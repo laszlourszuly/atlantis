@@ -1,3 +1,5 @@
+[![Circle CI](https://circleci.com/gh/echsylon/atlantis/tree/master.svg?style=svg)](https://circleci.com/gh/echsylon/atlantis/tree/master)
+
 # Atlantis
 
 <big><em>
