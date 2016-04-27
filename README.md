@@ -8,5 +8,5 @@ dependencies {
 }
 ```
 
-You can read more on the how-what-why's in the [Wiki](Home)
+You can read more on the how-what-why's in the [Wiki](https://github.com/echsylon/atlantis/wiki)
 
