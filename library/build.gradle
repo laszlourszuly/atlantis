@@ -1,0 +1,45 @@
+// Enable necessary plugins
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion '23.0.2'
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 23
+        versionCode 1
+        versionName '0.0.1'
+        project.archivesBaseName = 'atlantis'
+        project.version = android.defaultConfig.versionName
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+}
+
+configurations {
+    javadocDeps
+}
+
+dependencies {
+    compile 'com.google.code.gson:gson:2.6.2'
+    compile 'org.nanohttpd:nanohttpd:2.3.0'
+
+    javadocDeps 'com.google.code.gson:gson:2.6.2'
+    javadocDeps 'org.nanohttpd:nanohttpd:2.3.0'
+
+    testCompile 'com.google.dexmaker:dexmaker-mockito:1.2'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+    testCompile 'com.google.code.gson:gson:2.6.2'
+    testCompile 'junit:junit:4.12'
+}
+
+apply from: '../aar.gradle'
+apply from: '../jar.gradle'

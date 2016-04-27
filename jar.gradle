@@ -1,0 +1,56 @@
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'release-sources'
+    destinationDir = file('build/outputs/jar')
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.javadocDeps
+    options {
+        links 'http://docs.oracle.com/javase/7/docs/api/'
+        linksOffline 'http://d.android.com/reference', "${android.sdkDirectory}/docs/reference"
+    }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'release-javadoc'
+    from javadoc.destinationDir
+    destinationDir = file('build/outputs/jar')
+}
+
+task slimJar(type: Jar) {
+    classifier = 'release'
+    from('build/intermediates/classes/release/') {
+        exclude '**/BuildConfig.class'
+        exclude '**/R$*.class'
+        exclude '**/R.class'
+    }
+    destinationDir = file('build/outputs/jar')
+}
+
+task fatJar(type: Jar) {
+    classifier = 'release-fat'
+    // Add external dependency classes
+    from configurations.compile.findAll {
+        it.getName() != 'android.jar' && !it.getName().startsWith('junit') && !it.getName().startsWith('hamcrest')
+    }.collect {
+        it.isDirectory() ? it : zipTree(it)
+    }
+    // Add Atlantis classes
+    from('build/intermediates/classes/release/') {
+        exclude '**/BuildConfig.class'
+        exclude '**/R$*.class'
+        exclude '**/R.class'
+    }
+    destinationDir = file('build/outputs/jar')
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+    archives slimJar
+    archives fatJar
+}
+

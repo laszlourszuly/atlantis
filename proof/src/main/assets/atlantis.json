@@ -1,0 +1,25 @@
+{
+  "requests": [
+    {
+      "headers": "requestHeaderKey1: requestHeaderValue1\nrequestHeaderKey2: requestHeaderValue2\n",
+      "url": "http://localhost:8080/path/to/resource",
+      "method": "GET",
+      "responses": [
+        {
+          "responseCode": {
+            "code": 200,
+            "name": "OK"
+          },
+          "headers": [
+            {
+              "key": "responseHeaderKey1",
+              "value": "responseHeaderValue1"
+            }
+          ],
+          "mime": "application/json",
+          "text": "{\"responseBodyJsonAttribute\":\"responseBodyJsonValue\"}"
+        }
+      ]
+    }
+  ]
+}
