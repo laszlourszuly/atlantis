@@ -1,1 +1,1 @@
-include ':library', ':proof'
+include ':library'
