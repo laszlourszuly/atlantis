@@ -10,5 +10,5 @@ dependencies {
 }
 ```
 
-You can read more on the how-what-why's in the [[Wiki|home]]
+You can read more on the how-what-why's in the [Wiki](Home)
 
