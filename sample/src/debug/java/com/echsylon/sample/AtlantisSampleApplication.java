@@ -6,7 +6,7 @@ import android.widget.Toast;
 
 import com.echsylon.atlantis.Atlantis;
 
-public class AtlantisSampleApplication extends Application {
+public class AtlantisSampleApplication extends SampleApplication {
 
     @Override
     public void onCreate() {
