@@ -1,6 +1,6 @@
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
-    classifier = 'release-sources'
+    classifier = 'sources'
     destinationDir = file('build/outputs/jar')
 }
 
@@ -15,13 +15,12 @@ task javadoc(type: Javadoc) {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'release-javadoc'
+    classifier = 'javadoc'
     from javadoc.destinationDir
     destinationDir = file('build/outputs/jar')
 }
 
 task slimJar(type: Jar) {
-    classifier = 'release'
     from('build/intermediates/classes/release/') {
         exclude '**/BuildConfig.class'
         exclude '**/R$*.class'
@@ -31,7 +30,7 @@ task slimJar(type: Jar) {
 }
 
 task fatJar(type: Jar) {
-    classifier = 'release-fat'
+    classifier = 'fat'
     // Add external dependency classes
     from configurations.compile.findAll {
         it.getName() != 'android.jar' && !it.getName().startsWith('junit') && !it.getName().startsWith('hamcrest')
