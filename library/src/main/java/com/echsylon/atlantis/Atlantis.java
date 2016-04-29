@@ -2,6 +2,8 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Header;
@@ -78,9 +80,7 @@ public class Atlantis extends NanoHTTPD {
         try {
             instance.loadTemplate(context, templateAssetName);
         } catch (IOException e) {
-            if (errorListener != null)
-                errorListener.onError(e);
-
+            sendError(errorListener, e);
             return;
         }
 
@@ -94,23 +94,52 @@ public class Atlantis extends NanoHTTPD {
                         instance.pollForSignOfLife();
                     } catch (IOException e) {
                         Atlantis.shutdown();
-                        if (errorListener != null)
-                            errorListener.onError(e);
-
+                        sendError(errorListener, e);
                         return;
                     }
 
                     if (instance.isAlive()) {
-                        if (successListener != null)
-                            successListener.onSuccess();
+                        sendSuccess(successListener);
                     } else {
                         Atlantis.shutdown();
-                        if (errorListener != null)
-                            errorListener.onError(new TimeoutException());
+                        sendError(errorListener, new TimeoutException());
                     }
                 }
             }).start();
         }
+    }
+
+    /**
+     * Tries to send a throwable to a error callback implementation. This method ensures that the
+     * callback is called from the main thread and it handles null pointers gracefully.
+     *
+     * @param errorListener The error callback implementation.
+     * @param cause         The error.
+     */
+    private static void sendError(final OnErrorListener errorListener, final Throwable cause) {
+        if (errorListener != null)
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    errorListener.onError(cause);
+                }
+            });
+    }
+
+    /**
+     * Tries to notify a success callback implementation on a success event. This method ensures
+     * that the callback is called from the main thread and it handles null pointers gracefully.
+     *
+     * @param successListener The success callback implementation.
+     */
+    private static void sendSuccess(final OnSuccessListener successListener) {
+        if (successListener != null)
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    successListener.onSuccess();
+                }
+            });
     }
 
     /**
