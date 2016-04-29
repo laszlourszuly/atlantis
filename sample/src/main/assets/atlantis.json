@@ -1,0 +1,16 @@
+{
+  "requests": [{
+    "headers": "",
+    "url": "http://headers.jsontest.com/",
+    "method": "GET",
+    "responses": [{
+      "responseCode": {
+        "code": 200,
+        "name": "OK"
+      },
+      "headers": [],
+      "mime": "application/json",
+      "text": "{\"mock_attr\":\"mock value\"}"
+    }]
+  }]
+}
