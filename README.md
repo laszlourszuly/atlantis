@@ -72,6 +72,10 @@ protected void onCreate(Bundle savedInstanceState) {
     }
 ```
 
+There is a complete sample implementation along the code which you can have a peek on.
+
+Note that the example `jsontest.com` service is heavily used by many and it will most likely reach its maximum allowed daily quota somewher afternoon-ish. You can in such case, either try to run the app earlier on the day, or setup your own test server (instructions can be found on [http://www.jsontest.com/](http://www.jsontest.com/)). 
+
 ### More
 The [Wiki](https://github.com/echsylon/atlantis/wiki) contains more details and information.
 
@@ -79,7 +83,9 @@ The [Wiki](https://github.com/echsylon/atlantis/wiki) contains more details and 
 
 The Atlantis library is licensed under the Apache 2 license.
 
-The local web server, used by Atlantis, is licensed as:
+The [Google Gson](https://github.com/google/gson) library is licensed under the Apache 2 license.
+
+The [local web server](https://github.com/NanoHttpd/nanohttpd), used by Atlantis, is licensed as:
 
 <code>
 Copyright (c) 2012-2013 by Paul S. Hawke, 2001,2005-2013 by Jarno Elonen, 2010 by Konstantinos Togias
