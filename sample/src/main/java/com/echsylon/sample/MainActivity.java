@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(Menu.NONE, MENU_GET, Menu.NONE, "Get")
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -45,14 +44,22 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case MENU_GET:
-                performNetworkRequest();
+                performNetworkRequest(BuildConfig.BASE_URL, output);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private void performNetworkRequest() {
+    /**
+     * Tries to send a request to the given url and read the response from it. The work is done in a
+     * spawned worker thread and upon finish the result is written to the given output text view. As
+     * a courtesy this method will show a progress dialog while working (and dismiss it when done).
+     *
+     * @param urlString       The target url.
+     * @param resultContainer The text view to output the result to. May be null.
+     */
+    private void performNetworkRequest(final String urlString, final TextView resultContainer) {
         new AsyncTask<Void, Void, String>() {
             @Override
             protected void onPreExecute() {
@@ -65,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected String doInBackground(Void... params) {
                 try {
-                    URL url = new URL(BuildConfig.BASE_URL);
+                    URL url = new URL(urlString);
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
 
@@ -80,11 +87,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(String result) {
                 progress.dismiss();
-                output.setText(result);
+                if (resultContainer != null)
+                    resultContainer.setText(result);
             }
         }.execute();
     }
 
+    /**
+     * Manually tries to read all content from the given input stream and return it as a string.
+     * Would anything go wrong, then the exception stack trace is returned as a string. Any internal
+     * stream wrappers are closed, but the given input stream is left to the caller to deal with.
+     *
+     * @param stream The input stream to read content content from.
+     * @return A string containing either the read content or an exception stack trace. Never null.
+     */
     private String readNetworkResponse(InputStream stream) {
         InputStream inputStream = new BufferedInputStream(stream);
         InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
@@ -98,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 stringBuilder.append(line);
             return stringBuilder.toString();
         } catch (IOException e) {
-            return "";
+            return printThrowableToString(e);
         } finally {
             closeSilently(bufferedReader);
             closeSilently(inputStreamReader);
@@ -106,6 +122,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Tries to silently close something that claims to be closeable. Any exceptions thrown are
+     * silently consumed.
+     *
+     * @param closeable The thing to close.
+     */
     private void closeSilently(Closeable closeable) {
         if (closeable == null)
             return;
@@ -117,6 +139,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Writes the stack trace of the given throwable to a string variable and returns it.
+     *
+     * @param throwable The stack trace container.
+     * @return A string containing the stack trace. Never null.
+     */
     private String printThrowableToString(Throwable throwable) {
         if (throwable == null)
             return "";
@@ -124,6 +152,11 @@ public class MainActivity extends AppCompatActivity {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
         throwable.printStackTrace(printWriter);
-        return stringWriter.toString();
+        String result = stringWriter.toString();
+
+        closeSilently(stringWriter);
+        closeSilently(printWriter);
+
+        return result;
     }
 }
