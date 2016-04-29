@@ -28,5 +28,5 @@ android {
 
 dependencies {
     compile 'com.android.support:appcompat-v7:23.3.0'
-    compile 'com.echsylon.atlantis:atlantis:1.0.0'
+    compile 'com.echsylon.atlantis:atlantis:1.0.1'
 }
