@@ -52,3 +52,6 @@
 -dontnote **ILicensingService
 -dontnote org.apache.http.**
 -dontnote android.net.http.**
+
+# Retrolambda
+-dontwarn java.lang.invoke.*
