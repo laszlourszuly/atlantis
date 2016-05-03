@@ -1,7 +1,13 @@
 package com.echsylon.atlantis.internal;
 
+import android.content.Context;
+import android.content.res.AssetManager;
+
+import com.google.common.io.ByteStreams;
+
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -146,5 +152,32 @@ public class Utils {
     public static boolean notEmpty(String string) {
         return !isEmpty(string);
     }
+
+    /**
+     * Tries to read the entire content of the given asset file.
+     *
+     * @param context   The context to read the assets from.
+     * @param assetName The name of the asset that describes the responses.
+     * @return The content of the asset as a byte array.
+     * @throws IOException If failed opening the asset input stream.
+     */
+    public static byte[] readAsset(Context context, String assetName) throws IOException {
+        InputStream inputStream = null;
+        byte[] bytes;
+
+        try {
+            // Try to open the asset
+            AssetManager assetManager = context.getAssets();
+            inputStream = assetManager.open(assetName);
+
+            // Read the entire content
+            bytes = ByteStreams.toByteArray(inputStream);
+        } finally {
+            closeSilently(inputStream);
+        }
+
+        return bytes;
+    }
+
 
 }

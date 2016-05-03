@@ -1,7 +1,16 @@
 package com.echsylon.atlantis.internal;
 
-import org.junit.Test;
+import android.content.Context;
+import android.content.res.AssetManager;
 
+import com.echsylon.atlantis.BuildConfig;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.annotation.Config;
+
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,14 +18,19 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 /**
  * Verifies expected behavior on the {@link Utils} class.
  */
+@RunWith(RobolectricGradleTestRunner.class)
+@Config(constants = BuildConfig.class, sdk = 16)
 public class UtilsTest {
 
     @Test
@@ -102,6 +116,19 @@ public class UtilsTest {
         assertThat(Utils.notEmpty((String) null), is(false));
         assertThat(Utils.notEmpty(""), is(false));
         assertThat(Utils.notEmpty(" "), is(true));
+    }
+
+    @Test
+    public void testCanReadAsset() throws Exception {
+        Context mockedContext = mock(Context.class);
+        AssetManager mockedAssetManager = mock(AssetManager.class);
+
+        doReturn(mockedAssetManager).when(mockedContext).getAssets();
+        doReturn(new ByteArrayInputStream("{}".getBytes())).when(mockedAssetManager).open(anyString());
+
+        byte[] bytes = Utils.readAsset(mockedContext, "whatever.asset");
+        assertThat(bytes, notNullValue());
+        assertThat(bytes.length, is(2));
     }
 
 }

@@ -1,7 +1,6 @@
 package com.echsylon.atlantis;
 
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,11 +9,10 @@ import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Header;
 import com.echsylon.atlantis.template.Template;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +76,10 @@ public class Atlantis {
 
         // Reload any request templates.
         try {
-            instance.loadTemplate(context, templateAssetName);
-        } catch (IOException e) {
+            byte[] bytes = Utils.readAsset(context, templateAssetName);
+            String json = new String(bytes);
+            instance.universe = new Gson().fromJson(json, Template.class);
+        } catch (IOException | JsonSyntaxException e) {
             sendError(errorListener, e);
             return;
         }
@@ -146,6 +146,7 @@ public class Atlantis {
         }
     }
 
+    private Context context;
     private Template universe;
     private NanoHTTPD nanoHTTPD;
 
@@ -154,21 +155,28 @@ public class Atlantis {
         nanoHTTPD = new NanoHTTPD(host, port) {
             @Override
             public Response serve(IHTTPSession session) {
-                com.echsylon.atlantis.template.Response template = universe.findResponse(
+                com.echsylon.atlantis.template.Response response = universe.findResponse(
                         session.getUri(),
                         session.getMethod().name(),
                         parseSessionHeaders(session.getHeaders()));
 
                 // Couldn't find a suitable template.
-                if (template == null)
+                if (response == null)
                     return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
 
                 // Found a weird result.
-                if (template.statusCode() == 0)
+                if (response.statusCode() == 0)
                     return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Internal Error: Unknown status code (0)");
 
                 // Everything's just peachy.
-                return newFixedLengthResponse(parseStatus(template.statusCode()), template.mimeType(), template.content());
+                Response.Status status = parseStatus(response.statusCode());
+                if (response.hasAsset()) {
+                    byte[] bytes = response.asset(context);
+                    return newFixedLengthResponse(status, response.mimeType(), new ByteArrayInputStream(bytes), bytes.length);
+                } else {
+                    String content = response.content();
+                    return newFixedLengthResponse(parseStatus(response.statusCode()), response.mimeType(), content);
+                }
             }
         };
     }
@@ -196,30 +204,6 @@ public class Atlantis {
      */
     private boolean isLocalWebServerAlive() {
         return nanoHTTPD.isAlive();
-    }
-
-    /**
-     * Initializes the local web server with the response templates described in the given asset.
-     *
-     * @param context           The context to read the assets from.
-     * @param templateAssetName The name of the asset that describes the responses.
-     */
-    private void loadTemplate(Context context, String templateAssetName) throws IOException {
-        InputStream inputStream = null;
-        Reader reader = null;
-
-        try {
-            // Try to open the asset
-            AssetManager assetManager = context.getAssets();
-            inputStream = assetManager.open(templateAssetName);
-            reader = new InputStreamReader(inputStream);
-
-            // Parse the template
-            universe = new Gson().fromJson(reader, Template.class);
-        } finally {
-            Utils.closeSilently(reader);
-            Utils.closeSilently(inputStream);
-        }
     }
 
     /**

@@ -1,17 +1,33 @@
 package com.echsylon.atlantis.template;
 
+import android.content.Context;
+import android.content.res.AssetManager;
+
+import com.echsylon.atlantis.BuildConfig;
 import com.google.gson.Gson;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.annotation.Config;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 /**
  * Verifies expected behavior on the {@link Response} class.
  */
+@RunWith(RobolectricGradleTestRunner.class)
+@Config(constants = BuildConfig.class, sdk = 16)
 public class ResponseTest {
     private static final Response GOOD_RESPONSE;
     private static final Response BAD_RESPONSE;
@@ -24,6 +40,7 @@ public class ResponseTest {
                 "  }, " +
                 "  \"mime\": \"application/json\", " +
                 "  \"text\": \"\\\"{}\\\"\", " +
+                "  \"asset\": \"asset://fake.asset\", " +
                 "  \"headers\": [{" +
                 "    \"key\": \"k1\", " +
                 "    \"value\": \"v1\"" +
@@ -63,8 +80,41 @@ public class ResponseTest {
 
     @Test
     public void testContent() throws Exception {
+        assertThat(GOOD_RESPONSE.hasContent(), is(true));
         assertThat(GOOD_RESPONSE.content(), is("\"{}\""));
+        assertThat(BAD_RESPONSE.hasContent(), is(false));
         assertThat(BAD_RESPONSE.content(), nullValue());
     }
 
+    @Test
+    public void testAsset() throws Exception {
+        Context mockedContext = mock(Context.class);
+        AssetManager mockedAssetManager = mock(AssetManager.class);
+
+        doReturn(mockedAssetManager).when(mockedContext).getAssets();
+        doReturn(new ByteArrayInputStream("{}".getBytes())).when(mockedAssetManager).open(anyString());
+
+        assertThat(GOOD_RESPONSE.hasAsset(), is(true));
+        byte[] goodAsset = GOOD_RESPONSE.asset(mockedContext);
+        assertThat(goodAsset, notNullValue());
+        assertThat(goodAsset.length, is(2));
+
+        assertThat(BAD_RESPONSE.hasAsset(), is(false));
+        byte[] badAsset = BAD_RESPONSE.asset(mockedContext);
+        assertThat(badAsset, notNullValue());
+        assertThat(badAsset.length, is(0));
+    }
+
+    @Test
+    public void testAssetReturnsGracefully() throws Exception {
+        Context mockedContext = mock(Context.class);
+        AssetManager mockedAssetManager = mock(AssetManager.class);
+
+        doReturn(mockedAssetManager).when(mockedContext).getAssets();
+        doThrow(IOException.class).when(mockedAssetManager).open(anyString());
+
+        byte[] goodAsset = GOOD_RESPONSE.asset(mockedContext);
+        assertThat(goodAsset, notNullValue());
+        assertThat(goodAsset.length, is(0));
+    }
 }
