@@ -1,3 +1,15 @@
+// Module specific build settings
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+    }
+}
+
+// Plugins targeting this particular module
+apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.android.library'
 
 android {
@@ -18,8 +30,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
+// We want our JavaDoc to know of our dependencies
 configurations {
     javadocDeps
 }
@@ -37,5 +54,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+// Custom archive build configurations
 apply from: '../aar.gradle'
 apply from: '../jar.gradle'

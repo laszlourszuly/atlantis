@@ -118,12 +118,7 @@ public class Atlantis extends NanoHTTPD {
      */
     private static void sendError(final OnErrorListener errorListener, final Throwable cause) {
         if (errorListener != null)
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
-                    errorListener.onError(cause);
-                }
-            });
+            new Handler(Looper.getMainLooper()).post(() -> errorListener.onError(cause));
     }
 
     /**
@@ -134,12 +129,7 @@ public class Atlantis extends NanoHTTPD {
      */
     private static void sendSuccess(final OnSuccessListener successListener) {
         if (successListener != null)
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                @Override
-                public void run() {
-                    successListener.onSuccess();
-                }
-            });
+            new Handler(Looper.getMainLooper()).post(successListener::onSuccess);
     }
 
     /**
