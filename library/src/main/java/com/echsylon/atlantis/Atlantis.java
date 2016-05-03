@@ -2,6 +2,7 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -26,8 +26,8 @@ import fi.iki.elonen.NanoHTTPD;
  * This is the local web server that will serve the template responses. This web server will only
  * handle requests issued targeting "localhost", "192.168.0.1" or "127.0.0.1".
  */
-public class Atlantis extends NanoHTTPD {
-    // The singleton web server instance.
+public class Atlantis {
+    // The singleton instance of this class.
     private static volatile Atlantis instance;
 
     /**
@@ -84,28 +84,32 @@ public class Atlantis extends NanoHTTPD {
             return;
         }
 
-        // Try to start the local web server if it isn't started yet.
-        if (!instance.isAlive()) {
-            new Thread(new Runnable() {
+        // Try to start the local web server if it isn't started yet. Note, that NanoHTTPD will
+        // block the current thread for short bursts of time while waiting for an internal socket
+        // to connect. In order to prevent blocking the Android main thread, we'll initialize the
+        // instance from a worker thread instead.
+        if (!instance.isLocalWebServerAlive()) {
+            new AsyncTask<Void, Void, Throwable>() {
                 @Override
-                public void run() {
+                protected Throwable doInBackground(Void... lotsOfNothing) {
                     try {
-                        instance.start();
-                        instance.pollForSignOfLife();
+                        instance.startLocalServer();
+                        return null;
                     } catch (IOException e) {
-                        Atlantis.shutdown();
-                        sendError(errorListener, e);
-                        return;
-                    }
-
-                    if (instance.isAlive()) {
-                        sendSuccess(successListener);
-                    } else {
-                        Atlantis.shutdown();
-                        sendError(errorListener, new TimeoutException());
+                        instance.stopLocalServer();
+                        instance = null;
+                        return e;
                     }
                 }
-            }).start();
+
+                @Override
+                protected void onPostExecute(Throwable throwable) {
+                    if (throwable == null)
+                        sendSuccess(successListener);
+                    else
+                        sendError(errorListener, throwable);
+                }
+            }.execute();
         }
     }
 
@@ -137,53 +141,61 @@ public class Atlantis extends NanoHTTPD {
      */
     public static void shutdown() {
         if (instance != null) {
-            instance.stop();
+            instance.stopLocalServer();
             instance = null;
         }
     }
 
-    // The mocked internet template
     private Template universe;
+    private NanoHTTPD nanoHTTPD;
 
     // Intentionally hidden constructor.
     private Atlantis(String host, int port) {
-        super(host, port);
-    }
+        nanoHTTPD = new NanoHTTPD(host, port) {
+            @Override
+            public Response serve(IHTTPSession session) {
+                com.echsylon.atlantis.template.Response template = universe.findResponse(
+                        session.getUri(),
+                        session.getMethod().name(),
+                        parseSessionHeaders(session.getHeaders()));
 
-    @Override
-    public Response serve(IHTTPSession session) {
-        com.echsylon.atlantis.template.Response template = universe.findResponse(
-                session.getUri(),
-                session.getMethod().name(),
-                parseSessionHeaders(session.getHeaders()));
+                // Couldn't find a suitable template.
+                if (template == null)
+                    return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
 
-        // Couldn't find a suitable template.
-        if (template == null)
-            return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
+                // Found a weird result.
+                if (template.statusCode() == 0)
+                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Internal Error: Unknown status code (0)");
 
-        // Found a weird result.
-        if (template.statusCode() == 0)
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Internal Error: Unknown status code (0)");
-
-        // Everything's just peachy.
-        return newFixedLengthResponse(parseStatus(template.statusCode()), template.mimeType(), template.content());
+                // Everything's just peachy.
+                return newFixedLengthResponse(parseStatus(template.statusCode()), template.mimeType(), template.content());
+            }
+        };
     }
 
     /**
-     * Polls for a {@link #isAlive()} flag with a very short interval and retries a couple of times
-     * before giving up.
+     * Tries to start the local NanoHTTPD server.
+     *
+     * @throws IOException Thrown if the server can't be started for some reason.
      */
-    private void pollForSignOfLife() {
-        int iteration = 0;
+    private void startLocalServer() throws IOException {
+        nanoHTTPD.start();
+    }
 
-        while (!isAlive() && iteration++ < 10) {
-            try {
-                Thread.sleep(10L);
-            } catch (InterruptedException e) {
-                // We were prematurely interrupted, let's ignore the reason and
-                // do our thing again.
-            }
-        }
+    /**
+     * Tries to stop the local NanoHTTPD server. No fatal exception is expected.
+     */
+    private void stopLocalServer() {
+        nanoHTTPD.stop();
+    }
+
+    /**
+     * Checks if the local NanoHTTPD server is to consider as "up-and-running".
+     *
+     * @return Boolean true if alive, false otherwise.
+     */
+    private boolean isLocalWebServerAlive() {
+        return nanoHTTPD.isAlive();
     }
 
     /**
@@ -233,52 +245,52 @@ public class Atlantis extends NanoHTTPD {
      * @param statusCode The numeric status code.
      * @return An internal response status, or null if no match found.
      */
-    private Response.Status parseStatus(int statusCode) {
+    private NanoHTTPD.Response.Status parseStatus(int statusCode) {
         switch (statusCode) {
             case 101:
-                return Response.Status.SWITCH_PROTOCOL;
+                return NanoHTTPD.Response.Status.SWITCH_PROTOCOL;
             case 200:
-                return Response.Status.OK;
+                return NanoHTTPD.Response.Status.OK;
             case 201:
-                return Response.Status.CREATED;
+                return NanoHTTPD.Response.Status.CREATED;
             case 202:
-                return Response.Status.ACCEPTED;
+                return NanoHTTPD.Response.Status.ACCEPTED;
             case 204:
-                return Response.Status.NO_CONTENT;
+                return NanoHTTPD.Response.Status.NO_CONTENT;
             case 206:
-                return Response.Status.PARTIAL_CONTENT;
+                return NanoHTTPD.Response.Status.PARTIAL_CONTENT;
             case 207:
-                return Response.Status.MULTI_STATUS;
+                return NanoHTTPD.Response.Status.MULTI_STATUS;
             case 301:
-                return Response.Status.REDIRECT;
+                return NanoHTTPD.Response.Status.REDIRECT;
             case 303:
-                return Response.Status.REDIRECT_SEE_OTHER;
+                return NanoHTTPD.Response.Status.REDIRECT_SEE_OTHER;
             case 304:
-                return Response.Status.NOT_MODIFIED;
+                return NanoHTTPD.Response.Status.NOT_MODIFIED;
             case 400:
-                return Response.Status.BAD_REQUEST;
+                return NanoHTTPD.Response.Status.BAD_REQUEST;
             case 401:
-                return Response.Status.UNAUTHORIZED;
+                return NanoHTTPD.Response.Status.UNAUTHORIZED;
             case 403:
-                return Response.Status.FORBIDDEN;
+                return NanoHTTPD.Response.Status.FORBIDDEN;
             case 404:
-                return Response.Status.NOT_FOUND;
+                return NanoHTTPD.Response.Status.NOT_FOUND;
             case 405:
-                return Response.Status.METHOD_NOT_ALLOWED;
+                return NanoHTTPD.Response.Status.METHOD_NOT_ALLOWED;
             case 406:
-                return Response.Status.NOT_ACCEPTABLE;
+                return NanoHTTPD.Response.Status.NOT_ACCEPTABLE;
             case 408:
-                return Response.Status.REQUEST_TIMEOUT;
+                return NanoHTTPD.Response.Status.REQUEST_TIMEOUT;
             case 409:
-                return Response.Status.CONFLICT;
+                return NanoHTTPD.Response.Status.CONFLICT;
             case 416:
-                return Response.Status.RANGE_NOT_SATISFIABLE;
+                return NanoHTTPD.Response.Status.RANGE_NOT_SATISFIABLE;
             case 500:
-                return Response.Status.INTERNAL_ERROR;
+                return NanoHTTPD.Response.Status.INTERNAL_ERROR;
             case 501:
-                return Response.Status.NOT_IMPLEMENTED;
+                return NanoHTTPD.Response.Status.NOT_IMPLEMENTED;
             case 505:
-                return Response.Status.UNSUPPORTED_HTTP_VERSION;
+                return NanoHTTPD.Response.Status.UNSUPPORTED_HTTP_VERSION;
             default:
                 return null;
         }
