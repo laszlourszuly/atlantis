@@ -33,7 +33,8 @@ You need to define which requests you're mocking and what response they should d
                 "value": "value2"
             }],
             "mime": "application/json",
-            "text": "{\"attr\": \"value\"}"
+            "text": "{\"attr\": \"value\"}",
+            "asset": "assetFileName.mp3"
         }]
     }]
 }
@@ -48,14 +49,11 @@ The tool offers a very straight forward API; you can start it:
 protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    Uri uri = Uri.parse("http://localhost:8080");
     String configAssetName = "atlantis.json";
     Atlantis.OnSuccessListener successCallback = null;
     Atlantis.OnErrorListener errorCallback = null;
 
-    Atlantis.start(getContext(),
-            uri.getHost(),
-            uri.getPort(),
+    mServer = Atlantis.start(getContext(),
             configAssetName,
             successCallback,
             errorCallback);
@@ -68,7 +66,7 @@ protected void onCreate(Bundle savedInstanceState) {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Atlantis.shutdown();
+        mServer.close();
     }
 ```
 
