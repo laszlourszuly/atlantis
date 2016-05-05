@@ -38,24 +38,23 @@ public class TemplateTest {
     @SuppressWarnings({"unchecked", "ArraysAsListWithZeroOrOneArgument"})
     public void testFindResponse() throws Exception {
         // Verify empty url doesn't return result when there is no matching result.
-        assertThat(ROOT.findResponse("", "POST"), is(nullValue()));
+        assertThat(ROOT.findRequest("", "POST", null), is(nullValue()));
 
         // Verify query string is matched exactly
-        assertThat(ROOT.findResponse("scheme://host/path", "POST"), is(nullValue()));                    // no query
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1", "POST"), is(nullValue()));              // too short query
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q3=v3", "POST"), is(nullValue()));        // no matching query
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q2=v2&q3=v3", "POST"), is(nullValue()));  // too long query
+        assertThat(ROOT.findRequest("scheme://host/path", "POST", null), is(nullValue()));                    // no query
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1", "POST", null), is(nullValue()));              // too short query
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q3=v3", "POST", null), is(nullValue()));        // no matching query
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2&q3=v3", "POST", null), is(nullValue()));  // too long query
 
         // Verify method is matched
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q2=v2", "PUT"), is(nullValue()));
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "PUT", null), is(nullValue()));
 
         // Verify headers are matched if given (even if empty)
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q2=v2", "POST", Collections.EMPTY_LIST), is(nullValue()));
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", Collections.EMPTY_LIST), is(nullValue()));
 
         // Verify success
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q2=v2", "POST"), is(notNullValue()));         // exact query
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q2=v2", "POST", null), is(notNullValue()));   // ignore headers
-        assertThat(ROOT.findResponse("scheme://host/path?q1=v1&q2=v2", "POST",                               // exact headers
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", null), is(notNullValue()));   // ignore headers
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST",                               // exact headers
                 Arrays.asList(new Header("Content-Type", "text/plain"))), is(notNullValue()));
     }
 

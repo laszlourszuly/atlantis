@@ -21,38 +21,15 @@ public final class Template implements Serializable {
     }
 
     /**
-     * Tries to find and return a response for the first request template that matches the given url
-     * criteria with a GET method. The header will not be used for matching.
-     *
-     * @param url The url of the request template to find.
-     * @return The response template that matches the given criteria or null if no match found.
-     */
-    public Response findResponse(String url) {
-        return findResponse(url, "GET");
-    }
-
-    /**
-     * Tries to find and return a response for the first request template that matches the given
-     * method and url criteria. The header will not be used for matching.
-     *
-     * @param url    The url.
-     * @param method The request method.
-     * @return The response template that matches the given criteria or null if no match found.
-     */
-    public Response findResponse(String url, String method) {
-        return findResponse(url, method, null);
-    }
-
-    /**
-     * Tries to find and return a response for the first request template that matches the given
-     * method, url and header criteria.
+     * Tries to find a request template that matches the given method, url and header criteria.
+     * Returns the first match.
      *
      * @param url     The url.
      * @param method  The request method.
      * @param headers The request headers.
-     * @return The response template that matches the given criteria or null if no match found.
+     * @return The request template that matches the given criteria or null if no match found.
      */
-    public Response findResponse(String url, String method, List<Header> headers) {
+    public Request findRequest(String url, String method, List<Header> headers) {
         //noinspection ConstantConditions
         if (Utils.isEmpty(requests))
             return null;
@@ -71,7 +48,7 @@ public final class Template implements Serializable {
                 continue;
 
             // If we reached this point, we have a match
-            return request.response();
+            return request;
         }
 
         // There is no match. Try not to cry. Cry a lot.

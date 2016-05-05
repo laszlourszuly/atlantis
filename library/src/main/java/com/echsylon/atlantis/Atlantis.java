@@ -7,6 +7,7 @@ import android.os.Looper;
 
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Header;
+import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Template;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -146,24 +147,26 @@ public class Atlantis {
         this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
             @Override
             public Response serve(IHTTPSession session) {
-                Template template = getTemplate();
-                com.echsylon.atlantis.template.Response response = template.findResponse(
+                // Let it crash on null pointer as it's considered an unrecoverable error state.
+                Request request = template.findRequest(
                         session.getUri(),
                         session.getMethod().name(),
                         parseSessionHeaders(session.getHeaders()));
 
-                if (response == null) {
-                    return super.serve(session);
-                } else if (response.hasAsset()) {
-                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                    Context context = getContext();
-                    byte[] bytes = response.asset(context);
-                    return newFixedLengthResponse(status, response.mimeType(), new ByteArrayInputStream(bytes), bytes.length);
-                } else {
-                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                    String content = response.content();
-                    return newFixedLengthResponse(status, response.mimeType(), content);
+                if (request != null) {
+                    com.echsylon.atlantis.template.Response response = request.response();
+                    if (response.hasAsset()) {
+                        NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
+                        byte[] bytes = response.asset(Atlantis.this.context);
+                        return newFixedLengthResponse(status, response.mimeType(), new ByteArrayInputStream(bytes), bytes.length);
+                    } else {
+                        NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
+                        String content = response.content();
+                        return newFixedLengthResponse(status, response.mimeType(), content);
+                    }
                 }
+
+                return super.serve(session);
             }
         };
     }
