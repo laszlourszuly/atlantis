@@ -50,6 +50,18 @@ public final class Response implements Serializable {
     }
 
     /**
+     * Returns the HTTP status name of the response.
+     *
+     * @return The human readable name of the HTTP status.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public String statusName() {
+        return responseCode != null ?
+                responseCode.name :
+                null;
+    }
+
+    /**
      * Returns all the response headers, or an empty list if there are no headers.
      *
      * @return The list of response headers.

@@ -25,8 +25,33 @@ import fi.iki.elonen.NanoHTTPD;
  * handle requests issued targeting "localhost", "192.168.0.1" or "127.0.0.1".
  */
 public class Atlantis {
-    // The singleton instance of this class.
-    private static volatile Atlantis instance;
+    private static final String HOSTNAME = "localhost";
+    private static final int PORT = 8080;
+
+    /**
+     * This is a converter class, representing an HTTP status as the NanoHTTPD class knows it.
+     * Atlantis only works with integers and strings when it comes to HTTP status code, hence the
+     * need for this class.
+     */
+    private static final class NanoStatus implements NanoHTTPD.Response.IStatus {
+        private final int code;
+        private final String name;
+
+        private NanoStatus(int code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+
+        @Override
+        public String getDescription() {
+            return name;
+        }
+
+        @Override
+        public int getRequestStatus() {
+            return code;
+        }
+    }
 
     /**
      * This is a callback interface through which any asynchronous success states are notified.
@@ -52,52 +77,111 @@ public class Atlantis {
         void onError(Throwable cause);
     }
 
+    // The singleton instance.
+    private static Atlantis instance;
+
     /**
-     * Loads given mocked internet template and starts the local web server, if not already running.
-     * Note that an attempt to load the template is made regardless if the server is already running
-     * or not.
+     * Loads a set of template requests and corresponding responses and, if not already running also
+     * starts the local web server. Note that an attempt to load the template is made regardless if
+     * the server is already running or not.
      *
-     * @param context           The context to load the request templates from.
-     * @param host              The host name to connect to.
-     * @param port              The port to connect through.
+     * @param context           The context to load any assets from.
      * @param templateAssetName The name of the request template asset to load.
      * @param successListener   The success state callback implementation.
      * @param errorListener     The error callback implementation.
      */
     public static void start(final Context context,
-                             final String host, final int port,
                              final String templateAssetName,
                              final OnSuccessListener successListener,
                              final OnErrorListener errorListener) {
 
-        // Ensure the singleton exists.
         if (instance == null)
-            instance = new Atlantis(host, port);
+            instance = new Atlantis();
 
-        // Reload any request templates.
+        Template template;
         try {
             byte[] bytes = Utils.readAsset(context, templateAssetName);
             String json = new String(bytes);
-            instance.universe = new Gson().fromJson(json, Template.class);
+            template = new Gson().fromJson(json, Template.class);
         } catch (IOException | JsonSyntaxException e) {
             sendError(errorListener, e);
             return;
         }
 
-        // Try to start the local web server if it isn't started yet. Note, that NanoHTTPD will
-        // block the current thread for short bursts of time while waiting for an internal socket
-        // to connect. In order to prevent blocking the Android main thread, we'll initialize the
-        // instance from a worker thread instead.
-        if (!instance.isLocalWebServerAlive()) {
+        instance.setContext(context);
+        instance.setTemplate(template);
+        instance.start(successListener, errorListener);
+    }
+
+    /**
+     * Stops the local web server.
+     */
+    public static void shutdown() {
+        if (instance != null) {
+            instance.stop();
+            instance = null;
+        }
+    }
+
+    // Tries to send a throwable to a error callback implementation. This method ensures that the
+    // callback is called from the main thread and it handles null pointers gracefully.
+    private static void sendError(final OnErrorListener errorListener, final Throwable cause) {
+        if (errorListener != null)
+            new Handler(Looper.getMainLooper()).post(() -> errorListener.onError(cause));
+    }
+
+    // Tries to notify a success callback implementation on a success event. This method ensures
+    // that the callback is called from the main thread and it handles null pointers gracefully.
+    private static void sendSuccess(final OnSuccessListener successListener) {
+        if (successListener != null)
+            new Handler(Looper.getMainLooper()).post(successListener::onSuccess);
+    }
+
+    private Context context;
+    private Template template;
+    private NanoHTTPD nanoHTTPD;
+
+    // Intentionally hidden constructor.
+    private Atlantis() {
+        this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
+            @Override
+            public Response serve(IHTTPSession session) {
+                Template template = getTemplate();
+                com.echsylon.atlantis.template.Response response = template.findResponse(
+                        session.getUri(),
+                        session.getMethod().name(),
+                        parseSessionHeaders(session.getHeaders()));
+
+                if (response == null) {
+                    return super.serve(session);
+                } else if (response.hasAsset()) {
+                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
+                    Context context = getContext();
+                    byte[] bytes = response.asset(context);
+                    return newFixedLengthResponse(status, response.mimeType(), new ByteArrayInputStream(bytes), bytes.length);
+                } else {
+                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
+                    String content = response.content();
+                    return newFixedLengthResponse(status, response.mimeType(), content);
+                }
+            }
+        };
+    }
+
+    // Tries to start the local web server if it isn't started yet. Note, that NanoHTTPD will  block
+    // the current thread for short bursts of time while waiting for an internal socket to connect.
+    // In order to prevent blocking the Android main thread, we'll start NanoHTTTPD from a worker
+    // thread instead.
+    private void start(final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        if (!nanoHTTPD.isAlive()) {
             new AsyncTask<Void, Void, Throwable>() {
                 @Override
                 protected Throwable doInBackground(Void... lotsOfNothing) {
                     try {
-                        instance.startLocalServer();
+                        nanoHTTPD.start();
                         return null;
                     } catch (IOException e) {
-                        instance.stopLocalServer();
-                        instance = null;
+                        shutdown();
                         return e;
                     }
                 }
@@ -113,105 +197,28 @@ public class Atlantis {
         }
     }
 
-    /**
-     * Tries to send a throwable to a error callback implementation. This method ensures that the
-     * callback is called from the main thread and it handles null pointers gracefully.
-     *
-     * @param errorListener The error callback implementation.
-     * @param cause         The error.
-     */
-    private static void sendError(final OnErrorListener errorListener, final Throwable cause) {
-        if (errorListener != null)
-            new Handler(Looper.getMainLooper()).post(() -> errorListener.onError(cause));
-    }
-
-    /**
-     * Tries to notify a success callback implementation on a success event. This method ensures
-     * that the callback is called from the main thread and it handles null pointers gracefully.
-     *
-     * @param successListener The success callback implementation.
-     */
-    private static void sendSuccess(final OnSuccessListener successListener) {
-        if (successListener != null)
-            new Handler(Looper.getMainLooper()).post(successListener::onSuccess);
-    }
-
-    /**
-     * Stops the local web server.
-     */
-    public static void shutdown() {
-        if (instance != null) {
-            instance.stopLocalServer();
-            instance = null;
-        }
-    }
-
-    private Context context;
-    private Template universe;
-    private NanoHTTPD nanoHTTPD;
-
-    // Intentionally hidden constructor.
-    private Atlantis(String host, int port) {
-        nanoHTTPD = new NanoHTTPD(host, port) {
-            @Override
-            public Response serve(IHTTPSession session) {
-                com.echsylon.atlantis.template.Response response = universe.findResponse(
-                        session.getUri(),
-                        session.getMethod().name(),
-                        parseSessionHeaders(session.getHeaders()));
-
-                // Couldn't find a suitable template.
-                if (response == null)
-                    return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found");
-
-                // Found a weird result.
-                if (response.statusCode() == 0)
-                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, NanoHTTPD.MIME_PLAINTEXT, "Internal Error: Unknown status code (0)");
-
-                // Everything's just peachy.
-                Response.Status status = parseStatus(response.statusCode());
-                if (response.hasAsset()) {
-                    byte[] bytes = response.asset(context);
-                    return newFixedLengthResponse(status, response.mimeType(), new ByteArrayInputStream(bytes), bytes.length);
-                } else {
-                    String content = response.content();
-                    return newFixedLengthResponse(parseStatus(response.statusCode()), response.mimeType(), content);
-                }
-            }
-        };
-    }
-
-    /**
-     * Tries to start the local NanoHTTPD server.
-     *
-     * @throws IOException Thrown if the server can't be started for some reason.
-     */
-    private void startLocalServer() throws IOException {
-        nanoHTTPD.start();
-    }
-
-    /**
-     * Tries to stop the local NanoHTTPD server. No fatal exception is expected.
-     */
-    private void stopLocalServer() {
+    private void stop() {
         nanoHTTPD.stop();
     }
 
-    /**
-     * Checks if the local NanoHTTPD server is to consider as "up-and-running".
-     *
-     * @return Boolean true if alive, false otherwise.
-     */
-    private boolean isLocalWebServerAlive() {
-        return nanoHTTPD.isAlive();
+    private void setTemplate(Template template) {
+        this.template = template;
     }
 
-    /**
-     * Converts an internal key-value map to a more convenient list of header objects.
-     *
-     * @param sessionHeaders The key-value map.
-     * @return A list of headers. May be empty but never null.
-     */
+    private Template getTemplate() {
+        return template;
+    }
+
+    private void setContext(Context context) {
+        this.context = context;
+    }
+
+    private Context getContext() {
+        return context;
+    }
+
+    // Converts a map of string pairs to a list of header objects, as Atlantis internally expects
+    // them to be.
     private List<Header> parseSessionHeaders(Map<String, String> sessionHeaders) {
         List<Header> result = new ArrayList<>();
         Set<Map.Entry<String, String>> entries = sessionHeaders.entrySet();
@@ -221,63 +228,6 @@ public class Atlantis {
             result.add(new Header(entry.getKey(), entry.getValue()));
 
         return result;
-    }
-
-    /**
-     * Maps an integer to a Nano HTTP status code enumeration.
-     *
-     * @param statusCode The numeric status code.
-     * @return An internal response status, or null if no match found.
-     */
-    private NanoHTTPD.Response.Status parseStatus(int statusCode) {
-        switch (statusCode) {
-            case 101:
-                return NanoHTTPD.Response.Status.SWITCH_PROTOCOL;
-            case 200:
-                return NanoHTTPD.Response.Status.OK;
-            case 201:
-                return NanoHTTPD.Response.Status.CREATED;
-            case 202:
-                return NanoHTTPD.Response.Status.ACCEPTED;
-            case 204:
-                return NanoHTTPD.Response.Status.NO_CONTENT;
-            case 206:
-                return NanoHTTPD.Response.Status.PARTIAL_CONTENT;
-            case 207:
-                return NanoHTTPD.Response.Status.MULTI_STATUS;
-            case 301:
-                return NanoHTTPD.Response.Status.REDIRECT;
-            case 303:
-                return NanoHTTPD.Response.Status.REDIRECT_SEE_OTHER;
-            case 304:
-                return NanoHTTPD.Response.Status.NOT_MODIFIED;
-            case 400:
-                return NanoHTTPD.Response.Status.BAD_REQUEST;
-            case 401:
-                return NanoHTTPD.Response.Status.UNAUTHORIZED;
-            case 403:
-                return NanoHTTPD.Response.Status.FORBIDDEN;
-            case 404:
-                return NanoHTTPD.Response.Status.NOT_FOUND;
-            case 405:
-                return NanoHTTPD.Response.Status.METHOD_NOT_ALLOWED;
-            case 406:
-                return NanoHTTPD.Response.Status.NOT_ACCEPTABLE;
-            case 408:
-                return NanoHTTPD.Response.Status.REQUEST_TIMEOUT;
-            case 409:
-                return NanoHTTPD.Response.Status.CONFLICT;
-            case 416:
-                return NanoHTTPD.Response.Status.RANGE_NOT_SATISFIABLE;
-            case 500:
-                return NanoHTTPD.Response.Status.INTERNAL_ERROR;
-            case 501:
-                return NanoHTTPD.Response.Status.NOT_IMPLEMENTED;
-            case 505:
-                return NanoHTTPD.Response.Status.UNSUPPORTED_HTTP_VERSION;
-            default:
-                return null;
-        }
     }
 
 }
