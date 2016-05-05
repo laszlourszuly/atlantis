@@ -2,22 +2,20 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Header;
 import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Template;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
+import java.util.concurrent.Callable;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -78,9 +76,6 @@ public class Atlantis {
         void onError(Throwable cause);
     }
 
-    // The singleton instance.
-    private static Atlantis instance;
-
     /**
      * Loads a set of template requests and corresponding responses and, if not already running also
      * starts the local web server. Note that an attempt to load the template is made regardless if
@@ -90,60 +85,33 @@ public class Atlantis {
      * @param templateAssetName The name of the request template asset to load.
      * @param successListener   The success state callback implementation.
      * @param errorListener     The error callback implementation.
+     * @return An Atlantis object instance.
      */
-    public static void start(final Context context,
-                             final String templateAssetName,
-                             final OnSuccessListener successListener,
-                             final OnErrorListener errorListener) {
+    public static Atlantis start(final Context context,
+                                 final String templateAssetName,
+                                 final OnSuccessListener successListener,
+                                 final OnErrorListener errorListener) {
 
-        if (instance == null)
-            instance = new Atlantis();
+        Atlantis atlantis = new Atlantis(context);
+        Atlantis.OnSuccessListener trigger = () -> atlantis.start(successListener, errorListener);
+        atlantis.setTemplate(templateAssetName, trigger, errorListener);
 
-        Template template;
-        try {
-            byte[] bytes = Utils.readAsset(context, templateAssetName);
-            String json = new String(bytes);
-            template = new Gson().fromJson(json, Template.class);
-        } catch (IOException | JsonSyntaxException e) {
-            sendError(errorListener, e);
-            return;
-        }
-
-        instance.setContext(context);
-        instance.setTemplate(template);
-        instance.start(successListener, errorListener);
-    }
-
-    /**
-     * Stops the local web server.
-     */
-    public static void shutdown() {
-        if (instance != null) {
-            instance.stop();
-            instance = null;
-        }
-    }
-
-    // Tries to send a throwable to a error callback implementation. This method ensures that the
-    // callback is called from the main thread and it handles null pointers gracefully.
-    private static void sendError(final OnErrorListener errorListener, final Throwable cause) {
-        if (errorListener != null)
-            new Handler(Looper.getMainLooper()).post(() -> errorListener.onError(cause));
-    }
-
-    // Tries to notify a success callback implementation on a success event. This method ensures
-    // that the callback is called from the main thread and it handles null pointers gracefully.
-    private static void sendSuccess(final OnSuccessListener successListener) {
-        if (successListener != null)
-            new Handler(Looper.getMainLooper()).post(successListener::onSuccess);
+        return atlantis;
     }
 
     private Context context;
     private Template template;
     private NanoHTTPD nanoHTTPD;
+    private Stack<Request> captured;
+
+    private boolean isCapturing;
 
     // Intentionally hidden constructor.
-    private Atlantis() {
+    private Atlantis(Context context) {
+        this.context = context;
+        this.captured = new Stack<>();
+        this.isCapturing = false;
+
         this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
             @Override
             public Response serve(IHTTPSession session) {
@@ -154,6 +122,9 @@ public class Atlantis {
                         parseSessionHeaders(session.getHeaders()));
 
                 if (request != null) {
+                    if (isCapturing)
+                        captured.push(request);
+
                     com.echsylon.atlantis.template.Response response = request.response();
                     if (response.hasAsset()) {
                         NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
@@ -171,53 +142,78 @@ public class Atlantis {
         };
     }
 
-    // Tries to start the local web server if it isn't started yet. Note, that NanoHTTPD will  block
-    // the current thread for short bursts of time while waiting for an internal socket to connect.
-    // In order to prevent blocking the Android main thread, we'll start NanoHTTTPD from a worker
-    // thread instead.
-    private void start(final OnSuccessListener successListener, final OnErrorListener errorListener) {
-        if (!nanoHTTPD.isAlive()) {
-            new AsyncTask<Void, Void, Throwable>() {
-                @Override
-                protected Throwable doInBackground(Void... lotsOfNothing) {
-                    try {
-                        nanoHTTPD.start();
-                        return null;
-                    } catch (IOException e) {
-                        shutdown();
-                        return e;
-                    }
-                }
+    /**
+     * Sets a new template asset to the Atlantis instance. This will step into action for any future
+     * requests.
+     *
+     * @param templateAssetName The name of the asset to read the requests template from.
+     * @param successListener   The callback to deliver a success notification on.
+     * @param errorListener     The callback to deliver any error states on.
+     * @return A reference to this instance of the Atlantis object. This allows for method chaining.
+     */
+    public Atlantis setTemplate(final String templateAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        // The asset will be read from disk and a potentially time consuming json parsing will be
+        // performed, hence we'll spawn a worker thread for the task.
+        enqueueTask(() -> {
+            byte[] bytes = Utils.readAsset(context, templateAssetName);
+            String json = new String(bytes);
+            template = new Gson().fromJson(json, Template.class);
+            return null;
+        }, successListener, errorListener);
 
-                @Override
-                protected void onPostExecute(Throwable throwable) {
-                    if (throwable == null)
-                        sendSuccess(successListener);
-                    else
-                        sendError(errorListener, throwable);
-                }
-            }.execute();
-        }
+        return this;
     }
 
-    private void stop() {
+    /**
+     * Stops the local web server.
+     */
+    public void stop() {
         nanoHTTPD.stop();
+        template = null;
+        captured.clear();
+        isCapturing = false;
     }
 
-    private void setTemplate(Template template) {
-        this.template = template;
+    /**
+     * Tells the local web server to start capturing a copy of any served requests. This method will
+     * start a new capture session by clearing the capture history stack.
+     */
+    public void startCapturing() {
+        captured.clear();
+        isCapturing = true;
     }
 
-    private Template getTemplate() {
-        return template;
+    /**
+     * Tells the local web server to stop capturing any served requests. This method leaves the
+     * capture history stack intact.
+     */
+    public void stopCapturing() {
+        isCapturing = false;
     }
 
-    private void setContext(Context context) {
-        this.context = context;
+    /**
+     * Returns a reference to the capture history stack. This method leaves the stack intact, but
+     * new requests may be added by the local serer at any time.
+     *
+     * @return A reference to the captured history stack.
+     */
+    public Stack<Request> getCapturedRequests() {
+        return captured;
     }
 
-    private Context getContext() {
-        return context;
+    // Tries to start the local web server if it isn't started yet. Worth mentioning is that
+    // NanoHTTPD will block the current thread for short bursts of time while waiting for an
+    // internal socket to connect. In order to prevent blocking the Android main thread, we'll start
+    // NanoHTTTPD from a worker thread instead.
+    private Atlantis start(final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        if (!nanoHTTPD.isAlive()) {
+            enqueueTask(() -> {
+                nanoHTTPD.start();
+                return null;
+            }, successListener, errorListener);
+        }
+
+        return this;
     }
 
     // Converts a map of string pairs to a list of header objects, as Atlantis internally expects
@@ -231,6 +227,34 @@ public class Atlantis {
             result.add(new Header(entry.getKey(), entry.getValue()));
 
         return result;
+    }
+
+    // Creates a new AsyncTask instance and executes a callable from it. AsyncTasks will by default
+    // be queued up in a serial executor, which ensures they are operated on in the very same order
+    // they were once enqueued.
+    private void enqueueTask(final Callable<Void> callable, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        new AsyncTask<Void, Void, Throwable>() {
+            @Override
+            protected Throwable doInBackground(Void... params) {
+                try {
+                    callable.call();
+                    return null;
+                } catch (Exception e) {
+                    return e;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Throwable throwable) {
+                if (throwable == null) {
+                    if (successListener != null)
+                        successListener.onSuccess();
+                } else {
+                    if (errorListener != null)
+                        errorListener.onError(throwable);
+                }
+            }
+        }.execute();
     }
 
 }
