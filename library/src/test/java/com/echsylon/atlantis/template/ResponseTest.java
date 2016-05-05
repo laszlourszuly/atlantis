@@ -52,13 +52,15 @@ public class ResponseTest {
     }
 
     @Test
-    public void testResponseCode() throws Exception {
+    public void status_ResponseCode() throws Exception {
         assertThat(GOOD_RESPONSE.statusCode(), is(200));
+        assertThat(GOOD_RESPONSE.statusName(), is("OK"));
         assertThat(BAD_RESPONSE.statusCode(), is(0));
+        assertThat(BAD_RESPONSE.statusName(), is(nullValue()));
     }
 
     @Test
-    public void testHeaders() throws Exception {
+    public void header_CorrectHeadersAreReturned() throws Exception {
         assertThat(GOOD_RESPONSE.headers(), notNullValue());
         assertThat(GOOD_RESPONSE.headers().size(), is(1));
         assertThat(GOOD_RESPONSE.headers("k1"), notNullValue());
@@ -73,13 +75,13 @@ public class ResponseTest {
     }
 
     @Test
-    public void testMimeType() throws Exception {
+    public void mime_CorrectMimeTypeIsReturned() throws Exception {
         assertThat(GOOD_RESPONSE.mimeType(), is("application/json"));
         assertThat(BAD_RESPONSE.mimeType(), nullValue());
     }
 
     @Test
-    public void testContent() throws Exception {
+    public void content_CorrectContentTextIsReturned() throws Exception {
         assertThat(GOOD_RESPONSE.hasContent(), is(true));
         assertThat(GOOD_RESPONSE.content(), is("\"{}\""));
         assertThat(BAD_RESPONSE.hasContent(), is(false));
@@ -87,7 +89,7 @@ public class ResponseTest {
     }
 
     @Test
-    public void testAsset() throws Exception {
+    public void asset_CorrectAssetIsRead() throws Exception {
         Context mockedContext = mock(Context.class);
         AssetManager mockedAssetManager = mock(AssetManager.class);
 
@@ -106,7 +108,7 @@ public class ResponseTest {
     }
 
     @Test
-    public void testAssetReturnsGracefully() throws Exception {
+    public void asset_ReadingAssetsReturnGracefullyOnError() throws Exception {
         Context mockedContext = mock(Context.class);
         AssetManager mockedAssetManager = mock(AssetManager.class);
 
