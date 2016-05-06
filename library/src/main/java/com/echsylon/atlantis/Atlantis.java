@@ -143,28 +143,6 @@ public class Atlantis {
     }
 
     /**
-     * Sets a new template asset to the Atlantis instance. This will step into action for any future
-     * requests.
-     *
-     * @param templateAssetName The name of the asset to read the requests template from.
-     * @param successListener   The callback to deliver a success notification on.
-     * @param errorListener     The callback to deliver any error states on.
-     * @return A reference to this instance of the Atlantis object. This allows for method chaining.
-     */
-    public Atlantis setTemplate(final String templateAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
-        // The asset will be read from disk and a potentially time consuming json parsing will be
-        // performed, hence we'll spawn a worker thread for the task.
-        enqueueTask(() -> {
-            byte[] bytes = Utils.readAsset(context, templateAssetName);
-            String json = new String(bytes);
-            template = new Gson().fromJson(json, Template.class);
-            return null;
-        }, successListener, errorListener);
-
-        return this;
-    }
-
-    /**
      * Stops the local web server.
      */
     public void stop() {
@@ -222,6 +200,18 @@ public class Atlantis {
         }
 
         return this;
+    }
+
+    // Sets the template asset to the Atlantis instance. The asset will be read from disk and a
+    // potentially time consuming json parsing will be performed, hence a worker thread will be
+    // spawned for the task.
+    private void setTemplate(final String templateAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        enqueueTask(() -> {
+            byte[] bytes = Utils.readAsset(context, templateAssetName);
+            String json = new String(bytes);
+            template = new Gson().fromJson(json, Template.class);
+            return null;
+        }, successListener, errorListener);
     }
 
     // Converts a map of string pairs to a list of header objects, as Atlantis internally expects
