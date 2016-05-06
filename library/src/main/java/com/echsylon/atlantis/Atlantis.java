@@ -179,7 +179,7 @@ public class Atlantis {
      * start a new capture session by clearing the capture history stack.
      */
     public void startCapturing() {
-        captured.clear();
+        clearCapturedRequests();
         isCapturing = true;
     }
 
@@ -199,6 +199,14 @@ public class Atlantis {
      */
     public Stack<Request> getCapturedRequests() {
         return captured;
+    }
+
+    /**
+     * Clears any captured requests in the history stack. This method will not affect the capturing
+     * state.
+     */
+    public void clearCapturedRequests() {
+        captured.clear();
     }
 
     // Tries to start the local web server if it isn't started yet. Worth mentioning is that

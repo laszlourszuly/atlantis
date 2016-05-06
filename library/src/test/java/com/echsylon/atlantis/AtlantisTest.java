@@ -121,4 +121,15 @@ public class AtlantisTest {
         target.startCapturing();
         assertThat(target.getCapturedRequests().size(), is(0));
     }
+
+    @Test
+    public void capture_ClearCapturedHistoryStackWorks() throws Exception {
+        target.startCapturing();
+        ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+        target.stopCapturing();
+        assertThat(target.getCapturedRequests().size(), is(1));
+
+        target.clearCapturedRequests();
+        assertThat(target.getCapturedRequests().size(), is(0));
+    }
 }
