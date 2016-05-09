@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -43,7 +44,7 @@ public class Atlantis {
 
         @Override
         public String getDescription() {
-            return name;
+            return String.format(Locale.ENGLISH, "%d %s", code, name);
         }
 
         @Override
