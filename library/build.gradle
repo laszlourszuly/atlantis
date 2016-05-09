@@ -114,5 +114,5 @@ dependencies {
 }
 
 // Custom archive build configurations
-apply from: '../aar.gradle'
-apply from: '../jar.gradle'
+apply from: 'aar.gradle'
+apply from: 'jar.gradle'
