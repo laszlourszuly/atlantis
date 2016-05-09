@@ -3,13 +3,13 @@ machine:
   java:
     version: oraclejdk8
 
-# Generate and publish test results for both release and debug builds.
+# Run library release tests and publish test results.
 test:
+  override:
+    - ./gradlew clean library:testRelease
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/release/
     - find . -type f -regex ".*/build/test-results/release/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/release \;
-    - mkdir -p $CIRCLE_TEST_REPORTS/junit/debug/
-    - find . -type f -regex ".*/build/test-results/debug/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/debug \;
 
 # Trigger a Bintray deployment when a tag of a certain pattern is pushed to the
 # master branch in the repo owned echsylon (disqualifying any forked repos).
