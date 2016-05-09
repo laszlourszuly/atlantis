@@ -1,7 +1,9 @@
+# Configure the virtual machine. Set a Java 8 environment.
 machine:
   java:
     version: oraclejdk8
 
+# Generate and publish test results for both release and debug builds.
 test:
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/release/
@@ -9,9 +11,13 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/debug/
     - find . -type f -regex ".*/build/test-results/debug/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/debug \;
 
+# Trigger a Bintray deployment when a tag of a certain pattern is pushed to the
+# master branch in the repo owned echsylon (disqualifying any forked repos).
 deployment:
   production:
-    branch: production
+    branch: master
+    tag: /v[0-9]+(\.[0-9]+)*/
+    owner: echsylon
     commands:
-      - ./gradlew library:clean library:test library:assemble library:bintrayUpload
+      - ./gradlew library:bintrayUpload
 
