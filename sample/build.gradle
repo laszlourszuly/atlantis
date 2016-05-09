@@ -18,8 +18,7 @@ android {
             minifyEnabled false
         }
         debug {
-            buildConfigField 'int', 'PORT', '8080'
-            buildConfigField 'String', 'BASE_URL', '"http://localhost:" + BuildConfig.PORT'
+            buildConfigField 'String', 'BASE_URL', '"http://localhost:8080"'
             signingConfig signingConfigs.debug
             minifyEnabled false
         }
@@ -28,5 +27,5 @@ android {
 
 dependencies {
     compile 'com.android.support:appcompat-v7:23.3.0'
-    compile 'com.echsylon.atlantis:atlantis:1.0.1'
+    compile 'com.echsylon.atlantis:atlantis:1.1.0'
 }

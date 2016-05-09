@@ -1,11 +1,11 @@
 package com.echsylon.sample;
 
-import android.net.Uri;
 import android.widget.Toast;
 
 import com.echsylon.atlantis.Atlantis;
 
 public class AtlantisSampleApplication extends SampleApplication {
+    private Atlantis server;
 
     @Override
     public void onCreate() {
@@ -14,10 +14,7 @@ public class AtlantisSampleApplication extends SampleApplication {
     }
 
     private void startLocalWebServer() {
-        Uri uri = Uri.parse(BuildConfig.BASE_URL);
-        String host = uri.getHost();
-
-        Atlantis.start(this, host, BuildConfig.PORT, "atlantis.json",
+        server = Atlantis.start(this, "atlantis.json",
                 new Atlantis.OnSuccessListener() {
                     @Override
                     public void onSuccess() {
