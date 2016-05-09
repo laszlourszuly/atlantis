@@ -9,3 +9,9 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/debug/
     - find . -type f -regex ".*/build/test-results/debug/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/debug \;
 
+deployment:
+  production:
+    branch: production
+    commands:
+      - ./gradlew library:clean library:test library:assemble library:bintrayUpload
+
