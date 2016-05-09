@@ -11,7 +11,9 @@ buildscript {
 // Plugins targeting this particular module
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
 
+// Android configuration
 android {
     compileSdkVersion 23
     buildToolsVersion '23.0.2'
@@ -33,6 +35,34 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+// Library publication configuration
+publishing {
+    publications {
+        atlantis(MavenPublication) {
+            groupId = 'com.echsylon.atlantis'
+            artifactId = 'atlantis'
+            version = android.defaultConfig.versionName
+
+            // Source code bundle, from task defined in 'jar.gradle'
+            artifact(sourcesJar) {
+                classifier 'source'
+                extension 'jar'
+            }
+
+            // JavaDoc bundle, from task defined in 'jar.gradle'
+            artifact(javadocJar) {
+                classifier 'javadoc'
+                extension 'jar'
+            }
+
+            // The actual library, from task defined in 'jar.gradle'
+            artifact(slimJar) {
+                extension 'jar'
+            }
+        }
     }
 }
 

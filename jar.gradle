@@ -45,11 +45,3 @@ task fatJar(type: Jar) {
     }
     destinationDir = file('build/outputs/jar')
 }
-
-artifacts {
-    archives javadocJar
-    archives sourcesJar
-    archives slimJar
-    archives fatJar
-}
-
