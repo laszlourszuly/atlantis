@@ -87,7 +87,7 @@ bintray {
 
         version {
             name = android.defaultConfig.versionName
-            vcsTag = "v${android.defaultConfig.versionName}_${android.defaultConfig.versionCode}"
+            vcsTag = "v${android.defaultConfig.versionName}"
             released = new Date()
         }
     }
