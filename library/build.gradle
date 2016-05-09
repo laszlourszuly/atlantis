@@ -5,12 +5,14 @@ buildscript {
     }
     dependencies {
         classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     }
 }
 
 // Plugins targeting this particular module
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 
 // Android configuration
@@ -62,6 +64,31 @@ publishing {
             artifact(slimJar) {
                 extension 'jar'
             }
+        }
+    }
+}
+
+// Bintray configuration
+bintray {
+    user = System.getenv('ATLANTIS_BINTRAY_USER')
+    key = System.getenv('ATLANTIS_BINTRAY_KEY')
+    publications = ['atlantis']
+    publish = true
+
+    pkg {
+        repo = 'maven'
+        name = 'atlantis'
+        licenses = ['Apache-2.0']
+        websiteUrl = 'https://github.com/echsylon/atlantis/wiki'
+        issueTrackerUrl = 'https://github.com/echsylon/atlantis/issues'
+        vcsUrl = 'https://github.com/echsylon/atlantis.git'
+        githubRepo = 'echsylon/atlantis'
+        githubReleaseNotesFile = 'README.md'
+
+        version {
+            name = android.defaultConfig.versionName
+            vcsTag = "v${android.defaultConfig.versionName}_${android.defaultConfig.versionCode}"
+            released = new Date()
         }
     }
 }
