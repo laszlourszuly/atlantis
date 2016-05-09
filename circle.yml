@@ -14,8 +14,7 @@ test:
 # Trigger a Bintray deployment when a tag of a certain pattern is pushed to the
 # master branch in the repo owned echsylon (disqualifying any forked repos).
 deployment:
-  master:
-    branch: master
+  release:
     tag: /v[0-9]+(\.[0-9]+)*/
     owner: echsylon
     commands:
