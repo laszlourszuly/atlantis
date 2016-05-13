@@ -10,13 +10,11 @@ task javadoc(type: Javadoc) {
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
-    archiveName = "${archivesBaseName}-javadoc.jar"
     destinationDir = file('build/outputs/jar')
 }
 
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
-    archiveName = "${archivesBaseName}-sources.jar"
     destinationDir = file('build/outputs/jar')
 }
 
@@ -26,7 +24,6 @@ task slimJar(type: Jar) {
         exclude '**/R$*.class'
         exclude '**/R.class'
     }
-    archiveName = "${archivesBaseName}.jar"
     destinationDir = file('build/outputs/jar')
 }
 
@@ -43,6 +40,5 @@ task fatJar(type: Jar) {
         exclude '**/R$*.class'
         exclude '**/R.class'
     }
-    archiveName = "${archivesBaseName}-fat.jar"
     destinationDir = file('build/outputs/jar')
 }
