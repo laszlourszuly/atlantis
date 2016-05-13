@@ -3,7 +3,7 @@ android.libraryVariants.all { variant ->
     variant.outputs.each { output ->
         def outputFile = output.outputFile
         if (outputFile != null && outputFile.name.endsWith('.aar')) {
-            def fileName = "${archivesBaseName} ${version} ${name}.aar".replace(' ', '-').toLowerCase()
+            def fileName = "${archivesBaseName}.aar".replace(' ', '-').toLowerCase()
             output.outputFile = new File(outputFile.parent, fileName)
         }
     }
