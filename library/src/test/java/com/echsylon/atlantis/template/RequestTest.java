@@ -1,6 +1,6 @@
 package com.echsylon.atlantis.template;
 
-import com.google.gson.Gson;
+import com.echsylon.atlantis.internal.json.JsonParser;
 
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ public class RequestTest {
     private static final Request BAD_REQUEST;
 
     static {
-        GOOD_REQUEST = new Gson().fromJson("{" +
+        GOOD_REQUEST = new JsonParser().fromJson("{" +
                 "  \"headers\": \"Content-Type: text/plain\n\", " +
                 "  \"method\": \"POST\", " +
                 "  \"url\": \"scheme://host/path?q1=v1&q2=v2\", " +
@@ -31,8 +31,7 @@ public class RequestTest {
                 "  }]" +
                 "}", Request.class);
 
-        BAD_REQUEST = new Gson().fromJson("{}",
-                Request.class);
+        BAD_REQUEST = new JsonParser().fromJson("{}", Request.class);
     }
 
     @Test

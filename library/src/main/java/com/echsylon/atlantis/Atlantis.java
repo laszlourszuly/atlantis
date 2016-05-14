@@ -3,11 +3,11 @@ package com.echsylon.atlantis;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import com.echsylon.atlantis.internal.json.JsonParser;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Header;
 import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Template;
-import com.google.gson.Gson;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -210,7 +210,7 @@ public class Atlantis {
         enqueueTask(() -> {
             byte[] bytes = Utils.readAsset(context, templateAssetName);
             String json = new String(bytes);
-            template = new Gson().fromJson(json, Template.class);
+            template = new JsonParser().fromJson(json, Template.class);
             return null;
         }, successListener, errorListener);
     }

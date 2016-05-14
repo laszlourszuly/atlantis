@@ -1,6 +1,6 @@
 package com.echsylon.atlantis.template;
 
-import com.google.gson.Gson;
+import com.echsylon.atlantis.internal.json.JsonParser;
 
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class TemplateTest {
     private static final Template ROOT;
 
     static {
-        ROOT = new Gson().fromJson("{\"requests\": [{" +
+        ROOT = new JsonParser().fromJson("{\"requests\": [{" +
                 "  \"headers\": \"Content-Type: text/plain\n\", " +
                 "  \"method\": \"POST\", " +
                 "  \"url\": \"scheme://host/path?q1=v1&q2=v2\", " +
