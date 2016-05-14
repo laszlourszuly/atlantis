@@ -13,7 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class HeaderTest {
 
     @Test
-    public void testHeaders() throws Exception {
+    public void create_headersCanBeInstantiatedProperly() throws Exception {
         Header header1 = new Header("KEY", "VALUE");
         Header header2 = new Header("key", "value");
         Header header3 = new Header("k", "v");
