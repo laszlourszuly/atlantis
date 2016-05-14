@@ -6,7 +6,7 @@ If you're using Android Studio and Gradle you can easily start using Atlantis si
 
 ```groovy
 dependencies {
-    compile 'com.echsylon.atlantis:atlantis:1.1.5'
+    compile 'com.echsylon.atlantis:atlantis:1.1.6'
 }
 ```
 
@@ -17,7 +17,10 @@ You need to define which requests you're mocking and what response they should d
 ```json
 {
     "requests": [{
-        "headers": "Content-Type: text/plain\nX-Custom: c_req_header\n",
+        "headers": {
+            "Content-Type": "text/plain",
+            "X-Custom": "c_req_header"
+        },
         "url": "http://localhost:8080/path/to/resource?query=yes",
         "method": "GET",
         "responses": [{
@@ -25,12 +28,9 @@ You need to define which requests you're mocking and what response they should d
                 "code": 200,
                 "name": "OK"
             },
-            "headers": [{
-                "key": "X-Header-1",
-                "value": "value1"
-            }, {
-                "key": "X-Header-2",
-                "value": "value2"
+            "headers": {
+                "X-Header-1": "value1",
+                "X-Header-2": "value2"
             }],
             "mime": "application/json",
             "text": "{\"attr\": \"value\"}",
@@ -42,7 +42,7 @@ You need to define which requests you're mocking and what response they should d
 
 ### Use
 
-The tool offers a very straight forward API; you can start it:
+Atlantis offers a very straight forward default API; you can start it:
 
 ```java
 @Override
@@ -50,6 +50,8 @@ protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     String configAssetName = "atlantis.json";
+
+    // These babies are optional, implement them if you need them.
     Atlantis.OnSuccessListener successCallback = null;
     Atlantis.OnErrorListener errorCallback = null;
 
@@ -79,11 +81,15 @@ The [Wiki](https://github.com/echsylon/atlantis/wiki) contains more details and 
 
 ### License
 
-The Atlantis library is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-2.0) license.
+The Atlantis library is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-2.0) license and depends internally on the listed libraries below. Gradle will see to it so they all are linked properly, without you having to do anything.
 
-The [Google Gson](https://github.com/google/gson) library is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-2.0) license.
+* [Google Gson](https://github.com/google/gson)
 
-The [local web server](https://github.com/NanoHttpd/nanohttpd), used by Atlantis, is licensed as:
+* [Guava](https://github.com/google/guava)
+
+* [Nano HTTPD](https://github.com/NanoHttpd/nanohttpd)
+
+All dependencies are licensed under [Apache 2](http://www.apache.org/licenses/LICENSE-2.0), except Nano HTTPD, which is licensed as:
 
 <code>
 Copyright (c) 2012-2013 by Paul S. Hawke, 2001,2005-2013 by Jarno Elonen, 2010 by Konstantinos Togias
