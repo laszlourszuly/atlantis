@@ -23,14 +23,15 @@ public final class Request implements Serializable {
     }
 
     /**
-     * Returns all the headers for this request.
+     * Returns all the headers for this request. This method will split a single line string into a
+     * list of header objects.
      *
      * @return The list of request header.
      */
+    @SuppressWarnings("ConstantConditions")
     public List<Header> headers() {
         List<Header> result = new ArrayList<>();
 
-        //noinspection ConstantConditions
         if (Utils.isEmpty(headers))
             return result;
 
