@@ -8,7 +8,7 @@
         "code": 200,
         "name": "OK"
       },
-      "headers": [],
+      "headers": {},
       "mime": "application/json",
       "text": "{\"mock_attr\":\"mock value\"}"
     }]

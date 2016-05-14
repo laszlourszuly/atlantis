@@ -4,8 +4,8 @@ import com.echsylon.atlantis.internal.json.JsonParser;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -50,12 +50,13 @@ public class TemplateTest {
         assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "PUT", null), is(nullValue()));
 
         // Verify headers are matched if given (even if empty)
-        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", Collections.EMPTY_LIST), is(nullValue()));
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", Collections.EMPTY_MAP), is(nullValue()));
 
         // Verify success
-        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", null), is(notNullValue()));   // ignore headers
-        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST",                               // exact headers
-                Arrays.asList(new Header("Content-Type", "text/plain"))), is(notNullValue()));
+        HashMap<String, String> exactHeaders = new HashMap<>();
+        exactHeaders.put("Content-Type", "text/plain");
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", null), is(notNullValue()));         // ignore headers
+        assertThat(ROOT.findRequest("scheme://host/path?q1=v1&q2=v2", "POST", exactHeaders), is(notNullValue())); // exact headers
     }
 
 }

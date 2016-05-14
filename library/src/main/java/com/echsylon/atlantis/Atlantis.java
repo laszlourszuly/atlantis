@@ -3,18 +3,13 @@ package com.echsylon.atlantis;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import com.echsylon.atlantis.internal.json.JsonParser;
 import com.echsylon.atlantis.internal.Utils;
-import com.echsylon.atlantis.template.Header;
+import com.echsylon.atlantis.internal.json.JsonParser;
 import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Template;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.Callable;
 
@@ -120,7 +115,7 @@ public class Atlantis {
                 Request request = template.findRequest(
                         session.getUri(),
                         session.getMethod().name(),
-                        parseSessionHeaders(session.getHeaders()));
+                        session.getHeaders());
 
                 if (request != null) {
                     if (isCapturing)
@@ -213,19 +208,6 @@ public class Atlantis {
             template = new JsonParser().fromJson(json, Template.class);
             return null;
         }, successListener, errorListener);
-    }
-
-    // Converts a map of string pairs to a list of header objects, as Atlantis internally expects
-    // them to be.
-    private List<Header> parseSessionHeaders(Map<String, String> sessionHeaders) {
-        List<Header> result = new ArrayList<>();
-        Set<Map.Entry<String, String>> entries = sessionHeaders.entrySet();
-
-        //noinspection Convert2streamapi
-        for (Map.Entry<String, String> entry : entries)
-            result.add(new Header(entry.getKey(), entry.getValue()));
-
-        return result;
     }
 
     // Creates a new AsyncTask instance and executes a callable from it. AsyncTasks will by default

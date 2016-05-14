@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class contains all request templates the {@link Atlantis} local web server will ever serve.
@@ -29,7 +30,7 @@ public final class Template implements Serializable {
      * @param headers The request headers.
      * @return The request template that matches the given criteria or null if no match found.
      */
-    public Request findRequest(String url, String method, List<Header> headers) {
+    public Request findRequest(String url, String method, Map<String, String> headers) {
         //noinspection ConstantConditions
         if (Utils.isEmpty(requests))
             return null;
@@ -56,9 +57,19 @@ public final class Template implements Serializable {
     }
 
     // Validates if the two list of headers are the same. The test validates keys and corresponding
-    // values, but not their internal order.
-    private boolean hasHeaders(List<Header> test, List<Header> reference) {
-        return reference == null || test == null || test.containsAll(reference);
+    // values, but not their internal order. "test" == null is valid and signals a "don't test for
+    // headers" case.
+    private boolean hasHeaders(Map<String, String> test, Map<String, String> reference) {
+        // No headers required. Pass the test.
+        if (reference == null || test == null)
+            return true;
+
+        // Verify all required headers are present.
+        for (Map.Entry<String, String> referenceEntry : reference.entrySet())
+            if (!test.containsKey(referenceEntry.getKey()) || !test.get(referenceEntry.getKey()).equals(referenceEntry.getValue()))
+                return false;
+
+        return true;
     }
 
     // Validates if the two given urls have the same significant parts. Significant parts in this

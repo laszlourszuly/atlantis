@@ -38,11 +38,12 @@ public class RequestTest {
     public void testHeaders() throws Exception {
         assertThat(GOOD_REQUEST.headers(), notNullValue());
         assertThat(GOOD_REQUEST.headers().size(), is(1));
-        assertThat(GOOD_REQUEST.headers().get(0).key(), is("Content-Type"));
-        assertThat(GOOD_REQUEST.headers().get(0).value(), is("text/plain"));
+        assertThat(GOOD_REQUEST.headers().get("Content-Type"), is("text/plain"));
+        assertThat(GOOD_REQUEST.headers().get("Invalid-Header"), is(nullValue()));
 
         assertThat(BAD_REQUEST.headers(), notNullValue());
         assertThat(BAD_REQUEST.headers().size(), is(0));
+        assertThat(BAD_REQUEST.headers().get("Invalid-Header"), is(nullValue()));
     }
 
     @Test
