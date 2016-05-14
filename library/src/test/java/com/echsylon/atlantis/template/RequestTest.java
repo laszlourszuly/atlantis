@@ -18,7 +18,6 @@ public class RequestTest {
 
     static {
         GOOD_REQUEST = new JsonParser().fromJson("{" +
-                "  \"headers\": \"Content-Type: text/plain\n\", " +
                 "  \"method\": \"POST\", " +
                 "  \"url\": \"scheme://host/path?q1=v1&q2=v2\", " +
                 "  \"responses\": [{" +
@@ -35,31 +34,19 @@ public class RequestTest {
     }
 
     @Test
-    public void testHeaders() throws Exception {
-        assertThat(GOOD_REQUEST.headers(), notNullValue());
-        assertThat(GOOD_REQUEST.headers().size(), is(1));
-        assertThat(GOOD_REQUEST.headers().get("Content-Type"), is("text/plain"));
-        assertThat(GOOD_REQUEST.headers().get("Invalid-Header"), is(nullValue()));
-
-        assertThat(BAD_REQUEST.headers(), notNullValue());
-        assertThat(BAD_REQUEST.headers().size(), is(0));
-        assertThat(BAD_REQUEST.headers().get("Invalid-Header"), is(nullValue()));
-    }
-
-    @Test
-    public void testMethod() throws Exception {
+    public void method_returnsExpectedMethodOrNull() throws Exception {
         assertThat(GOOD_REQUEST.method(), is("POST"));
         assertThat(BAD_REQUEST.method(), nullValue());
     }
 
     @Test
-    public void testUrl() throws Exception {
+    public void url_returnsExpectedUrlOrNull() throws Exception {
         assertThat(GOOD_REQUEST.url(), is("scheme://host/path?q1=v1&q2=v2"));
         assertThat(BAD_REQUEST.url(), nullValue());
     }
 
     @Test
-    public void testResponse() throws Exception {
+    public void response_neverReturnsNull() throws Exception {
         assertThat(GOOD_REQUEST.response(), notNullValue());
         assertThat(BAD_REQUEST.response(), notNullValue());
     }

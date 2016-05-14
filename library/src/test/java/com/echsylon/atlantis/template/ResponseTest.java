@@ -40,10 +40,7 @@ public class ResponseTest {
                 "  }, " +
                 "  \"mime\": \"application/json\", " +
                 "  \"text\": \"\\\"{}\\\"\", " +
-                "  \"asset\": \"asset://fake.asset\", " +
-                "  \"headers\": {" +
-                "    \"k1\": \"v1\"" +
-                "  }" +
+                "  \"asset\": \"asset://fake.asset\"" +
                 "}", Response.class);
 
         BAD_RESPONSE = new Gson().fromJson("{}", Response.class);
@@ -55,18 +52,6 @@ public class ResponseTest {
         assertThat(GOOD_RESPONSE.statusName(), is("OK"));
         assertThat(BAD_RESPONSE.statusCode(), is(0));
         assertThat(BAD_RESPONSE.statusName(), is(nullValue()));
-    }
-
-    @Test
-    public void header_CorrectHeadersAreReturned() throws Exception {
-        assertThat(GOOD_RESPONSE.headers(), notNullValue());
-        assertThat(GOOD_RESPONSE.headers().size(), is(1));
-        assertThat(GOOD_RESPONSE.headers().get("k1"), is("v1"));
-        assertThat(GOOD_RESPONSE.headers().get("invalid_key"), is(nullValue()));
-
-        assertThat(BAD_RESPONSE.headers(), notNullValue());
-        assertThat(BAD_RESPONSE.headers().size(), is(0));
-        assertThat(BAD_RESPONSE.headers().get("invalid_key"), is(nullValue()));
     }
 
     @Test

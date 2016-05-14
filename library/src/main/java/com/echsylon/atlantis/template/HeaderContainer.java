@@ -7,7 +7,7 @@ import java.util.Map;
  * This class is responsible for holding any header data. This feature is known to be part of both
  * {@link Request} and {@link Response} objects, and is therefore isolated in a separate class.
  */
-abstract class HeaderContainer {
+class HeaderContainer {
 
     /**
      * The raw array of headers.
