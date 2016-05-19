@@ -1,1 +1,9 @@
 apply plugin: 'com.github.kt3k.coveralls'
+
+coveralls {
+    jacocoReportPath = "${buildDir}/reports/coverage/jacoco/jacoco.xml"
+}
+tasks.coveralls {
+    dependsOn 'jacoco'
+    onlyIf { System.env.'CI' }
+}
