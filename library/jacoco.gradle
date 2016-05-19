@@ -1,0 +1,21 @@
+apply plugin: 'jacoco'
+
+task generateJacocoTestReports(type: JacocoReport, dependsOn: 'testReleaseUnitTest') {
+    group = "Reporting"
+    description = "Generate Jacoco Robolectric unit test coverage reports"
+    classDirectories = fileTree(
+            dir: '../library/build/intermediates/classes/release',
+            excludes: ['**/R.class',
+                       '**/R$*.class',
+                       '**/*$ViewInjector*.*',
+                       '**/BuildConfig.*',
+                       '**/Manifest*.*'])
+    sourceDirectories = files('../library/src/main/java')
+    additionalSourceDirs = files('../library/src/main/java')
+    executionData = files('../library/build/jacoco/testReleaseUnitTest.exec')
+    reports {
+        csv.enabled = false
+        xml.enabled = true
+        html.enabled = true
+    }
+}

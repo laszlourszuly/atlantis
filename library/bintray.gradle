@@ -1,0 +1,25 @@
+apply plugin: 'com.jfrog.bintray'
+
+bintray {
+    user = System.getenv('ATLANTIS_BINTRAY_USER')
+    key = System.getenv('ATLANTIS_BINTRAY_KEY')
+    publications = ['atlantis']
+    publish = true
+
+    pkg {
+        repo = 'maven'
+        name = 'atlantis'
+        licenses = ['Apache-2.0']
+        websiteUrl = 'https://github.com/echsylon/atlantis/wiki'
+        issueTrackerUrl = 'https://github.com/echsylon/atlantis/issues'
+        vcsUrl = 'https://github.com/echsylon/atlantis.git'
+        githubRepo = 'echsylon/atlantis'
+        githubReleaseNotesFile = 'README.md'
+
+        version {
+            name = android.defaultConfig.versionName
+            vcsTag = "v${android.defaultConfig.versionName}"
+            released = new Date()
+        }
+    }
+}

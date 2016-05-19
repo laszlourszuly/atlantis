@@ -4,7 +4,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+        classpath 'me.tatarka:gradle-retrolambda:3.3.0-beta4'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     }
 }
@@ -12,8 +12,6 @@ buildscript {
 // Plugins targeting this particular module
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'maven-publish'
 
 // Android configuration
 android {
@@ -31,80 +29,13 @@ android {
     buildTypes {
         release {
             minifyEnabled true
+            testCoverageEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-
-// Library publication configuration
-publishing {
-    publications {
-        atlantis(MavenPublication) {
-            groupId = 'com.echsylon.atlantis'
-            artifactId = 'atlantis'
-            version = android.defaultConfig.versionName
-
-            // The publication doesn't know about our dependencies for the Android gradle plugin,
-            // so we have to manually add them to the pom
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
-
-                // Iterate over the compile dependencies (we don't want the test ones), adding a
-                // <dependency> node for each
-                configurations.compile.allDependencies.each {
-                    def dependencyNode = dependenciesNode.appendNode('dependency')
-                    dependencyNode.appendNode('groupId', it.group)
-                    dependencyNode.appendNode('artifactId', it.name)
-                    dependencyNode.appendNode('version', it.version)
-                }
-            }
-
-            // Source code bundle, from task defined in 'jar.gradle'
-            artifact(sourcesJar) {
-                classifier 'source'
-                extension 'jar'
-            }
-
-            // JavaDoc bundle, from task defined in 'jar.gradle'
-            artifact(javadocJar) {
-                classifier 'javadoc'
-                extension 'jar'
-            }
-
-            // The actual library, from task defined in 'jar.gradle'
-            artifact(slimJar) {
-                extension 'jar'
-            }
-        }
-    }
-}
-
-// Bintray configuration
-bintray {
-    user = System.getenv('ATLANTIS_BINTRAY_USER')
-    key = System.getenv('ATLANTIS_BINTRAY_KEY')
-    publications = ['atlantis']
-    publish = true
-
-    pkg {
-        repo = 'maven'
-        name = 'atlantis'
-        licenses = ['Apache-2.0']
-        websiteUrl = 'https://github.com/echsylon/atlantis/wiki'
-        issueTrackerUrl = 'https://github.com/echsylon/atlantis/issues'
-        vcsUrl = 'https://github.com/echsylon/atlantis.git'
-        githubRepo = 'echsylon/atlantis'
-        githubReleaseNotesFile = 'README.md'
-
-        version {
-            name = android.defaultConfig.versionName
-            vcsTag = "v${android.defaultConfig.versionName}"
-            released = new Date()
-        }
     }
 }
 
@@ -131,3 +62,6 @@ dependencies {
 // Custom archive build configurations
 apply from: 'aar.gradle'
 apply from: 'jar.gradle'
+apply from: 'jacoco.gradle'
+apply from: 'publish.gradle'
+apply from: 'bintray.gradle'
