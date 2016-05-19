@@ -1,6 +1,5 @@
 package com.echsylon.atlantis.template;
 
-import com.echsylon.atlantis.Atlantis;
 import com.echsylon.atlantis.internal.Utils;
 
 import java.io.Serializable;

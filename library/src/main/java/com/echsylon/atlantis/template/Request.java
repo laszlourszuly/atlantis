@@ -1,7 +1,5 @@
 package com.echsylon.atlantis.template;
 
-import com.echsylon.atlantis.Atlantis;
-
 import java.io.Serializable;
 
 /**
