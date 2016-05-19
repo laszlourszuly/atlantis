@@ -6,7 +6,7 @@ machine:
 # Run library release tests and publish test results.
 test:
   override:
-    - ./gradlew :library:clean :library:coveralls
+    - ./gradlew :library:clean :library:coveralls --stacktrace
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/release/
     - find . -type f -regex ".*/build/test-results/release/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/release \;
