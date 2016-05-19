@@ -4,6 +4,6 @@ coveralls {
     jacocoReportPath = "${buildDir}/reports/coverage/jacoco/jacoco.xml"
 }
 tasks.coveralls {
-    dependsOn 'jacoco'
-    onlyIf { System.env.'CI' }
+    dependsOn ':library:jacoco'
+    onlyIf { System.env.'CIRCLECI' }
 }
