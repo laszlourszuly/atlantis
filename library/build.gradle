@@ -6,6 +6,7 @@ buildscript {
     dependencies {
         classpath 'me.tatarka:gradle-retrolambda:3.3.0-beta4'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.6.3'
     }
 }
 
@@ -65,3 +66,4 @@ apply from: 'jar.gradle'
 apply from: 'jacoco.gradle'
 apply from: 'publish.gradle'
 apply from: 'bintray.gradle'
+apply from: 'coveralls.gradle'
