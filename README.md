@@ -1,4 +1,4 @@
-[![Circle CI](https://circleci.com/gh/echsylon/atlantis/tree/master.svg?style=svg)](https://circleci.com/gh/echsylon/atlantis/tree/master)
+[![Circle CI](https://circleci.com/gh/echsylon/atlantis/tree/master.svg?style=shield)](https://circleci.com/gh/echsylon/atlantis/tree/master)
 
 [![Coverage Status](https://coveralls.io/repos/github/echsylon/atlantis/badge.svg?branch=)](https://coveralls.io/github/echsylon/atlantis?branch=)
 
