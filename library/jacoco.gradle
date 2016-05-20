@@ -3,7 +3,7 @@ apply plugin: 'jacoco'
 jacoco {
     reportsDir = file("${buildDir}/reports/coverage/")
 }
-task jacoco(type: JacocoReport, dependsOn: 'testReleaseUnitTest') {
+task jacoco(type: JacocoReport) {
     group = "Reporting"
     description = "Generate Jacoco Robolectric unit test coverage reports"
     classDirectories = fileTree(
