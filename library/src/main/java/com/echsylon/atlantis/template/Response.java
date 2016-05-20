@@ -8,7 +8,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * This class contains all the data required by the {@link Atlantis} to serve a response.
+ * This class contains all the data required by the {@link com.echsylon.atlantis.Atlantis Atlantis}
+ * to serve a response.
  */
 public class Response extends HeaderContainer implements Serializable {
     private static final String ASSET_SCHEME = "asset://";

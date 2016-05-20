@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class contains all request templates the {@link Atlantis} local web server will ever serve.
- * This is the "downloaded Internet".
+ * This class contains all request templates the {@link com.echsylon.atlantis.Atlantis Atlantis}
+ * local web server will ever serve. This is the "downloaded Internet".
  */
 public final class Template implements Serializable {
     private static final String SCHMEA_SEPARATOR = "://";

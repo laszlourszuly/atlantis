@@ -3,9 +3,9 @@ package com.echsylon.atlantis.template;
 import java.io.Serializable;
 
 /**
- * This class represents a request template as the {@link Atlantis} local web server expects it. It
- * will use this template when trying to identify which response to serve to a user provided
- * request.
+ * This class represents a request template as the {@link com.echsylon.atlantis.Atlantis Atlantis}
+ * local web server expects it. It will use this template when trying to identify which response to
+ * serve to a user provided request.
  */
 public class Request extends HeaderContainer implements Serializable {
     private final String method = null;

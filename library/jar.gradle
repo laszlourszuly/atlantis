@@ -3,28 +3,28 @@ task javadoc(type: Javadoc) {
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     classpath += configurations.javadocDeps
     options {
-        links 'http://docs.oracle.com/javase/7/docs/api/'
+        links 'http://docs.oracle.com/javase/8/docs/api/'
         linksOffline 'http://d.android.com/reference', "${android.sdkDirectory}/docs/reference"
     }
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
-    destinationDir = file('build/outputs/jar')
+    destinationDir = file("${buildDir}/outputs/jar")
 }
 
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
-    destinationDir = file('build/outputs/jar')
+    destinationDir = file("${buildDir}/outputs/jar")
 }
 
 task slimJar(type: Jar) {
-    from('build/intermediates/classes/release/') {
+    from("${buildDir}/intermediates/classes/release/") {
         exclude '**/BuildConfig.class'
         exclude '**/R$*.class'
         exclude '**/R.class'
     }
-    destinationDir = file('build/outputs/jar')
+    destinationDir = file("${buildDir}/outputs/jar")
 }
 
 task fatJar(type: Jar) {
@@ -35,10 +35,10 @@ task fatJar(type: Jar) {
         it.isDirectory() ? it : zipTree(it)
     }
     // Add Atlantis classes
-    from('build/intermediates/classes/release/') {
+    from("${buildDir}/intermediates/classes/release/") {
         exclude '**/BuildConfig.class'
         exclude '**/R$*.class'
         exclude '**/R.class'
     }
-    destinationDir = file('build/outputs/jar')
+    destinationDir = file("${buildDir}/outputs/jar")
 }
