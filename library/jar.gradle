@@ -1,7 +1,7 @@
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.javadocDeps
+    classpath += configurations.compile
     options {
         links 'http://docs.oracle.com/javase/8/docs/api/'
         linksOffline 'http://d.android.com/reference', "${android.sdkDirectory}/docs/reference"

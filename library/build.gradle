@@ -42,22 +42,12 @@ android {
     }
 }
 
-// We want our JavaDoc to know of our dependencies
-configurations {
-    javadocDeps
-}
-
 dependencies {
     compile 'com.google.code.gson:gson:2.6.2'
     compile 'org.nanohttpd:nanohttpd:2.3.0'
     compile 'com.google.guava:guava:19.0'
 
-    javadocDeps 'com.google.code.gson:gson:2.6.2'
-    javadocDeps 'org.nanohttpd:nanohttpd:2.3.0'
-    javadocDeps 'com.google.guava:guava:19.0'
-
     testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile 'com.google.code.gson:gson:2.6.2'
     testCompile 'org.robolectric:robolectric:3.0'
     testCompile 'junit:junit:4.12'
 }
