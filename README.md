@@ -1,5 +1,7 @@
 [![Circle CI](https://circleci.com/gh/echsylon/atlantis/tree/master.svg?style=svg)](https://circleci.com/gh/echsylon/atlantis/tree/master)
 
+[![Coverage Status](https://coveralls.io/repos/github/echsylon/atlantis/badge.svg?branch=)](https://coveralls.io/github/echsylon/atlantis?branch=)
+
 ### Integrate
 
 If you're using Android Studio and Gradle you can easily start using Atlantis simply by listing it in your Gradle `dependencies` section:
