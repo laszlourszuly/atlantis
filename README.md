@@ -6,7 +6,7 @@ If you're using Android Studio and Gradle you can easily start using Atlantis si
 
 ```groovy
 dependencies {
-    compile 'com.echsylon.atlantis:atlantis:1.1.6'
+    compile 'com.echsylon.atlantis:atlantis:1.1.7'
 }
 ```
 
@@ -31,7 +31,7 @@ You need to define which requests you're mocking and what response they should d
             "headers": {
                 "X-Header-1": "value1",
                 "X-Header-2": "value2"
-            }],
+            },
             "mime": "application/json",
             "text": "{\"attr\": \"value\"}",
             "asset": "assetFileName.mp3"
