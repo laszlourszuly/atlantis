@@ -112,6 +112,21 @@ public class AtlantisTest {
     }
 
     @Test
+    public void response_returnsNotFoundResponseWhenNoMatchingConfigurationFound() throws Exception {
+        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/ten").openConnection();
+            assertThat(connection.getResponseCode(), is(404));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
     public void capture_requestsCapturedWhenInCapturingMode() throws Exception {
         Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
         Atlantis target = null;
