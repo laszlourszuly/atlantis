@@ -15,6 +15,7 @@ import org.robolectric.annotation.Config;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -93,19 +94,19 @@ public class ResponseTest {
     }
 
     @Test
-    public void asset_readingAssetsReturnsGracefullyOnError() throws Exception {
+    public void asset_readingAssetsDoesNotConsumeErrors() throws Exception {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("asset", "asset://fake.asset");
         Response response = new Gson().fromJson(jsonObject, Response.class);
 
         AssetManager mockedAssetManager = mock(AssetManager.class);
-        doThrow(IOException.class).when(mockedAssetManager).open(anyString());
+        doThrow(IOException.class).when(mockedAssetManager).open("asset://fake.asset");
         Context mockedContext = mock(Context.class);
         doReturn(mockedAssetManager).when(mockedContext).getAssets();
 
-        byte[] goodAsset = response.asset(mockedContext);
-        assertThat(goodAsset, is(notNullValue()));
-        assertThat(goodAsset.length, is(0));
+        assertThatThrownBy(() -> response.asset(mockedContext))
+                .isInstanceOf(IOException.class)
+                .hasNoCause();
     }
 
     @Test
@@ -123,6 +124,19 @@ public class ResponseTest {
         jsonObject.addProperty("delay", 113L);
         Response response = new Gson().fromJson(jsonObject, Response.class);
         assertThat(response.delay(), is(113L));
+    }
+
+    @Test
+    public void delay_exceptionThrownIfMaxDelayLessThanDefaultDelay() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("delay", 110L);
+        jsonObject.addProperty("maxDelay", 90L);
+        Response response = new Gson().fromJson(jsonObject, Response.class);
+
+        assertThatThrownBy(response::delay)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("'maxDelay' mustn't be less than 'delay'")
+                .hasNoCause();
     }
 
 }

@@ -80,12 +80,8 @@ public class Response extends HeaderContainer implements Serializable {
      * @param context The context the asset is to be opened from.
      * @return The asset byte array, may be empty but never null.
      */
-    public byte[] asset(Context context) {
-        try {
-            return Utils.readAsset(context, asset);
-        } catch (IOException e) {
-            return new byte[0];
-        }
+    public byte[] asset(Context context) throws IOException {
+        return Utils.readAsset(context, asset);
     }
 
     /**

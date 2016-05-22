@@ -122,6 +122,8 @@ public class Atlantis {
                         captured.push(request);
 
                     com.echsylon.atlantis.template.Response response = request.response();
+
+                    // Maybe delay
                     long delay = response.delay();
                     if (delay > 0L)
                         try {
@@ -130,14 +132,17 @@ public class Atlantis {
                             // For some reason we weren't allowed to sleep as long as we wanted.
                         }
 
-                    if (response.hasAsset()) {
+                    // Try to serve
+                    try {
                         NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                        byte[] bytes = response.asset(Atlantis.this.context);
-                        return newFixedLengthResponse(status, response.mimeType(), new ByteArrayInputStream(bytes), bytes.length);
-                    } else {
-                        NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                        String content = response.content();
-                        return newFixedLengthResponse(status, response.mimeType(), content);
+                        String mime = response.mimeType();
+                        byte[] bytes = response.hasAsset() ?
+                                response.asset(Atlantis.this.context) :
+                                response.content().getBytes();
+                        return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
+
+                    } catch (Exception e) {
+                        return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "");
                     }
                 }
 
