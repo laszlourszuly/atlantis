@@ -8,6 +8,8 @@
         "code": 200,
         "name": "OK"
       },
+      "delay": 1000,
+      "maxDelay": 1200,
       "headers": {},
       "mime": "application/json",
       "text": "{\"mock_attr\":\"mock value\"}"

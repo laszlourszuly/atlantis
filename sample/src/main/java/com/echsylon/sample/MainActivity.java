@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -61,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private void performNetworkRequest(final String urlString, final TextView resultContainer) {
         new AsyncTask<Void, Void, String>() {
+            private volatile long time = 0L;
+
             @Override
             protected void onPreExecute() {
                 if (progress != null && progress.isShowing())
@@ -72,11 +75,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected String doInBackground(Void... params) {
                 try {
+                    time = System.currentTimeMillis();
                     URL url = new URL(urlString);
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
-
-                    return readNetworkResponse(connection.getInputStream());
+                    String result = readNetworkResponse(connection.getInputStream());
+                    time = System.currentTimeMillis() - time;
+                    return result;
                 } catch (MalformedURLException e) {
                     return printThrowableToString(e);
                 } catch (IOException e) {
@@ -89,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
                 progress.dismiss();
                 if (resultContainer != null)
                     resultContainer.setText(result);
+                Toast.makeText(MainActivity.this, "Turn around time: " + time, Toast.LENGTH_SHORT)
+                        .show();
             }
         }.execute();
     }
