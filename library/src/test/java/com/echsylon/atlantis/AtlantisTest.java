@@ -4,9 +4,8 @@ import android.content.Context;
 import android.content.res.AssetManager;
 
 import com.echsylon.atlantis.template.Request;
+import com.google.common.io.ByteStreams;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricGradleTestRunner;
@@ -14,14 +13,17 @@ import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Stack;
 
+import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -32,104 +34,269 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Config(constants = BuildConfig.class, sdk = 16)
 public class AtlantisTest {
     private static final String AUTHORITY = "http://localhost:8080";
-    private Atlantis target;
-    private Atlantis.OnErrorListener mockedErrorListener;
-    private Atlantis.OnSuccessListener mockedSuccessListener;
 
-    private Context mockedContext;
-    private AssetManager mockedAssetManager;
-
-    @Before
-    public void setup() throws Exception {
-        String json = "{\"requests\":[{\"url\":\"http://test.com/one\",\"method\":\"GET\"},{\"url\":\"http://test.com/two\",\"method\":\"GET\"}]}";
-
-        mockedContext = mock(Context.class);
-        mockedAssetManager = mock(AssetManager.class);
-        mockedErrorListener = mock(Atlantis.OnErrorListener.class);
-        mockedSuccessListener = mock(Atlantis.OnSuccessListener.class);
-
-        doReturn(mockedAssetManager).when(mockedContext).getAssets();
-        doReturn(new ByteArrayInputStream(json.getBytes())).when(mockedAssetManager).open(anyString());
-
-        target = Atlantis.start(mockedContext, "requests.json", mockedSuccessListener, mockedErrorListener);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        target.stopCapturing();
-        target.stop();
-        target = null;
-        mockedContext = null;
-        mockedAssetManager = null;
-        mockedErrorListener = null;
-        mockedSuccessListener = null;
-    }
-
-    @Test
-    public void callbacks_SuccessCallbackCalledEventually() throws Exception {
-        verifyZeroInteractions(mockedErrorListener);
-        verify(mockedSuccessListener).onSuccess();
-    }
-
-    @Test
-    public void callbacks_ErrorCallbackCalledWhenAssetNotReadable() throws Exception {
+    // Returns a mocked context that holds a mocked AssetManager which in turn will deliver the
+    // given JSON when requesting the "config.json" asset.
+    private Context getMockedContext(String configJson) throws Exception {
         Context context = mock(Context.class);
         AssetManager assetManager = mock(AssetManager.class);
+        doReturn(assetManager).when(context).getAssets();
+        doReturn(new ByteArrayInputStream(configJson.getBytes())).when(assetManager).open("config.json");
+        return context;
+    }
+
+    // Returns a mocked context that holds a mocked AssetManager which in turn will deliver the
+    // given JSON when requesting the "config.json" asset and the given byte array when requesting
+    // the "asset://asset.bin" asset.
+    private Context getMockedContext(String configJson, byte[] externalAsset) throws Exception {
+        Context context = mock(Context.class);
+        AssetManager assetManager = mock(AssetManager.class);
+        doReturn(assetManager).when(context).getAssets();
+        doReturn(new ByteArrayInputStream(configJson.getBytes())).when(assetManager).open("config.json");
+        doReturn(new ByteArrayInputStream(externalAsset)).when(assetManager).open("asset://asset.bin");
+        return context;
+    }
+
+    // Returns a mocked context that holds a mocked AssetManager which in turn will deliver the
+    // given JSON when requesting the "config.json" asset and throw an exception when requesting
+    // the "asset://asset.bin" asset.
+    private Context getMockedContext(String configJson, Class<? extends Exception> typeOfError) throws Exception {
+        Context context = mock(Context.class);
+        AssetManager assetManager = mock(AssetManager.class);
+        doReturn(assetManager).when(context).getAssets();
+        doReturn(new ByteArrayInputStream(configJson.getBytes())).when(assetManager).open("config.json");
+        doThrow(typeOfError).when(assetManager).open("asset://asset.bin");
+        return context;
+    }
+
+    // Returns a mocked context that holds a mocked AssetManager which in turn will throw an
+    // exception of the given type when requesting the "config.json" asset.
+    private Context getMockedContext(Class<? extends Exception> typeOfError) throws Exception {
+        Context context = mock(Context.class);
+        AssetManager assetManager = mock(AssetManager.class);
+        doReturn(assetManager).when(context).getAssets();
+        doThrow(typeOfError).when(assetManager).open("config.json");
+        return context;
+    }
+
+    @Test
+    public void callbacks_successCallbackCalledEventually() throws Exception {
+        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Atlantis.OnErrorListener errorListener = mock(Atlantis.OnErrorListener.class);
+        Atlantis.OnSuccessListener successListener = mock(Atlantis.OnSuccessListener.class);
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", successListener, errorListener);
+            verifyZeroInteractions(errorListener);
+            verify(successListener).onSuccess();
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
+    public void callbacks_errorCallbackCalledWhenAssetNotReadable() throws Exception {
+        Context context = getMockedContext(IOException.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
+        Atlantis target = null;
 
-        doReturn(assetManager).when(context).getAssets();
-        doThrow(IOException.class).when(assetManager).open(anyString());
-
-        Atlantis.start(context, "", successCallback, errorCallback);
-        verifyZeroInteractions(successCallback);
-        verify(errorCallback).onError(any(Throwable.class));
+        try {
+            target = Atlantis.start(context, "config.json", successCallback, errorCallback);
+            verifyZeroInteractions(successCallback);
+            verify(errorCallback).onError(any(IOException.class));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
     }
 
     @Test
-    public void capture_RequestsCapturedWhenInCapturingMode() throws Exception {
-        // Make a request and verify nothing has been captured.
-        ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
-        assertThat(target.getCapturedRequests().size(), is(0));
+    public void capture_requestsCapturedWhenInCapturingMode() throws Exception {
+        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Atlantis target = null;
 
-        // Start capturing, make a new request and verify that a request has been captured.
-        target.startCapturing();
-        ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
-        assertThat(target.getCapturedRequests().size(), is(1));
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            assertThat(target.getCapturedRequests().size(), is(0));
+
+            target.startCapturing();
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            assertThat(target.getCapturedRequests().size(), is(1));
+        } finally {
+            if (target != null) {
+                target.stopCapturing();
+                target.stop();
+            }
+        }
     }
 
     @Test
-    public void capture_RequestsCapturedInCorrectOrder() throws Exception {
-        target.startCapturing();
-        ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
-        ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
-        target.stopCapturing();
-        Stack<Request> capturedRequests = target.getCapturedRequests();
-        assertThat(capturedRequests.size(), is(2));
-        assertThat(capturedRequests.get(0).url(), is("http://test.com/one"));
-        assertThat(capturedRequests.get(1).url(), is("http://test.com/two"));
+    public void capture_requestsCapturedInCorrectOrder() throws Exception {
+        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'},{'url':'/two', 'method':'get'}]}");
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            target.startCapturing();
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
+            target.stopCapturing();
+
+            Stack<Request> capturedRequests = target.getCapturedRequests();
+            assertThat(capturedRequests.size(), is(2));
+            assertThat(capturedRequests.get(0).url(), is("/one"));
+            assertThat(capturedRequests.get(1).url(), is("/two"));
+        } finally {
+            if (target != null) {
+                target.stopCapturing();
+                target.stop();
+            }
+        }
     }
 
     @Test
-    public void capture_CaptureHistoryStackResetOnStartCapture() throws Exception {
-        target.startCapturing();
-        ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
-        ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
-        target.stopCapturing();
-        assertThat(target.getCapturedRequests().size(), is(2));
+    public void capture_captureHistoryStackResetOnStartCapture() throws Exception {
+        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'},{'url':'/two', 'method':'get'}]}");
+        Atlantis target = null;
 
-        target.startCapturing();
-        assertThat(target.getCapturedRequests().size(), is(0));
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            target.startCapturing();
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
+            target.stopCapturing();
+            assertThat(target.getCapturedRequests().size(), is(2));
+
+            target.startCapturing();
+            assertThat(target.getCapturedRequests().size(), is(0));
+        } finally {
+            if (target != null) {
+                target.stopCapturing();
+                target.stop();
+            }
+        }
     }
 
     @Test
-    public void capture_ClearCapturedHistoryStackWorks() throws Exception {
-        target.startCapturing();
-        ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
-        target.stopCapturing();
-        assertThat(target.getCapturedRequests().size(), is(1));
+    public void capture_clearCapturedHistoryStackWorks() throws Exception {
+        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Atlantis target = null;
 
-        target.clearCapturedRequests();
-        assertThat(target.getCapturedRequests().size(), is(0));
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            target.startCapturing();
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            target.stopCapturing();
+            assertThat(target.getCapturedRequests().size(), is(1));
+
+            target.clearCapturedRequests();
+            assertThat(target.getCapturedRequests().size(), is(0));
+        } finally {
+            if (target != null) {
+                target.stopCapturing();
+                target.stop();
+            }
+        }
     }
+
+    // This test isn't very meaningful as Atlantis will guarantee to block for a certain amount of
+    // time, but the overhead time from other tasks (like reading assets, sending events through the
+    // socket, etc) is not accounted for, hence the actual time between the points where the request
+    // was sent and the response was received, may very well exceed the stated delay time. For now
+    // we're tolerant about this, but maybe it would make more sense to just remove this test.
+    @Test
+    public void delay_responseIsDelayedExactTime() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{statusCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "text:'{}', delay: 20}]}]}");
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            long time = System.currentTimeMillis();
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            time = System.currentTimeMillis() - time;
+            assertThat(time, is(greaterThanOrEqualTo(20L)));
+        } finally {
+            if (target != null) {
+                target.stopCapturing();
+                target.stop();
+            }
+        }
+    }
+
+    // This test isn't very meaningful as Atlantis will guarantee to block for a certain amount of
+    // time, but the overhead time from other tasks (like reading assets, sending events through the
+    // socket, etc) is not accounted for, hence the actual time between the points where the request
+    // was sent and the response was received, may very well exceed the stated delay time. For now,
+    // we're adding 20% buffer time, but maybe it would make more sense to just remove this test.
+    @Test
+    public void delay_responseIsDelayedRandomTime() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{statusCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "text:'{}', delay: 20, maxDelay: 40}]}]}");
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+            long time = System.currentTimeMillis();
+            ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
+            time = System.currentTimeMillis() - time;
+            assertThat(time, is(both(greaterThanOrEqualTo(20L)).and(lessThanOrEqualTo((long) (40L * 1.20f)))));
+        } finally {
+            if (target != null) {
+                target.stopCapturing();
+                target.stop();
+            }
+        }
+    }
+
+    @Test
+    public void asset_intactExternalAssetIsDelivered() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime: 'application/octet-stream', " +
+                "asset:'asset://asset.bin'}]}]}", new byte[]{1, 2, 3});
+        Atlantis target = null;
+        InputStream inputStream = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+
+            inputStream = new URL(AUTHORITY + "/one").openConnection().getInputStream();
+            byte[] bytes = ByteStreams.toByteArray(inputStream);
+            assertThat(bytes.length, is(3));
+            assertThat(bytes[0], is((byte) 1));
+            assertThat(bytes[1], is((byte) 2));
+            assertThat(bytes[2], is((byte) 3));
+        } finally {
+            if (target != null)
+                target.stop();
+
+            if (inputStream != null)
+                inputStream.close();
+        }
+    }
+
+    @Test
+    public void asset_internalErrorResponseWhenAssetCanNotBeRead() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime: 'application/octet-stream', " +
+                "asset:'asset://asset.bin'}]}]}", IOException.class);
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", null, null);
+
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+            assertThat(connection.getResponseCode(), is(500));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
 }
