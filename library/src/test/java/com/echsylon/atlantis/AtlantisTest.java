@@ -18,11 +18,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Stack;
 
-import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -232,8 +230,8 @@ public class AtlantisTest {
     // This test isn't very meaningful as Atlantis will guarantee to block for a certain amount of
     // time, but the overhead time from other tasks (like reading assets, sending events through the
     // socket, etc) is not accounted for, hence the actual time between the points where the request
-    // was sent and the response was received, may very well exceed the stated delay time. For now,
-    // we're adding 20% buffer time, but maybe it would make more sense to just remove this test.
+    // was sent and the response was received, may very well exceed the stated delay time. Therefore
+    // we can not test the upper bound, and maybe it would make more sense to just remove this test.
     @Test
     public void delay_responseIsDelayedRandomTime() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
@@ -246,7 +244,7 @@ public class AtlantisTest {
             long time = System.currentTimeMillis();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             time = System.currentTimeMillis() - time;
-            assertThat(time, is(both(greaterThanOrEqualTo(20L)).and(lessThanOrEqualTo((long) (40L * 1.20f)))));
+            assertThat(time, is(greaterThanOrEqualTo(20L)));
         } finally {
             if (target != null) {
                 target.stopCapturing();
