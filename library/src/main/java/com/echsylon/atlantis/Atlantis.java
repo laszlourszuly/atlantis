@@ -122,6 +122,14 @@ public class Atlantis {
                         captured.push(request);
 
                     com.echsylon.atlantis.template.Response response = request.response();
+                    long delay = response.delay();
+                    if (delay > 0L)
+                        try {
+                            Thread.sleep(delay);
+                        } catch (InterruptedException e) {
+                            // For some reason we weren't allowed to sleep as long as we wanted.
+                        }
+
                     if (response.hasAsset()) {
                         NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
                         byte[] bytes = response.asset(Atlantis.this.context);

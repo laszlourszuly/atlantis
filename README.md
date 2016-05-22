@@ -32,6 +32,8 @@ You need to define which requests you're mocking and what response they should d
                 "X-Header-1": "value1",
                 "X-Header-2": "value2"
             },
+            "delay": 1000,
+            "maxDelay": 12000,
             "mime": "application/json",
             "text": "{\"attr\": \"value\"}",
             "asset": "assetFileName.mp3"

@@ -5,6 +5,7 @@ import android.content.res.AssetManager;
 
 import com.echsylon.atlantis.BuildConfig;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,10 +15,13 @@ import org.robolectric.annotation.Config;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -29,74 +33,96 @@ import static org.mockito.Mockito.mock;
 @RunWith(RobolectricGradleTestRunner.class)
 @Config(constants = BuildConfig.class, sdk = 16)
 public class ResponseTest {
-    private static final Response GOOD_RESPONSE;
-    private static final Response BAD_RESPONSE;
 
-    static {
-        GOOD_RESPONSE = new Gson().fromJson("{" +
-                "  \"responseCode\": {" +
-                "    \"code\": 200, " +
-                "    \"name\": \"OK\"" +
-                "  }, " +
-                "  \"mime\": \"application/json\", " +
-                "  \"text\": \"\\\"{}\\\"\", " +
-                "  \"asset\": \"asset://fake.asset\"" +
-                "}", Response.class);
+    @Test
+    public void status_responseCode() throws Exception {
+        JsonObject responseCode = new JsonObject();
+        responseCode.addProperty("code", 200);
+        responseCode.addProperty("name", "OK");
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("responseCode", responseCode);
 
-        BAD_RESPONSE = new Gson().fromJson("{}", Response.class);
+        Response responseWithContent = new Gson().fromJson(jsonObject, Response.class);
+        assertThat(responseWithContent.statusCode(), is(200));
+        assertThat(responseWithContent.statusName(), is("OK"));
+
+        Response emptyResponse = new Gson().fromJson(new JsonObject(), Response.class);
+        assertThat(emptyResponse.statusCode(), is(0));
+        assertThat(emptyResponse.statusName(), is(nullValue()));
     }
 
     @Test
-    public void status_ResponseCode() throws Exception {
-        assertThat(GOOD_RESPONSE.statusCode(), is(200));
-        assertThat(GOOD_RESPONSE.statusName(), is("OK"));
-        assertThat(BAD_RESPONSE.statusCode(), is(0));
-        assertThat(BAD_RESPONSE.statusName(), is(nullValue()));
+    public void mime_correctMimeTypeIsReturned() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("mime", "application/json");
+        Response responseWithContent = new Gson().fromJson(jsonObject, Response.class);
+        assertThat(responseWithContent.mimeType(), is("application/json"));
+
+        Response emptyResponse = new Gson().fromJson(new JsonObject(), Response.class);
+        assertThat(emptyResponse.mimeType(), is(nullValue()));
     }
 
     @Test
-    public void mime_CorrectMimeTypeIsReturned() throws Exception {
-        assertThat(GOOD_RESPONSE.mimeType(), is("application/json"));
-        assertThat(BAD_RESPONSE.mimeType(), nullValue());
+    public void content_correctContentTextIsReturned() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("text", "\"{}\"");
+        Response responseWithContent = new Gson().fromJson(jsonObject, Response.class);
+        assertThat(responseWithContent.hasContent(), is(true));
+        assertThat(responseWithContent.content(), is("\"{}\""));
+
+        Response emptyResponse = new Gson().fromJson(new JsonObject(), Response.class);
+        assertThat(emptyResponse.hasContent(), is(false));
+        assertThat(emptyResponse.content(), is(nullValue()));
     }
 
     @Test
-    public void content_CorrectContentTextIsReturned() throws Exception {
-        assertThat(GOOD_RESPONSE.hasContent(), is(true));
-        assertThat(GOOD_RESPONSE.content(), is("\"{}\""));
-        assertThat(BAD_RESPONSE.hasContent(), is(false));
-        assertThat(BAD_RESPONSE.content(), nullValue());
-    }
+    public void asset_assetIsReadCorrectly() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("asset", "asset://fake.asset");
+        Response response = new Gson().fromJson(jsonObject, Response.class);
 
-    @Test
-    public void asset_CorrectAssetIsRead() throws Exception {
-        Context mockedContext = mock(Context.class);
         AssetManager mockedAssetManager = mock(AssetManager.class);
-
-        doReturn(mockedAssetManager).when(mockedContext).getAssets();
         doReturn(new ByteArrayInputStream("{}".getBytes())).when(mockedAssetManager).open(anyString());
+        Context mockedContext = mock(Context.class);
+        doReturn(mockedAssetManager).when(mockedContext).getAssets();
 
-        assertThat(GOOD_RESPONSE.hasAsset(), is(true));
-        byte[] goodAsset = GOOD_RESPONSE.asset(mockedContext);
-        assertThat(goodAsset, notNullValue());
+        assertThat(response.hasAsset(), is(true));
+        byte[] goodAsset = response.asset(mockedContext);
+        assertThat(goodAsset, is(notNullValue()));
         assertThat(goodAsset.length, is(2));
-
-        assertThat(BAD_RESPONSE.hasAsset(), is(false));
-        byte[] badAsset = BAD_RESPONSE.asset(mockedContext);
-        assertThat(badAsset, notNullValue());
-        assertThat(badAsset.length, is(0));
     }
 
     @Test
-    public void asset_ReadingAssetsReturnGracefullyOnError() throws Exception {
-        Context mockedContext = mock(Context.class);
+    public void asset_readingAssetsReturnsGracefullyOnError() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("asset", "asset://fake.asset");
+        Response response = new Gson().fromJson(jsonObject, Response.class);
+
         AssetManager mockedAssetManager = mock(AssetManager.class);
-
-        doReturn(mockedAssetManager).when(mockedContext).getAssets();
         doThrow(IOException.class).when(mockedAssetManager).open(anyString());
+        Context mockedContext = mock(Context.class);
+        doReturn(mockedAssetManager).when(mockedContext).getAssets();
 
-        byte[] goodAsset = GOOD_RESPONSE.asset(mockedContext);
-        assertThat(goodAsset, notNullValue());
+        byte[] goodAsset = response.asset(mockedContext);
+        assertThat(goodAsset, is(notNullValue()));
         assertThat(goodAsset.length, is(0));
     }
+
+    @Test
+    public void delay_randomDelayBetweenDefaultAndMaxIsReturned() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("delay", 110L);
+        jsonObject.addProperty("maxDelay", 130L);
+        Response response = new Gson().fromJson(jsonObject, Response.class);
+        assertThat(response.delay(), is(both(greaterThanOrEqualTo(100L)).and(lessThanOrEqualTo(130L))));
+    }
+
+    @Test
+    public void delay_exactDelayIsReturnedIfOnlyDefaultGiven() throws Exception {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("delay", 113L);
+        Response response = new Gson().fromJson(jsonObject, Response.class);
+        assertThat(response.delay(), is(113L));
+    }
+
 }

@@ -6,6 +6,7 @@ import com.echsylon.atlantis.internal.Utils;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Random;
 
 /**
  * This class contains all the data required by the {@link com.echsylon.atlantis.Atlantis Atlantis}
@@ -27,6 +28,8 @@ public class Response extends HeaderContainer implements Serializable {
     private final String mime = null;
     private final String text = null;
     private final String asset = null;
+    private final Integer delay = null;
+    private final Integer maxDelay = null;
 
     /**
      * Returns the HTTP status code of the response.
@@ -83,6 +86,38 @@ public class Response extends HeaderContainer implements Serializable {
         } catch (IOException e) {
             return new byte[0];
         }
+    }
+
+    /**
+     * Returns the amount of milliseconds to wait before serving this particular response.
+     * <p>
+     * If only the "delay" variable exists, then that value is returned.
+     * <p>
+     * If both "delay" and "maxDelay" are given, then a different random number between those values
+     * is returned every time this method is called.
+     * <p>
+     * If only "maxDelay" is given then a different random number between zero (0) and "maxDelay" is
+     * returned every time this method is called.
+     * <p>
+     * If neither "delay" nor "maxDelay" is given, then zero (0) is returned.
+     * <p>
+     * A "maxDelay" less than "delay" is considered illegal and will cause an exception to be
+     * thrown.
+     *
+     * @return Number of milliseconds. Zero (0) means "no delay".
+     * @throws IllegalArgumentException if "maxDelay" is less than "delay".
+     */
+    @SuppressWarnings("ConstantConditions")
+    public long delay() throws IllegalArgumentException {
+        if (maxDelay == null || maxDelay.equals(delay))
+            return Utils.getNative(delay, 0);
+
+        int min = Utils.getNative(delay, 0);
+        int max = Utils.getNative(maxDelay, 0);
+        if (max < min)
+            throw new IllegalArgumentException("'maxDelay' mustn't be less than 'delay'");
+
+        return new Random().nextInt(max - min) + min;
     }
 
     /**
