@@ -36,7 +36,7 @@ You need to define which requests you're mocking and what response they should d
             "maxDelay": 12000,
             "mime": "application/json",
             "text": "{\"attr\": \"value\"}",
-            "asset": "assetFileName.mp3"
+            "asset": "asset://anyFile.mp3"
         }]
     }]
 }
