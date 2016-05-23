@@ -34,41 +34,41 @@ import static org.mockito.Mockito.mock;
 public class UtilsTest {
 
     @Test
-    public void testCloseSilentlyReallyIsSilent() throws Exception {
+    public void close_closeSilentlyReallyIsSilent() throws Exception {
         Closeable mockedCloseable = mock(Closeable.class);
         doThrow(IOException.class).when(mockedCloseable).close();
         Utils.closeSilently(mockedCloseable);
     }
 
     @Test
-    public void testGetNativeBoolean() throws Exception {
+    public void native_getNativeBoolean() throws Exception {
         assertThat(Utils.getNative(Boolean.TRUE, false), is(true));
         assertThat(Utils.getNative(null, true), is(true));
     }
 
     @Test
-    public void testGetNativeFloat() throws Exception {
+    public void native_getNativeFloat() throws Exception {
         Float floatObject = 1f;
         assertThat(Utils.getNative(floatObject, 0f), is(1f));
         assertThat(Utils.getNative(null, 2f), is(2f));
     }
 
     @Test
-    public void testGetNativeInteger() throws Exception {
+    public void native_getNativeInteger() throws Exception {
         Integer intObject = 3;
         assertThat(Utils.getNative(intObject, 0), is(3));
         assertThat(Utils.getNative((Integer) null, 4), is(4));
     }
 
     @Test
-    public void testGetNativeLong() throws Exception {
+    public void native_getNativeLong() throws Exception {
         Long longObject = 5L;
         assertThat(Utils.getNative(longObject, 0L), is(5L));
         assertThat(Utils.getNative((Long) null, 6L), is(6L));
     }
 
     @Test
-    public void testGetNonNull() throws Exception {
+    public void native_getNonNull() throws Exception {
         Object object = new Object();
         Object fallback = new Object();
         assertThat(Utils.getNonNull(object, fallback), is(object));
@@ -77,49 +77,49 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsEmptyArray() throws Exception {
+    public void empty_isEmptyArray() throws Exception {
         assertThat(Utils.isEmpty((Object[]) null), is(true));
         assertThat(Utils.isEmpty(new Object[0]), is(true));
         assertThat(Utils.isEmpty(new Object[1]), is(false));
     }
 
     @Test
-    public void testIsEmptyList() throws Exception {
+    public void empty_isEmptyList() throws Exception {
         assertThat(Utils.isEmpty((List) null), is(true));
         assertThat(Utils.isEmpty(new ArrayList<>()), is(true));
         assertThat(Utils.isEmpty(Arrays.asList(new Object[1])), is(false));
     }
 
     @Test
-    public void testIsEmptyString() throws Exception {
+    public void empty_isEmptyString() throws Exception {
         assertThat(Utils.isEmpty((String) null), is(true));
         assertThat(Utils.isEmpty(""), is(true));
         assertThat(Utils.isEmpty(" "), is(false));
     }
 
     @Test
-    public void testNotEmptyArray() throws Exception {
+    public void empty_notEmptyArray() throws Exception {
         assertThat(Utils.notEmpty((Object[]) null), is(false));
         assertThat(Utils.notEmpty(new Object[0]), is(false));
         assertThat(Utils.notEmpty(new Object[1]), is(true));
     }
 
     @Test
-    public void testNotEmptyList() throws Exception {
+    public void empty_notEmptyList() throws Exception {
         assertThat(Utils.notEmpty((List) null), is(false));
         assertThat(Utils.notEmpty(new ArrayList<>()), is(false));
         assertThat(Utils.notEmpty(Arrays.asList(new Object[1])), is(true));
     }
 
     @Test
-    public void testNotEmptyString() throws Exception {
+    public void empty_notEmptyString() throws Exception {
         assertThat(Utils.notEmpty((String) null), is(false));
         assertThat(Utils.notEmpty(""), is(false));
         assertThat(Utils.notEmpty(" "), is(true));
     }
 
     @Test
-    public void testCanReadAsset() throws Exception {
+    public void io_canReadAsset() throws Exception {
         Context mockedContext = mock(Context.class);
         AssetManager mockedAssetManager = mock(AssetManager.class);
 

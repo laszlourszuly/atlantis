@@ -5,8 +5,8 @@ import android.os.AsyncTask;
 
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.internal.json.JsonParser;
+import com.echsylon.atlantis.template.Configuration;
 import com.echsylon.atlantis.template.Request;
-import com.echsylon.atlantis.template.Template;
 
 import java.io.ByteArrayInputStream;
 import java.util.Locale;
@@ -77,26 +77,26 @@ public class Atlantis {
      * starts the local web server. Note that an attempt to load the template is made regardless if
      * the server is already running or not.
      *
-     * @param context           The context to load any assets from.
-     * @param templateAssetName The name of the request template asset to load.
-     * @param successListener   The success state callback implementation.
-     * @param errorListener     The error callback implementation.
+     * @param context         The context to load any assets from.
+     * @param configAssetName The name of the request configuration asset to load.
+     * @param successListener The success state callback implementation.
+     * @param errorListener   The error callback implementation.
      * @return An Atlantis object instance.
      */
     public static Atlantis start(final Context context,
-                                 final String templateAssetName,
+                                 final String configAssetName,
                                  final OnSuccessListener successListener,
                                  final OnErrorListener errorListener) {
 
         Atlantis atlantis = new Atlantis(context);
         Atlantis.OnSuccessListener trigger = () -> atlantis.start(successListener, errorListener);
-        atlantis.setTemplate(templateAssetName, trigger, errorListener);
+        atlantis.setConfiguration(configAssetName, trigger, errorListener);
 
         return atlantis;
     }
 
     private Context context;
-    private Template template;
+    private Configuration configuration;
     private NanoHTTPD nanoHTTPD;
     private Stack<Request> captured;
 
@@ -112,7 +112,7 @@ public class Atlantis {
             @Override
             public Response serve(IHTTPSession session) {
                 // Let it crash on null pointer as it's considered an unrecoverable error state.
-                Request request = template.findRequest(
+                Request request = configuration.findRequest(
                         session.getUri(),
                         session.getMethod().name(),
                         session.getHeaders());
@@ -156,7 +156,7 @@ public class Atlantis {
      */
     public void stop() {
         nanoHTTPD.stop();
-        template = null;
+        configuration = null;
         captured.clear();
         isCapturing = false;
     }
@@ -211,14 +211,14 @@ public class Atlantis {
         return this;
     }
 
-    // Sets the template asset to the Atlantis instance. The asset will be read from disk and a
+    // Sets the configuration asset to the Atlantis instance. The asset will be read from disk and a
     // potentially time consuming json parsing will be performed, hence a worker thread will be
     // spawned for the task.
-    private void setTemplate(final String templateAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+    private void setConfiguration(final String configAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
         enqueueTask(() -> {
-            byte[] bytes = Utils.readAsset(context, templateAssetName);
+            byte[] bytes = Utils.readAsset(context, configAssetName);
             String json = new String(bytes);
-            template = new JsonParser().fromJson(json, Template.class);
+            configuration = new JsonParser().fromJson(json, Configuration.class);
             return null;
         }, successListener, errorListener);
     }

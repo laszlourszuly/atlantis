@@ -12,7 +12,7 @@ import java.util.Random;
  * This class contains all the data required by the {@link com.echsylon.atlantis.Atlantis Atlantis}
  * to serve a response.
  */
-public class Response extends HeaderContainer implements Serializable {
+public class Response extends HttpEntity implements Serializable {
     private static final String ASSET_SCHEME = "asset://";
     public static final Response EMPTY = new Response();
 

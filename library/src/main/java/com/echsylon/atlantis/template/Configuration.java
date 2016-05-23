@@ -12,12 +12,12 @@ import java.util.Map;
  * This class contains all request templates the {@link com.echsylon.atlantis.Atlantis Atlantis}
  * local web server will ever serve. This is the "downloaded Internet".
  */
-public final class Template implements Serializable {
+public final class Configuration implements Serializable {
     private static final String SCHMEA_SEPARATOR = "://";
     private final Request[] requests = null;
 
     // Intentionally hidden constructor.
-    private Template() {
+    private Configuration() {
     }
 
     /**

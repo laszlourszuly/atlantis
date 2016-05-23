@@ -7,7 +7,7 @@ import java.io.Serializable;
  * local web server expects it. It will use this template when trying to identify which response to
  * serve to a user provided request.
  */
-public class Request extends HeaderContainer implements Serializable {
+public class Request extends HttpEntity implements Serializable {
     private final String method = null;
     private final String url = null;
     private final Response[] responses = null;

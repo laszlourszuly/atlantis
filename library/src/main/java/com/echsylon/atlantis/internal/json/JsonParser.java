@@ -41,18 +41,4 @@ public class JsonParser {
         }
     }
 
-    /**
-     * Tries to write a JSON string based on a Java object.
-     *
-     * @param object The Java object to serialize into a JSON string.
-     * @return The JSON string, never null. Handles null pointers gracefully.
-     */
-    public String toJson(Object object) {
-        return new GsonBuilder()
-                .setPrettyPrinting()
-                .disableHtmlEscaping()
-                .create()
-                .toJson(object);
-    }
-
 }
