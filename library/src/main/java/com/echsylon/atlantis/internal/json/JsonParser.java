@@ -1,5 +1,6 @@
 package com.echsylon.atlantis.internal.json;
 
+import com.echsylon.atlantis.template.Configuration;
 import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Response;
 import com.google.gson.GsonBuilder;
@@ -32,8 +33,9 @@ public class JsonParser {
     public <T> T fromJson(String json, Class<T> expectedResultType) throws JsonException {
         try {
             return new GsonBuilder()
-                    .registerTypeAdapter(Request.class, HeaderDeserializer.newRequestHeaderDeserializer())
-                    .registerTypeAdapter(Response.class, HeaderDeserializer.newResponseHeaderDeserializer())
+                    .registerTypeAdapter(Configuration.class, Deserializers.newConfigurationDeserializer())
+                    .registerTypeAdapter(Response.class, Deserializers.newResponseDeserializer())
+                    .registerTypeAdapter(Request.class, Deserializers.newRequestDeserializer())
                     .create()
                     .fromJson(json, expectedResultType);
         } catch (JsonSyntaxException e) {

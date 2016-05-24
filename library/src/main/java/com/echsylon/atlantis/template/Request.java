@@ -1,5 +1,8 @@
 package com.echsylon.atlantis.template;
 
+import com.echsylon.atlantis.ResponseFilter;
+import com.echsylon.atlantis.filter.response.DefaultResponseFilter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,11 +99,24 @@ public class Request extends HttpEntity implements Serializable {
             return this;
         }
 
+        /**
+         * Sets the response filter logic to use when deciding which response to serve. Null is a
+         * valid value, even though it doesn't make sense.
+         *
+         * @param responseFilter The response filter implementation.
+         * @return This buildable request instance, allowing chaining of method calls.
+         */
+        public Builder withResponseFilter(ResponseFilter responseFilter) {
+            this.responseFilter = responseFilter;
+            return this;
+        }
+
     }
 
     protected String method = null;
     protected String url = null;
     protected List<Response> responses = null;
+    protected ResponseFilter responseFilter = new DefaultResponseFilter();
 
     // Intentionally hidden constructor.
     protected Request() {
@@ -129,10 +145,9 @@ public class Request extends HttpEntity implements Serializable {
      *
      * @return The response.
      */
-    @SuppressWarnings("ConstantConditions")
     public Response response() {
-        return responses != null && responses.size() > 0 ?
-                responses.get(0) :
+        return responseFilter != null ?
+                responseFilter.getResponse(this, responses) :
                 null;
     }
 
