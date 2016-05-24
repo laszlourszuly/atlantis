@@ -3,7 +3,9 @@ package com.echsylon.atlantis;
 import android.content.Context;
 import android.content.res.AssetManager;
 
+import com.echsylon.atlantis.template.Configuration;
 import com.echsylon.atlantis.template.Request;
+import com.echsylon.atlantis.template.Response;
 import com.google.common.io.ByteStreams;
 
 import org.junit.Test;
@@ -78,14 +80,56 @@ public class AtlantisTest {
     }
 
     @Test
+    public void configuration_canSetAssetConfiguration() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "text:'{}'}]}]}");
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+            assertThat(connection.getResponseCode(), is(200));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
+    public void configuration_canSetBuiltConfiguration() throws Exception {
+        Context context = mock(Context.class);
+        Configuration configuration = new Configuration.Builder()
+                .withRequest(new Request.Builder()
+                        .withUrl("/one")
+                        .withMethod("get")
+                        .withResponse(new Response.Builder()
+                                .withStatus(200, "OK")
+                                .withContent("{}")));
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, configuration);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+            assertThat(connection.getResponseCode(), is(200));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
     public void callbacks_successCallbackCalledEventually() throws Exception {
-        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
         Atlantis.OnErrorListener errorListener = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successListener = mock(Atlantis.OnSuccessListener.class);
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", successListener, errorListener);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", successListener, errorListener);
             verifyZeroInteractions(errorListener);
             verify(successListener).onSuccess();
         } finally {
@@ -102,7 +146,8 @@ public class AtlantisTest {
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", successCallback, errorCallback);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", successCallback, errorCallback);
             verifyZeroInteractions(successCallback);
             verify(errorCallback).onError(any(IOException.class));
         } finally {
@@ -113,11 +158,12 @@ public class AtlantisTest {
 
     @Test
     public void response_returnsNotFoundResponseWhenNoMatchingConfigurationFound() throws Exception {
-        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
             HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/ten").openConnection();
             assertThat(connection.getResponseCode(), is(404));
         } finally {
@@ -128,11 +174,13 @@ public class AtlantisTest {
 
     @Test
     public void capture_requestsCapturedWhenInCapturingMode() throws Exception {
-        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
+
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             assertThat(target.getCapturedRequests().size(), is(0));
 
@@ -149,11 +197,12 @@ public class AtlantisTest {
 
     @Test
     public void capture_requestsCapturedInCorrectOrder() throws Exception {
-        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'},{'url':'/two', 'method':'get'}]}");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get'},{url:'/two', method:'get'}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
@@ -173,11 +222,12 @@ public class AtlantisTest {
 
     @Test
     public void capture_captureHistoryStackResetOnStartCapture() throws Exception {
-        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'},{'url':'/two', 'method':'get'}]}");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get'},{url:'/two', method:'get'}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
@@ -196,11 +246,12 @@ public class AtlantisTest {
 
     @Test
     public void capture_clearCapturedHistoryStackWorks() throws Exception {
-        Context context = getMockedContext("{'requests':[{'url':'/one', 'method':'get'}]}");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             target.stopCapturing();
@@ -224,12 +275,13 @@ public class AtlantisTest {
     @Test
     public void delay_responseIsDelayedExactTime() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
-                "responses:[{statusCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
                 "text:'{}', delay: 20}]}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
             long time = System.currentTimeMillis();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             time = System.currentTimeMillis() - time;
@@ -250,12 +302,13 @@ public class AtlantisTest {
     @Test
     public void delay_responseIsDelayedRandomTime() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
-                "responses:[{statusCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
                 "text:'{}', delay: 20, maxDelay: 40}]}]}");
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
             long time = System.currentTimeMillis();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             time = System.currentTimeMillis() - time;
@@ -277,7 +330,8 @@ public class AtlantisTest {
         InputStream inputStream = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
 
             inputStream = new URL(AUTHORITY + "/one").openConnection().getInputStream();
             byte[] bytes = ByteStreams.toByteArray(inputStream);
@@ -302,7 +356,8 @@ public class AtlantisTest {
         Atlantis target = null;
 
         try {
-            target = Atlantis.start(context, "config.json", null, null);
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
 
             HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
             assertThat(connection.getResponseCode(), is(500));

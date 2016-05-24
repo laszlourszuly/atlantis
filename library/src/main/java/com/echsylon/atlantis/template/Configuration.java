@@ -3,6 +3,7 @@ package com.echsylon.atlantis.template;
 import com.echsylon.atlantis.internal.Utils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -12,11 +13,37 @@ import java.util.Map;
  * This class contains all request templates the {@link com.echsylon.atlantis.Atlantis Atlantis}
  * local web server will ever serve. This is the "downloaded Internet".
  */
-public final class Configuration implements Serializable {
+public class Configuration implements Serializable {
     private static final String SCHMEA_SEPARATOR = "://";
-    private final Request[] requests = null;
 
-    // Intentionally hidden constructor.
+    /**
+     * This class offers means of building a configuration object directly from code (as opposed to
+     * configure one in a JSON asset).
+     */
+    public static final class Builder extends Configuration {
+
+        /**
+         * Adds a request to the configuration being built. Doesn't add null pointers.
+         *
+         * @param request The request to add.
+         * @return This buildable configuration object, allowing chaining of method calls.
+         */
+        public Builder withRequest(Request request) {
+            if (request != null) {
+                if (this.requests == null)
+                    this.requests = new ArrayList<>();
+
+                requests.add(request);
+            }
+
+            return this;
+        }
+
+    }
+
+    protected List<Request> requests = null;
+
+    // Intentionally hidden constructor
     private Configuration() {
     }
 

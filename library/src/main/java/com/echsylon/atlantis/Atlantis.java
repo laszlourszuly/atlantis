@@ -73,25 +73,21 @@ public class Atlantis {
     }
 
     /**
-     * Loads a set of template requests and corresponding responses and, if not already running also
-     * starts the local web server. Note that an attempt to load the template is made regardless if
-     * the server is already running or not.
+     * Starts the local Atlantis server. The caller must manually set a configuration (either by
+     * pointing to a JSON asset or by injecting programmatically defined requests). The success
+     * callback is called once the server is fully operational. Note that the configuration can be
+     * injected regardless of the current start-up state of the local server.
      *
-     * @param context         The context to load any assets from.
-     * @param configAssetName The name of the request configuration asset to load.
      * @param successListener The success state callback implementation.
      * @param errorListener   The error callback implementation.
      * @return An Atlantis object instance.
      */
-    public static Atlantis start(final Context context,
-                                 final String configAssetName,
-                                 final OnSuccessListener successListener,
-                                 final OnErrorListener errorListener) {
-
-        Atlantis atlantis = new Atlantis(context);
-        Atlantis.OnSuccessListener trigger = () -> atlantis.start(successListener, errorListener);
-        atlantis.setConfiguration(configAssetName, trigger, errorListener);
-
+    public static Atlantis start(OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+        atlantis.enqueueTask(() -> {
+            atlantis.nanoHTTPD.start();
+            return null;
+        }, successListener, errorListener);
         return atlantis;
     }
 
@@ -103,53 +99,62 @@ public class Atlantis {
     private boolean isCapturing;
 
     // Intentionally hidden constructor.
-    private Atlantis(Context context) {
-        this.context = context;
+    private Atlantis() {
         this.captured = new Stack<>();
         this.isCapturing = false;
 
         this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
             @Override
             public Response serve(IHTTPSession session) {
-                // Let it crash on null pointer as it's considered an unrecoverable error state.
+                // Early bail-out.
+                if (configuration == null)
+                    return super.serve(session);
+
+                // Find a matching request configuration.
                 Request request = configuration.findRequest(
                         session.getUri(),
                         session.getMethod().name(),
                         session.getHeaders());
 
-                if (request != null) {
-                    if (isCapturing)
+                // Capture if in such a mode.
+                if (isCapturing)
+                    if (request != null)
                         captured.push(request);
+                    else
+                        captured.push(new Request.Builder()
+                                .withHeaders(session.getHeaders())
+                                .withUrl(session.getUri())
+                                .withMethod(session.getMethod().name()));
 
-                    // Validate response
-                    com.echsylon.atlantis.template.Response response = request.response();
-                    if (response == null)
-                        return super.serve(session);
+                // No matching request, fallback to default response.
+                if (request == null)
+                    return super.serve(session);
 
-                    // Maybe delay
-                    long delay = response.delay();
-                    if (delay > 0L)
-                        try {
-                            Thread.sleep(delay);
-                        } catch (InterruptedException e) {
-                            // For some reason we weren't allowed to sleep as long as we wanted.
-                        }
+                // Get a response to serve.
+                com.echsylon.atlantis.template.Response response = request.response();
+                if (response == null)
+                    return super.serve(session);
 
-                    // Try to serve
+                // Maybe delay before actually serving the response.
+                long delay = response.delay();
+                if (delay > 0L)
                     try {
-                        NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                        String mime = response.mimeType();
-                        byte[] bytes = response.hasAsset() ?
-                                response.asset(Atlantis.this.context) :
-                                response.content().getBytes();
-                        return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
-
-                    } catch (Exception e) {
-                        return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "");
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        // For some reason we weren't allowed to sleep as long as we wanted.
                     }
-                }
 
-                return super.serve(session);
+                // Now finally try to serve.
+                try {
+                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
+                    String mime = response.mimeType();
+                    byte[] bytes = response.hasAsset() ?
+                            response.asset(Atlantis.this.context) :
+                            response.content().getBytes();
+                    return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
+                } catch (Exception e) {
+                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "");
+                }
             }
         };
     }
@@ -162,6 +167,37 @@ public class Atlantis {
         configuration = null;
         captured.clear();
         isCapturing = false;
+    }
+
+    /**
+     * Reconfigures Atlantis by setting the new set of requests to respond to.
+     *
+     * @param context       The context to use when reading assets.
+     * @param configuration The new configuration.
+     */
+    public void setConfiguration(Context context, Configuration configuration) {
+        this.context = context;
+        this.configuration = configuration;
+    }
+
+    /**
+     * Reconfigures Atlantis from a configuration JSON asset. The asset is read read from disk on a
+     * worker thread. Any results are notified through the given callbacks, if given.
+     *
+     * @param context         The context to use when reading assets.
+     * @param configAssetName The name of the configuration asset (relative to the apps 'assets'
+     *                        folder).
+     * @param successListener The success callback.
+     * @param errorListener   The error callback.
+     */
+    public void setConfiguration(final Context context, final String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
+        enqueueTask(() -> {
+            byte[] bytes = Utils.readAsset(context, configAssetName);
+            String json = new String(bytes);
+            this.configuration = new JsonParser().fromJson(json, Configuration.class);
+            this.context = context;
+            return null;
+        }, successListener, errorListener);
     }
 
     /**
@@ -197,33 +233,6 @@ public class Atlantis {
      */
     public void clearCapturedRequests() {
         captured.clear();
-    }
-
-    // Tries to start the local web server if it isn't started yet. Worth mentioning is that
-    // NanoHTTPD will block the current thread for short bursts of time while waiting for an
-    // internal socket to connect. In order to prevent blocking the Android main thread, we'll start
-    // NanoHTTTPD from a worker thread instead.
-    private Atlantis start(final OnSuccessListener successListener, final OnErrorListener errorListener) {
-        if (!nanoHTTPD.isAlive()) {
-            enqueueTask(() -> {
-                nanoHTTPD.start();
-                return null;
-            }, successListener, errorListener);
-        }
-
-        return this;
-    }
-
-    // Sets the configuration asset to the Atlantis instance. The asset will be read from disk and a
-    // potentially time consuming json parsing will be performed, hence a worker thread will be
-    // spawned for the task.
-    private void setConfiguration(final String configAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
-        enqueueTask(() -> {
-            byte[] bytes = Utils.readAsset(context, configAssetName);
-            String json = new String(bytes);
-            configuration = new JsonParser().fromJson(json, Configuration.class);
-            return null;
-        }, successListener, errorListener);
     }
 
     // Creates a new AsyncTask instance and executes a callable from it. AsyncTasks will by default
