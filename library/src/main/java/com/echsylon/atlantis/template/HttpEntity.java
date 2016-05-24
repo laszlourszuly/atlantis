@@ -14,6 +14,11 @@ class HttpEntity {
      */
     protected Map<String, String> headers = null;
 
+
+    // Intentionally hidden constructor.
+    protected HttpEntity() {
+    }
+
     /**
      * Returns a map of all currently held headers. The returned map is a copy of the internal
      * headers container, hence making changes to it won't affect the internal state.

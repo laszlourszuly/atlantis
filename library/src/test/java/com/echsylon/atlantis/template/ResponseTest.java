@@ -69,7 +69,7 @@ public class ResponseTest {
 
         Response response = new Response.Builder()
                 .withHeader("h1", "v1")
-                .withStatusCode(200, "OK")
+                .withStatus(200, "OK")
                 .withMimeType("application/json")
                 .withContent("{}")
                 .withAsset("hejhopp.bin")

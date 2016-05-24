@@ -7,6 +7,7 @@ import com.echsylon.atlantis.internal.Utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
@@ -45,6 +46,21 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
+         * Adds all non-empty key/value pairs from the given headers.
+         *
+         * @param headers The headers to copy keys and values from.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withHeaders(Map<String, String> headers) {
+            if (headers != null)
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
+                        this.headers.put(entry.getKey(), entry.getValue());
+
+            return this;
+        }
+
+        /**
          * Sets the response code of this response. Doesn't validate neither the given status code
          * nor the name. It's up to the caller to ensure they make sense in the given context.
          *
@@ -52,7 +68,7 @@ public class Response extends HttpEntity implements Serializable {
          * @param name The corresponding human readable status text ("OK", "Not found", etc).
          * @return This buildable response instance, allowing chaining of method calls.
          */
-        public Builder withStatusCode(int code, String name) {
+        public Builder withStatus(int code, String name) {
             if (this.responseCode == null)
                 this.responseCode = new Code();
 
@@ -153,6 +169,11 @@ public class Response extends HttpEntity implements Serializable {
     protected String asset = null;
     protected Integer delay = null;
     protected Integer maxDelay = null;
+
+
+    // Intentionally hidden constructor.
+    protected Response() {
+    }
 
     /**
      * Returns the HTTP status code of the response.

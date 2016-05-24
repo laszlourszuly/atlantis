@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 
@@ -35,6 +36,21 @@ public class Request extends HttpEntity implements Serializable {
 
                 this.headers.put(key, value);
             }
+
+            return this;
+        }
+
+        /**
+         * Adds all non-empty key/value pairs from the given headers.
+         *
+         * @param headers The headers to copy keys and values from.
+         * @return This buildable request instance, allowing chaining of method calls.
+         */
+        public Builder withHeaders(Map<String, String> headers) {
+            if (headers != null)
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
+                        this.headers.put(entry.getKey(), entry.getValue());
 
             return this;
         }
@@ -85,6 +101,10 @@ public class Request extends HttpEntity implements Serializable {
     protected String method = null;
     protected String url = null;
     protected List<Response> responses = null;
+
+    // Intentionally hidden constructor.
+    protected Request() {
+    }
 
     /**
      * Returns the method of this request.
