@@ -1,6 +1,11 @@
 package com.echsylon.atlantis.template;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 
 /**
  * This class represents a request template as the {@link com.echsylon.atlantis.Atlantis Atlantis}
@@ -8,9 +13,78 @@ import java.io.Serializable;
  * serve to a user provided request.
  */
 public class Request extends HttpEntity implements Serializable {
-    private final String method = null;
-    private final String url = null;
-    private final Response[] responses = null;
+
+    /**
+     * This class offers means of building a request configuration directly from code (as opposed to
+     * configure one in a JSON asset).
+     */
+    public static final class Builder extends Request {
+
+        /**
+         * Adds a header to the request being built. Doesn't add anything if either {@param key} or
+         * {@param value} is empty (null pointer is considered as empty).
+         *
+         * @param key   The header key.
+         * @param value The header value.
+         * @return This buildable request instance, allowing chaining of method calls.
+         */
+        public Builder withHeader(String key, String value) {
+            if (notAnyEmpty(key, value)) {
+                if (this.headers == null)
+                    this.headers = new HashMap<>();
+
+                this.headers.put(key, value);
+            }
+
+            return this;
+        }
+
+        /**
+         * Adds a response to the request being built. Doesn't add null pointers.
+         *
+         * @param response The response to add.
+         * @return This buildable request instance, allowing chaining of method calls.
+         */
+        public Builder withResponse(Response response) {
+            if (response != null) {
+                if (this.responses == null)
+                    this.responses = new ArrayList<>();
+
+                this.responses.add(response);
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the method of the request.  Allows null pointers and empty strings, even though it
+         * in practice doesn't make any sense.
+         *
+         * @param method The new HTTP request method.
+         * @return This buildable request instance, allowing chaining of method calls.
+         */
+        public Builder withMethod(String method) {
+            this.method = method;
+            return this;
+        }
+
+        /**
+         * Sets the url of the request. Allows null pointers and empty strings, even though it in
+         * practice doesn't make any sense.
+         *
+         * @param url The new url.
+         * @return This buildable request instance, allowing chaining of method calls.
+         */
+        public Builder withUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
+    }
+
+    protected String method = null;
+    protected String url = null;
+    protected List<Response> responses = null;
 
     /**
      * Returns the method of this request.
@@ -37,9 +111,9 @@ public class Request extends HttpEntity implements Serializable {
      */
     @SuppressWarnings("ConstantConditions")
     public Response response() {
-        return responses != null && responses.length > 0 ?
-                responses[0] :
-                Response.EMPTY;
+        return responses != null && responses.size() > 0 ?
+                responses.get(0) :
+                null;
     }
 
 }

@@ -77,6 +77,18 @@ public class UtilsTest {
     }
 
     @Test
+    public void empty_isAnyEmptyString() throws Exception {
+        assertThat(Utils.isAnyEmpty(), is(true));
+        assertThat(Utils.isAnyEmpty(""), is(true));
+        assertThat(Utils.isAnyEmpty((String) null), is(true));
+        assertThat(Utils.isAnyEmpty("not empty", ""), is(true));
+        assertThat(Utils.isAnyEmpty("not empty", null), is(true));
+
+        assertThat(Utils.isAnyEmpty(" "), is(false));
+        assertThat(Utils.isAnyEmpty("also not empty"), is(false));
+    }
+
+    @Test
     public void empty_isEmptyArray() throws Exception {
         assertThat(Utils.isEmpty((Object[]) null), is(true));
         assertThat(Utils.isEmpty(new Object[0]), is(true));
@@ -95,6 +107,18 @@ public class UtilsTest {
         assertThat(Utils.isEmpty((String) null), is(true));
         assertThat(Utils.isEmpty(""), is(true));
         assertThat(Utils.isEmpty(" "), is(false));
+    }
+
+    @Test
+    public void empty_notAnyEmptyString() throws Exception {
+        assertThat(Utils.notAnyEmpty(), is(false));
+        assertThat(Utils.notAnyEmpty(""), is(false));
+        assertThat(Utils.notAnyEmpty((String) null), is(false));
+        assertThat(Utils.notAnyEmpty("not empty", ""), is(false));
+        assertThat(Utils.notAnyEmpty("not empty", null), is(false));
+
+        assertThat(Utils.notAnyEmpty(" "), is(true));
+        assertThat(Utils.notAnyEmpty("also not empty"), is(true));
     }
 
     @Test

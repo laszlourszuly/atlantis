@@ -6,7 +6,10 @@ import com.echsylon.atlantis.internal.Utils;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Random;
+
+import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 
 /**
  * This class contains all the data required by the {@link com.echsylon.atlantis.Atlantis Atlantis}
@@ -17,19 +20,139 @@ public class Response extends HttpEntity implements Serializable {
     public static final Response EMPTY = new Response();
 
     /**
+     * This class offers means of building a response configuration directly from code (as opposed
+     * to configure one in a JSON asset).
+     */
+    public static final class Builder extends Response {
+
+        /**
+         * Adds a header to the response being built. Doesn't add anything if either {@param key} or
+         * {@param value} is empty (null pointers are considered as empty).
+         *
+         * @param key   The header key.
+         * @param value The header value.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withHeader(String key, String value) {
+            if (notAnyEmpty(key, value)) {
+                if (this.headers == null)
+                    this.headers = new HashMap<>();
+
+                this.headers.put(key, value);
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the response code of this response. Doesn't validate neither the given status code
+         * nor the name. It's up to the caller to ensure they make sense in the given context.
+         *
+         * @param code The new HTTP status code.
+         * @param name The corresponding human readable status text ("OK", "Not found", etc).
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withStatusCode(int code, String name) {
+            if (this.responseCode == null)
+                this.responseCode = new Code();
+
+            this.responseCode.code = code;
+            this.responseCode.name = name;
+            return this;
+        }
+
+        /**
+         * Sets the mime type of this response. Doesn't validate the input.
+         *
+         * @param mimeType The new mime type.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withMimeType(String mimeType) {
+            this.mime = mimeType;
+            return this;
+        }
+
+        /**
+         * Sets the plain text context of this response. Doesn't validate the input or that it
+         * matches any set mime types.
+         *
+         * @param content The new plain text content.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withContent(String content) {
+            this.text = content;
+            return this;
+        }
+
+        /**
+         * Sets the asset resource path (relative to the apps 'assets' folder) of this response. The
+         * only validation being done is that the asset starts with "asset://".
+         *
+         * @param assetName The new asset path.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withAsset(String assetName) {
+            this.asset = assetName != null && !assetName.toLowerCase().startsWith("asset://") ?
+                    "asset://" + assetName :
+                    assetName;
+            return this;
+        }
+
+        /**
+         * Sets the default delay for this response, disabling the max delay. Doesn't do anything if
+         * the default delay isn't greater than zero.
+         *
+         * @param milliseconds The new amount of milliseconds to delay this response.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withDelay(int milliseconds) {
+            if (milliseconds > 0) {
+                this.delay = milliseconds;
+                this.maxDelay = null;
+            }
+            return this;
+        }
+
+        /**
+         * Sets the random delay metrics for this response. Doesn't do anything if default delay
+         * isn't greater than zero and only sets the max delay if it's greater than the default
+         * delay (otherwise it's reset).
+         *
+         * @param milliseconds    The minimum amount of random milliseconds to delay this response.
+         * @param maxMilliseconds The maximum amount of random milliseconds to delay this response.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withDelay(int milliseconds, int maxMilliseconds) {
+            if (milliseconds > 0 && maxMilliseconds >= milliseconds) {
+                this.delay = milliseconds;
+                this.maxDelay = maxMilliseconds > milliseconds ?
+                        maxMilliseconds :
+                        null;
+            }
+            return this;
+        }
+
+    }
+
+
+    /**
      * This class represents a status code on a response.
      */
     private static final class Code {
-        private final Integer code = null;
-        private final String name = null;
+        private Integer code = null;
+        private String name = null;
+
+        // Intentionally hidden constructor.
+        private Code() {
+        }
     }
 
-    private final Code responseCode = null;
-    private final String mime = null;
-    private final String text = null;
-    private final String asset = null;
-    private final Integer delay = null;
-    private final Integer maxDelay = null;
+    protected Code responseCode = null;
+    protected String mime = null;
+    protected String text = null;
+    protected String asset = null;
+    protected Integer delay = null;
+    protected Integer maxDelay = null;
 
     /**
      * Returns the HTTP status code of the response.

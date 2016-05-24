@@ -93,6 +93,24 @@ public class Utils {
     }
 
     /**
+     * Tests if any of the given strings is a null pointer or has no length.
+     *
+     * @param strings The strings to test.
+     * @return Boolean true if a null pointer or no arguments is provided, or if at least one of the
+     * given strings is a null pointer or has no length, false otherwise.
+     */
+    public static boolean isAnyEmpty(String... strings) {
+        if (strings == null || isEmpty(strings))
+            return true;
+
+        for (String string : strings)
+            if (isEmpty(string))
+                return true;
+
+        return false;
+    }
+
+    /**
      * Tests if the given list is a null pointer or has no length.
      *
      * @param list The list to test.
@@ -121,6 +139,17 @@ public class Utils {
      */
     public static boolean isEmpty(String string) {
         return string == null || string.isEmpty();
+    }
+
+    /**
+     * The inverse of {@link #isAnyEmpty(String...)}.
+     *
+     * @param strings The strings to test.
+     * @return Boolean false if a null pointer or no arguments are provided, or if at least one of
+     * the given strings is a null pointer or has no length, true otherwise.
+     */
+    public static boolean notAnyEmpty(String... strings) {
+        return !isAnyEmpty(strings);
     }
 
     /**
@@ -162,6 +191,9 @@ public class Utils {
      * @throws IOException If failed opening the asset input stream.
      */
     public static byte[] readAsset(Context context, String assetName) throws IOException {
+        if (context == null || isEmpty(assetName))
+            return new byte[0];
+
         InputStream inputStream = null;
         byte[] bytes;
 

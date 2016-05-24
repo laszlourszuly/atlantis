@@ -14,9 +14,11 @@ import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.both;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -34,6 +36,62 @@ import static org.mockito.Mockito.mock;
 @RunWith(RobolectricGradleTestRunner.class)
 @Config(constants = BuildConfig.class, sdk = 16)
 public class ResponseTest {
+
+    @Test
+    public void create_canBuildEmptyResponse() throws Exception {
+        Context context = mock(Context.class);
+        Response response = new Response.Builder();
+        assertThat(response, is(notNullValue()));
+        assertThat(response, is(instanceOf(Response.class)));
+        assertThat(response.statusCode(), is(0));
+        assertThat(response.statusName(), is(nullValue()));
+        assertThat(response.mimeType(), is(nullValue()));
+        assertThat(response.hasContent(), is(false));
+        assertThat(response.content(), is(nullValue()));
+        assertThat(response.hasAsset(), is(false));
+
+        byte[] asset = response.asset(context);
+        assertThat(asset, is(notNullValue()));
+        assertThat(asset.length, is(0));
+
+        assertThat(response.delay(), is(0L));
+        assertThat(response.headers(), is(notNullValue()));
+        assertThat(response.headers(), is(Collections.EMPTY_MAP));
+    }
+
+    @Test
+    public void create_canBuildFullResponse() throws Exception {
+        AssetManager assetManager = mock(AssetManager.class);
+        doReturn(new ByteArrayInputStream(new byte[]{0, 1, 2})).when(assetManager).open("asset://hejhopp.bin");
+
+        Context context = mock(Context.class);
+        doReturn(assetManager).when(context).getAssets();
+
+        Response response = new Response.Builder()
+                .withHeader("h1", "v1")
+                .withStatusCode(200, "OK")
+                .withMimeType("application/json")
+                .withContent("{}")
+                .withAsset("hejhopp.bin")
+                .withDelay(12);
+        assertThat(response.headers().get("h1"), is("v1"));
+        assertThat(response.headers().get("invalid"), is(nullValue()));
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.statusName(), is("OK"));
+        assertThat(response.mimeType(), is("application/json"));
+        assertThat(response.hasContent(), is(true));
+        assertThat(response.content(), is("{}"));
+
+        byte[] asset = response.asset(context);
+        assertThat(response.hasAsset(), is(true));
+        assertThat(asset, is(notNullValue()));
+        assertThat(asset.length, is(3));
+        assertThat(asset[0], is((byte) 0));
+        assertThat(asset[1], is((byte) 1));
+        assertThat(asset[2], is((byte) 2));
+
+        assertThat(response.delay(), is(12L));
+    }
 
     @Test
     public void status_responseCode() throws Exception {

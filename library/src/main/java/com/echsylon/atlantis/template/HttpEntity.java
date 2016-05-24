@@ -12,7 +12,7 @@ class HttpEntity {
     /**
      * The raw map of headers.
      */
-    protected final Map<String, String> headers = null;
+    protected Map<String, String> headers = null;
 
     /**
      * Returns a map of all currently held headers. The returned map is a copy of the internal

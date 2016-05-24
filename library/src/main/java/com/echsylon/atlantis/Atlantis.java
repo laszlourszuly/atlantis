@@ -121,7 +121,10 @@ public class Atlantis {
                     if (isCapturing)
                         captured.push(request);
 
+                    // Validate response
                     com.echsylon.atlantis.template.Response response = request.response();
+                    if (response == null)
+                        return super.serve(session);
 
                     // Maybe delay
                     long delay = response.delay();
