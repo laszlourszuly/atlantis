@@ -89,6 +89,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
             assertThat(connection.getResponseCode(), is(200));
         } finally {
@@ -112,6 +113,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, configuration);
+
             HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
             assertThat(connection.getResponseCode(), is(200));
         } finally {
@@ -130,6 +132,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", successListener, errorListener);
+
             verifyZeroInteractions(errorListener);
             verify(successListener).onSuccess();
         } finally {
@@ -148,6 +151,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
+
             verifyZeroInteractions(successCallback);
             verify(errorCallback).onError(any(IOException.class));
         } finally {
@@ -164,6 +168,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/ten").openConnection();
             assertThat(connection.getResponseCode(), is(404));
         } finally {
@@ -184,14 +189,14 @@ public class AtlantisTest {
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             assertThat(target.getCapturedRequests().size(), is(0));
 
+            Thread.sleep(10);
+
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             assertThat(target.getCapturedRequests().size(), is(1));
         } finally {
-            if (target != null) {
-                target.stopCapturing();
+            if (target != null)
                 target.stop();
-            }
         }
     }
 
@@ -203,6 +208,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
@@ -213,10 +219,8 @@ public class AtlantisTest {
             assertThat(capturedRequests.get(0).url(), is("/one"));
             assertThat(capturedRequests.get(1).url(), is("/two"));
         } finally {
-            if (target != null) {
-                target.stopCapturing();
+            if (target != null)
                 target.stop();
-            }
         }
     }
 
@@ -228,6 +232,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             ((HttpURLConnection) new URL(AUTHORITY + "/two").openConnection()).getResponseCode();
@@ -237,10 +242,8 @@ public class AtlantisTest {
             target.startCapturing();
             assertThat(target.getCapturedRequests().size(), is(0));
         } finally {
-            if (target != null) {
-                target.stopCapturing();
+            if (target != null)
                 target.stop();
-            }
         }
     }
 
@@ -252,6 +255,7 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             target.startCapturing();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             target.stopCapturing();
@@ -260,10 +264,8 @@ public class AtlantisTest {
             target.clearCapturedRequests();
             assertThat(target.getCapturedRequests().size(), is(0));
         } finally {
-            if (target != null) {
-                target.stopCapturing();
+            if (target != null)
                 target.stop();
-            }
         }
     }
 
@@ -282,15 +284,14 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             long time = System.currentTimeMillis();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             time = System.currentTimeMillis() - time;
             assertThat(time, is(greaterThanOrEqualTo(20L)));
         } finally {
-            if (target != null) {
-                target.stopCapturing();
+            if (target != null)
                 target.stop();
-            }
         }
     }
 
@@ -309,15 +310,14 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(null, null);
             target.setConfiguration(context, "config.json", null, null);
+
             long time = System.currentTimeMillis();
             ((HttpURLConnection) new URL(AUTHORITY + "/one").openConnection()).getResponseCode();
             time = System.currentTimeMillis() - time;
             assertThat(time, is(greaterThanOrEqualTo(20L)));
         } finally {
-            if (target != null) {
-                target.stopCapturing();
+            if (target != null)
                 target.stop();
-            }
         }
     }
 

@@ -163,10 +163,13 @@ public class Atlantis {
      * Stops the local web server.
      */
     public void stop() {
-        nanoHTTPD.stop();
         configuration = null;
-        captured.clear();
+        nanoHTTPD.closeAllConnections();
+        nanoHTTPD.stop();
+        nanoHTTPD = null;
         isCapturing = false;
+        captured.clear();
+        captured = null;
     }
 
     /**
