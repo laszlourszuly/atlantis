@@ -14,19 +14,16 @@ public class AtlantisSampleApplication extends SampleApplication {
     }
 
     private void startLocalWebServer() {
-        server = Atlantis.start(this, "atlantis.json",
-                new Atlantis.OnSuccessListener() {
-                    @Override
-                    public void onSuccess() {
-                    }
-                },
-                new Atlantis.OnErrorListener() {
-                    @Override
-                    public void onError(final Throwable cause) {
-                        Toast.makeText(AtlantisSampleApplication.this,
-                                "Something went wrong, check the logs for details",
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
+        Atlantis.OnErrorListener errorListener = new Atlantis.OnErrorListener() {
+            @Override
+            public void onError(final Throwable cause) {
+                Toast.makeText(AtlantisSampleApplication.this,
+                        "Something went wrong, check the logs for details",
+                        Toast.LENGTH_LONG).show();
+            }
+        };
+
+        server = Atlantis.start(null, errorListener);
+        server.setConfiguration(this, "atlantis.json", null, errorListener);
     }
 }
