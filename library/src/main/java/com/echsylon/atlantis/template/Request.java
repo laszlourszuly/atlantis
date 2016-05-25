@@ -1,6 +1,5 @@
 package com.echsylon.atlantis.template;
 
-import com.echsylon.atlantis.ResponseFilter;
 import com.echsylon.atlantis.filter.response.DefaultResponseFilter;
 
 import java.io.Serializable;
@@ -17,6 +16,25 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
  * serve to a user provided request.
  */
 public class Request extends HttpEntity implements Serializable {
+
+    /**
+     * This interface describes the features for filtering out a particular request based on a set
+     * of hints describing the desired result.
+     */
+    public interface Filter {
+
+        /**
+         * Returns a request object based on the internal filtering logic.
+         *
+         * @param requests All available requests
+         * @param url      The url giving a hint of which request to find.
+         * @param method   The corresponding request method to filter on.
+         * @param headers  The headers hint.
+         * @return The filtered request or null if no match found.
+         */
+        Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers);
+
+    }
 
     /**
      * This class offers means of building a request configuration directly from code (as opposed to
@@ -110,7 +128,7 @@ public class Request extends HttpEntity implements Serializable {
          * @param responseFilter The response filter implementation.
          * @return This buildable request instance, allowing chaining of method calls.
          */
-        public Builder withResponseFilter(ResponseFilter responseFilter) {
+        public Builder withResponseFilter(Response.Filter responseFilter) {
             this.responseFilter = responseFilter;
             return this;
         }
@@ -120,7 +138,7 @@ public class Request extends HttpEntity implements Serializable {
     protected String method = null;
     protected String url = null;
     protected List<Response> responses = null;
-    protected ResponseFilter responseFilter = new DefaultResponseFilter();
+    protected Response.Filter responseFilter = new DefaultResponseFilter();
 
     // Intentionally hidden constructor.
     protected Request() {

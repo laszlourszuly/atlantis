@@ -1,6 +1,5 @@
 package com.echsylon.atlantis.filter.response;
 
-import com.echsylon.atlantis.ResponseFilter;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Response;
@@ -8,10 +7,10 @@ import com.echsylon.atlantis.template.Response;
 import java.util.List;
 
 /**
- * This class implements the default behaviour of a {@link ResponseFilter}. It returns the first
+ * This class implements the default behaviour of a {@link Response.Filter}. It returns the first
  * response available or null if there are no responses to pick from.
  */
-public class DefaultResponseFilter implements ResponseFilter {
+public class DefaultResponseFilter implements Response.Filter {
 
     /**
      * Returns the first available response.

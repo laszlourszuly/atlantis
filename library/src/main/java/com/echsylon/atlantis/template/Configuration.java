@@ -1,7 +1,6 @@
 package com.echsylon.atlantis.template;
 
 import com.echsylon.atlantis.filter.request.DefaultRequestFilter;
-import com.echsylon.atlantis.RequestFilter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ public class Configuration implements Serializable {
          * @param requestFilter The request filter implementation.
          * @return This buildable configuration object, allowing chaining of method calls.
          */
-        public Builder withRequestFilter(RequestFilter requestFilter) {
+        public Builder withRequestFilter(Request.Filter requestFilter) {
             this.requestFilter = requestFilter;
             return this;
         }
@@ -52,7 +51,7 @@ public class Configuration implements Serializable {
     }
 
     protected List<Request> requests = null;
-    protected RequestFilter requestFilter = new DefaultRequestFilter();
+    protected Request.Filter requestFilter = new DefaultRequestFilter();
 
     // Intentionally hidden constructor
     protected Configuration() {

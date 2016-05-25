@@ -1,7 +1,5 @@
 package com.echsylon.atlantis.internal.json;
 
-import com.echsylon.atlantis.RequestFilter;
-import com.echsylon.atlantis.ResponseFilter;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Configuration;
 import com.echsylon.atlantis.template.Request;
@@ -65,7 +63,7 @@ class Deserializers {
         // Otherwise we'll need to instantiate a suitable class and assign it to the corresponding
         // field on the Configuration object.
         try {
-            RequestFilter filter = (RequestFilter) Class.forName(filterClassName).newInstance();
+            Request.Filter filter = (Request.Filter) Class.forName(filterClassName).newInstance();
             return configuration.withRequestFilter(filter);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
@@ -99,7 +97,7 @@ class Deserializers {
         // Otherwise we'll need to instantiate a suitable class and assign it to the corresponding
         // field on the Request object.
         try {
-            ResponseFilter filter = (ResponseFilter) Class.forName(filterClassName).newInstance();
+            Response.Filter filter = (Response.Filter) Class.forName(filterClassName).newInstance();
             return request.withResponseFilter(filter);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);

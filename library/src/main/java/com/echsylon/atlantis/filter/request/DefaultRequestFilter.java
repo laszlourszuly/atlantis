@@ -1,6 +1,5 @@
 package com.echsylon.atlantis.filter.request;
 
-import com.echsylon.atlantis.RequestFilter;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Request;
 
@@ -10,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class implements the default behaviour of a {@link RequestFilter}. It returns the first
+ * This class implements the default behaviour of a {@link Request.Filter}. It returns the first
  * request available that matches all hints, or null if there are no requests to pick from or no
  * request could be matched.
  */
-public class DefaultRequestFilter implements RequestFilter {
+public class DefaultRequestFilter implements Request.Filter {
     private static final String SCHEMA_SEPARATOR = "://";
 
     /**

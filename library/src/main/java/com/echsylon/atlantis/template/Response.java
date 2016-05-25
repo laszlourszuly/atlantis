@@ -7,6 +7,7 @@ import com.echsylon.atlantis.internal.Utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -19,6 +20,23 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 public class Response extends HttpEntity implements Serializable {
     private static final String ASSET_SCHEME = "asset://";
     public static final Response EMPTY = new Response();
+
+    /**
+     * This interface describes the features for filtering out a particular response based solely on
+     * internal logic.
+     */
+    public interface Filter {
+
+        /**
+         * Returns the next response based on internal state and logic.
+         *
+         * @param request   The request to find a response for.
+         * @param responses All available responses.
+         * @return The filtered response or null.
+         */
+        Response getResponse(Request request, List<Response> responses);
+
+    }
 
     /**
      * This class offers means of building a response configuration directly from code (as opposed

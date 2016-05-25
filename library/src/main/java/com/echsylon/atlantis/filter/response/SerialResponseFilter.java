@@ -1,6 +1,5 @@
 package com.echsylon.atlantis.filter.response;
 
-import com.echsylon.atlantis.ResponseFilter;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.template.Request;
 import com.echsylon.atlantis.template.Response;
@@ -9,11 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * This class implements serial filter behaviour of a {@link ResponseFilter}. It returns the next
+ * This class implements serial filter behaviour of a {@link Response.Filter}. It returns the next
  * response from the available ones relative to the previously returned response for a given
  * request, or null if there are no responses to pick from.
  */
-public class SerialResponseFilter implements ResponseFilter {
+public class SerialResponseFilter implements Response.Filter {
     private final HashMap<Request, Integer> indexMap = new HashMap<>();
 
     /**
