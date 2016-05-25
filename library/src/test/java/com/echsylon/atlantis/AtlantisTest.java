@@ -125,6 +125,55 @@ public class AtlantisTest {
     }
 
     @Test
+    public void configuration_canStartWithAssetConfiguration() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "text:'{}'}]}]}");
+        Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
+        Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, "config.json", successCallback, errorCallback);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+
+            verifyZeroInteractions(errorCallback);
+            verify(successCallback).onSuccess();
+            assertThat(connection.getResponseCode(), is(200));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
+    public void configuration_canStartWithBuildConfiguration() throws Exception {
+        Context context = mock(Context.class);
+        Configuration configuration = new Configuration.Builder()
+                .withRequest(new Request.Builder()
+                        .withUrl("/one")
+                        .withMethod("get")
+                        .withResponse(new Response.Builder()
+                                .withStatus(200, "OK")
+                                .withContent("{}")));
+        Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
+        Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(context, configuration, successCallback, errorCallback);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+
+            verifyZeroInteractions(errorCallback);
+            verify(successCallback).onSuccess();
+            assertThat(connection.getResponseCode(), is(200));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
     public void filter_canParseRequestFilterFromAssetConfiguration() throws Exception {
         Context context = getMockedContext("{requestFilter:'com.echsylon.atlantis.filter.request.DefaultRequestFilter', requests:[]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);

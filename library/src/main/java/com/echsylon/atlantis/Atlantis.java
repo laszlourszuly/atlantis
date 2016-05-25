@@ -91,6 +91,49 @@ public class Atlantis {
         return atlantis;
     }
 
+    /**
+     * Starts the local Atlantis server and automatically loads a configuration from a JSON asset.
+     *
+     * @param context         The context to use while loading assets.
+     * @param configAssetName The name of the configuration asset to load.
+     * @param successListener The success state callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start(Context context, String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+        atlantis.enqueueTask(() -> {
+                    atlantis.nanoHTTPD.start();
+                    return null;
+                },
+                () -> atlantis.setConfiguration(context, configAssetName, successListener, errorListener),
+                errorListener);
+        return atlantis;
+    }
+
+    /**
+     * Starts the local Atlantis server and automatically sets a built configuration.
+     *
+     * @param context         The context to use while loading any response assets.
+     * @param configuration   The built configuration object.
+     * @param successListener The success state callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start(Context context, Configuration configuration, OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+        atlantis.enqueueTask(() -> {
+                    atlantis.nanoHTTPD.start();
+                    return null;
+                },
+                () -> {
+                    atlantis.setConfiguration(context, configuration);
+                    successListener.onSuccess();
+                },
+                errorListener);
+        return atlantis;
+    }
+
     private Context context;
     private Configuration configuration;
     private NanoHTTPD nanoHTTPD;
