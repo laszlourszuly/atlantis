@@ -1,5 +1,9 @@
 [![Circle CI](https://circleci.com/gh/echsylon/atlantis/tree/master.svg?style=shield)](https://circleci.com/gh/echsylon/atlantis/tree/master) [![Coverage Status](https://coveralls.io/repos/github/echsylon/atlantis/badge.svg?branch=master)](https://coveralls.io/github/echsylon/atlantis?branch=master) [![Download](https://api.bintray.com/packages/echsylon/maven/atlantis/images/download.svg) ](https://bintray.com/echsylon/maven/atlantis/_latestVersion)
 
+### What it is
+
+The Atlantis library will aid you in "mocking the Internet" for your Android app. It offers an isolated and ideal representation of the Internet, as you want it, without forcing you to do any changes to your code.
+
 ### Integrate
 
 If you're using Android Studio and Gradle you can easily start using Atlantis simply by listing it in your Gradle `dependencies` section:
