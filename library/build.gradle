@@ -26,6 +26,7 @@ android {
         versionCode 14
         versionName '1.2.0'
         project.archivesBaseName = 'atlantis'
+        project.version = android.defaultConfig.versionName
     }
     buildTypes {
         release {

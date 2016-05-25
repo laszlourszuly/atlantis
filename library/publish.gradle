@@ -23,21 +23,13 @@ publishing {
             }
 
             // Source code bundle, from task defined in 'jar.gradle'
-            artifact(sourcesJar) {
-                classifier 'source'
-                extension 'jar'
-            }
+            artifact(sourceJar)
 
             // JavaDoc bundle, from task defined in 'jar.gradle'
-            artifact(javadocJar) {
-                classifier 'javadoc'
-                extension 'jar'
-            }
+            artifact(javadocJar)
 
             // The actual library, from task defined in 'jar.gradle'
-            artifact(slimJar) {
-                extension 'jar'
-            }
+            artifact(slimJar)
         }
     }
 }
