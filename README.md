@@ -6,7 +6,7 @@ If you're using Android Studio and Gradle you can easily start using Atlantis si
 
 ```groovy
 dependencies {
-    compile 'com.echsylon.atlantis:atlantis:1.1.7'
+    compile 'com.echsylon.atlantis:atlantis:1.1.8'
 }
 ```
 
@@ -44,7 +44,7 @@ You need to define which requests you're mocking and what response they should d
 
 ### Use
 
-Atlantis offers a very straight forward default API; you can start it:
+Atlantis offers a very straight forward default API; at a minimum you can start it:
 
 ```java
 @Override
@@ -74,9 +74,9 @@ protected void onCreate(Bundle savedInstanceState) {
     }
 ```
 
-There is a complete sample implementation along the code which you can have a peek on.
+A more complete documentation can be found on the Wiki (see below). There is also a sample implementation along the code which you can have a peek on.
 
-Note that the example host, the `jsontest.com` service, is heavily used by many and it will most likely reach its maximum daily quota somewhere afternoon-ish. You can in such case, either try to run the sample app earlier on the day, or setup your own test server (instructions can be found on [http://www.jsontest.com/](http://www.jsontest.com/)). 
+Note that the example host, the `jsontest.com` service, is heavily used by many and it will most likely reach its maximum daily quota somewhere afternoon-ish. You can in such case, either try to run the sample app earlier on the day, or set up your own test server (instructions can be found on [http://www.jsontest.com/](http://www.jsontest.com/)). 
 
 ### More
 The [Wiki](https://github.com/echsylon/atlantis/wiki) contains more details and information.
