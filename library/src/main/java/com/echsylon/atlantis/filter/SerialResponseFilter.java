@@ -1,8 +1,8 @@
-package com.echsylon.atlantis.filter.response;
+package com.echsylon.atlantis.filter;
 
 import com.echsylon.atlantis.internal.Utils;
-import com.echsylon.atlantis.template.Request;
-import com.echsylon.atlantis.template.Response;
+import com.echsylon.atlantis.Request;
+import com.echsylon.atlantis.Response;
 
 import java.util.HashMap;
 import java.util.List;

@@ -1,6 +1,6 @@
-package com.echsylon.atlantis.template;
+package com.echsylon.atlantis;
 
-import com.echsylon.atlantis.filter.response.DefaultResponseFilter;
+import com.echsylon.atlantis.filter.DefaultResponseFilter;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -4,9 +4,6 @@ import android.content.Context;
 import android.content.res.AssetManager;
 
 import com.echsylon.atlantis.internal.json.JsonParser;
-import com.echsylon.atlantis.template.Configuration;
-import com.echsylon.atlantis.template.Request;
-import com.echsylon.atlantis.template.Response;
 import com.google.common.io.ByteStreams;
 
 import org.junit.Test;
@@ -175,7 +172,7 @@ public class AtlantisTest {
 
     @Test
     public void filter_canParseRequestFilterFromAssetConfiguration() throws Exception {
-        Context context = getMockedContext("{requestFilter:'com.echsylon.atlantis.filter.request.DefaultRequestFilter', requests:[]}");
+        Context context = getMockedContext("{requestFilter:'com.echsylon.atlantis.filter.DefaultRequestFilter', requests:[]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
         Atlantis target = null;
@@ -194,7 +191,7 @@ public class AtlantisTest {
     @Test
     public void filter_canParseResponseFilterFromAssetConfiguration() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'," +
-                "  responseFilter: 'com.echsylon.atlantis.filter.response.DefaultResponseFilter', " +
+                "  responseFilter: 'com.echsylon.atlantis.filter.DefaultResponseFilter', " +
                 "  responses:[]}]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);

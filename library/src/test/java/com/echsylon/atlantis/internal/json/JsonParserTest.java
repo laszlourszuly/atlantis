@@ -1,7 +1,7 @@
 package com.echsylon.atlantis.internal.json;
 
-import com.echsylon.atlantis.template.Request;
-import com.echsylon.atlantis.template.Response;
+import com.echsylon.atlantis.Request;
+import com.echsylon.atlantis.Response;
 
 import org.junit.Test;
 

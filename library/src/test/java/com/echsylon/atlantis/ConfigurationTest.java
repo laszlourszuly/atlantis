@@ -1,5 +1,6 @@
-package com.echsylon.atlantis.template;
+package com.echsylon.atlantis;
 
+import com.echsylon.atlantis.Configuration;
 import com.google.gson.Gson;
 
 import org.junit.Test;

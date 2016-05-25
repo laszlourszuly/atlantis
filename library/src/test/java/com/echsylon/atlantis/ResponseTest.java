@@ -1,9 +1,10 @@
-package com.echsylon.atlantis.template;
+package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.content.res.AssetManager;
 
 import com.echsylon.atlantis.BuildConfig;
+import com.echsylon.atlantis.Response;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 

@@ -5,8 +5,6 @@ import android.os.AsyncTask;
 
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.internal.json.JsonParser;
-import com.echsylon.atlantis.template.Configuration;
-import com.echsylon.atlantis.template.Request;
 
 import java.io.ByteArrayInputStream;
 import java.util.Locale;
@@ -174,7 +172,7 @@ public class Atlantis {
                     return super.serve(session);
 
                 // Get a response to serve.
-                com.echsylon.atlantis.template.Response response = request.response();
+                com.echsylon.atlantis.Response response = request.response();
                 if (response == null)
                     return super.serve(session);
 

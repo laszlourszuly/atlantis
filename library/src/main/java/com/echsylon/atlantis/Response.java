@@ -1,4 +1,4 @@
-package com.echsylon.atlantis.template;
+package com.echsylon.atlantis;
 
 import android.content.Context;
 

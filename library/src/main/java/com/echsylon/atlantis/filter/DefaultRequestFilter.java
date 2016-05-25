@@ -1,7 +1,7 @@
-package com.echsylon.atlantis.filter.request;
+package com.echsylon.atlantis.filter;
 
 import com.echsylon.atlantis.internal.Utils;
-import com.echsylon.atlantis.template.Request;
+import com.echsylon.atlantis.Request;
 
 import java.util.Arrays;
 import java.util.Collections;

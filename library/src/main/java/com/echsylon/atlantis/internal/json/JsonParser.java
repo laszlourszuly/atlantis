@@ -1,8 +1,8 @@
 package com.echsylon.atlantis.internal.json;
 
-import com.echsylon.atlantis.template.Configuration;
-import com.echsylon.atlantis.template.Request;
-import com.echsylon.atlantis.template.Response;
+import com.echsylon.atlantis.Configuration;
+import com.echsylon.atlantis.Request;
+import com.echsylon.atlantis.Response;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
