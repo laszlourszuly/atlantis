@@ -47,21 +47,28 @@ class Deserializers {
     // De-serializes a configuration JSON object, preparing any header attributes as well as
     // instantiating any request filter classes.
     private static Configuration deserializeConfiguration(JsonElement json, JsonDeserializationContext context) {
+        // Remove the 'requestFilter' attribute as it's a string in the JSON. The Configuration
+        // object expects it to be a Java object. We'll later parse the removed string (which just
+        // happens to be the name of the class to instantiate) and set the object field manually.
         JsonObject jsonObject = json.getAsJsonObject();
         String filterClassName = jsonObject.has("requestFilter") ?
                 jsonObject.remove("requestFilter").getAsString() :
                 null;
 
+        // Create the Configuration object from the JSON.
         Configuration.Builder configuration = context.deserialize(jsonObject, Configuration.Builder.class);
 
+        // If there was no 'requestFilter' attribute in the JSON, we're done.
         if (Utils.isEmpty(filterClassName))
             return configuration;
 
+        // Otherwise we'll need to instantiate a suitable class and assign it to the corresponding
+        // field on the Configuration object.
         try {
             RequestFilter filter = (RequestFilter) Class.forName(filterClassName).newInstance();
             return configuration.withRequestFilter(filter);
         } catch (Exception e) {
-            return configuration;
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -74,21 +81,28 @@ class Deserializers {
     // De-serializes a request JSON object, preparing any header attributes as well as instantiating
     // any response filter classes.
     private static Request deserializeRequest(JsonElement json, JsonDeserializationContext context) {
+        // Remove the 'responseFilter' attribute as it's a string in the JSON. The Configuration
+        // object expects it to be a Java object. We'll later parse the removed string (which just
+        // happens to be the name of the class to instantiate) and set the object field manually.
         JsonObject jsonObject = prepareHeaders(json);
         String filterClassName = jsonObject.has("responseFilter") ?
                 jsonObject.remove("responseFilter").getAsString() :
                 null;
 
+        // Create the Request object from the JSON.
         Request.Builder request = context.deserialize(jsonObject, Request.Builder.class);
 
+        // If there was no 'responseFilter' attribute in the JSON, we're done.
         if (Utils.isEmpty(filterClassName))
             return request;
 
+        // Otherwise we'll need to instantiate a suitable class and assign it to the corresponding
+        // field on the Request object.
         try {
             ResponseFilter filter = (ResponseFilter) Class.forName(filterClassName).newInstance();
             return request.withResponseFilter(filter);
         } catch (Exception e) {
-            return request;
+            throw new IllegalArgumentException(e);
         }
     }
 

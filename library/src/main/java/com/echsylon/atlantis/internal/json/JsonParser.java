@@ -38,7 +38,7 @@ public class JsonParser {
                     .registerTypeAdapter(Request.class, Deserializers.newRequestDeserializer())
                     .create()
                     .fromJson(json, expectedResultType);
-        } catch (JsonSyntaxException e) {
+        } catch (IllegalArgumentException | JsonSyntaxException e) {
             throw new JsonException(e);
         }
     }
