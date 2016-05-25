@@ -5,7 +5,6 @@ import android.widget.Toast;
 import com.echsylon.atlantis.Atlantis;
 
 public class AtlantisSampleApplication extends SampleApplication {
-    private Atlantis server;
 
     @Override
     public void onCreate() {
@@ -14,16 +13,22 @@ public class AtlantisSampleApplication extends SampleApplication {
     }
 
     private void startLocalWebServer() {
-        Atlantis.OnErrorListener errorListener = new Atlantis.OnErrorListener() {
-            @Override
-            public void onError(final Throwable cause) {
-                Toast.makeText(AtlantisSampleApplication.this,
-                        "Something went wrong, check the logs for details",
-                        Toast.LENGTH_LONG).show();
-            }
-        };
-
-        server = Atlantis.start(null, errorListener);
-        server.setConfiguration(this, "atlantis.json", null, errorListener);
+        Atlantis.start(this, "atlantis.json",
+                new Atlantis.OnSuccessListener() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(AtlantisSampleApplication.this,
+                                "Atlantis server is up and runnint",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                },
+                new Atlantis.OnErrorListener() {
+                    @Override
+                    public void onError(final Throwable cause) {
+                        Toast.makeText(AtlantisSampleApplication.this,
+                                "Something went wrong, check the logs for details",
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }
