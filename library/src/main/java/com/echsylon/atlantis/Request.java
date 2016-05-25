@@ -43,8 +43,8 @@ public class Request extends HttpEntity implements Serializable {
     public static final class Builder extends Request {
 
         /**
-         * Adds a header to the request being built. Doesn't add anything if either {@param key} or
-         * {@param value} is empty (null pointer is considered as empty).
+         * Adds a header to the request being built. Doesn't add anything if either {@code key} or
+         * {@code value} is empty (null pointer is considered as empty).
          *
          * @param key   The header key.
          * @param value The header value.

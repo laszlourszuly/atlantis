@@ -45,8 +45,8 @@ public class Response extends HttpEntity implements Serializable {
     public static final class Builder extends Response {
 
         /**
-         * Adds a header to the response being built. Doesn't add anything if either {@param key} or
-         * {@param value} is empty (null pointers are considered as empty).
+         * Adds a header to the response being built. Doesn't add anything if either {@code key} or
+         * {@code value} is empty (null pointers are considered as empty).
          *
          * @param key   The header key.
          * @param value The header value.
@@ -245,6 +245,7 @@ public class Response extends HttpEntity implements Serializable {
      *
      * @param context The context the asset is to be opened from.
      * @return The asset byte array, may be empty but never null.
+     * @throws IOException If for some reason the asset file could not be read.
      */
     public byte[] asset(Context context) throws IOException {
         return Utils.readAsset(context, asset);
