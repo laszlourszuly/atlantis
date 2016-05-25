@@ -50,10 +50,14 @@ public class Request extends HttpEntity implements Serializable {
          * @return This buildable request instance, allowing chaining of method calls.
          */
         public Builder withHeaders(Map<String, String> headers) {
-            if (headers != null)
+            if (headers != null) {
+                if (this.headers == null)
+                    this.headers = new HashMap<>();
+
                 for (Map.Entry<String, String> entry : headers.entrySet())
                     if (notAnyEmpty(entry.getKey(), entry.getValue()))
                         this.headers.put(entry.getKey(), entry.getValue());
+            }
 
             return this;
         }

@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -41,6 +42,20 @@ public class RequestTest {
         assertThat(request.url(), is("/test"));
         assertThat(request.method(), is("get"));
         assertThat(request.response(), is(Response.EMPTY));
+    }
+
+    @Test
+    public void create_canBuildRequestWithHeadersMap() throws Exception {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("h1", "v1");
+        headers.put("h2", "v2");
+
+        Request request = new Request.Builder()
+                .withHeaders(headers);
+        assertThat(request.headers().size(), is(2));
+        assertThat(request.headers().get("h1"), is("v1"));
+        assertThat(request.headers().get("h2"), is("v2"));
+        assertThat(request.headers().get("invalid"), is(nullValue()));
     }
 
     @Test

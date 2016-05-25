@@ -21,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Stack;
 
+import static org.hamcrest.CoreMatchers.either;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -292,6 +293,29 @@ public class AtlantisTest {
             assertThat(capturedRequests.size(), is(2));
             assertThat(capturedRequests.get(0).url(), is("/one"));
             assertThat(capturedRequests.get(1).url(), is("/two"));
+        } finally {
+            if (target != null)
+                target.stop();
+        }
+    }
+
+    @Test
+    public void capture_alsoCapturesUnmappedRequests() throws Exception {
+        Context context = getMockedContext("{requests:[]}");
+        Atlantis target = null;
+
+        try {
+            target = Atlantis.start(null, null);
+            target.setConfiguration(context, "config.json", null, null);
+
+            target.startCapturing();
+            ((HttpURLConnection) new URL(AUTHORITY + "/unmapped/request").openConnection()).getResponseCode();
+            target.stopCapturing();
+
+            Stack<Request> capturedRequests = target.getCapturedRequests();
+            assertThat(capturedRequests.size(), is(1));
+            assertThat(capturedRequests.get(0).url(), is("/unmapped/request"));
+            assertThat(capturedRequests.get(0).method(), either(is("get")).or(is("GET")));
         } finally {
             if (target != null)
                 target.stop();

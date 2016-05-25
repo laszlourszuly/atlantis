@@ -15,6 +15,7 @@ import org.robolectric.annotation.Config;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.both;
@@ -91,6 +92,20 @@ public class ResponseTest {
         assertThat(asset[2], is((byte) 2));
 
         assertThat(response.delay(), is(12L));
+    }
+
+    @Test
+    public void create_canBuildResponseWithHeadersMap() throws Exception {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("h1", "v1");
+        headers.put("h2", "v2");
+
+        Response response = new Response.Builder()
+                .withHeaders(headers);
+        assertThat(response.headers().size(), is(2));
+        assertThat(response.headers().get("h1"), is("v1"));
+        assertThat(response.headers().get("h2"), is("v2"));
+        assertThat(response.headers().get("invalid"), is(nullValue()));
     }
 
     @Test
