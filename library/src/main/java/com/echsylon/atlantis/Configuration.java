@@ -1,6 +1,7 @@
 package com.echsylon.atlantis;
 
 import com.echsylon.atlantis.filter.DefaultRequestFilter;
+import com.echsylon.atlantis.internal.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -48,8 +49,20 @@ public class Configuration implements Serializable {
             return this;
         }
 
+        /**
+         * Sets the fallback base url to try to hit when no no mocked request was found.
+         *
+         * @param realBaseUrl The real-world base URL, including scheme.
+         * @return This buildable configuration object, allowing chaining of method calls.
+         */
+        public Builder withFallbackBaseUrl(String realBaseUrl) {
+            this.fallbackBaseUrl = realBaseUrl;
+            return this;
+        }
+
     }
 
+    protected String fallbackBaseUrl = null;
     protected List<Request> requests = null;
     protected Request.Filter requestFilter = new DefaultRequestFilter();
 
@@ -58,13 +71,32 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Tries to find a request template that matches the given method, url and header criteria.
-     * Returns the first match.
+     * Returns the fallback base url for this configuration.
+     *
+     * @return The fallback base url or null.
+     */
+    public String fallbackBaseUrl() {
+        return fallbackBaseUrl;
+    }
+
+    /**
+     * Returns a flag telling whether this configuration can present an alternative route to a
+     * supposedly "real" response.
+     *
+     * @return Boolean true if the configuration has a fallback base url, false otherwise.
+     */
+    public boolean hasAlternativeRoute() {
+        return Utils.notEmpty(fallbackBaseUrl);
+    }
+
+    /**
+     * Tries to find a request configuration. The actual logic behind the matching is delegated to
+     * the current {@link com.echsylon.atlantis.Request.Filter} implementation.
      *
      * @param url     The url.
      * @param method  The request method.
      * @param headers The request headers.
-     * @return The request template that matches the given criteria or null if no match found.
+     * @return The first request configuration that matches the given criteria or null.
      */
     public Request findRequest(String url, String method, Map<String, String> headers) {
         return requestFilter != null ?

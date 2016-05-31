@@ -3,11 +3,16 @@ package com.echsylon.atlantis;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import com.echsylon.atlantis.internal.UrlUtils;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.internal.json.JsonParser;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.Callable;
 
@@ -135,15 +140,17 @@ public class Atlantis {
     private Context context;
     private Configuration configuration;
     private NanoHTTPD nanoHTTPD;
-    private Stack<Request> captured;
 
     private boolean isCapturing;
+    private final Object captureLock;
+    private volatile Stack<Request> captured;
+
 
     // Intentionally hidden constructor.
     private Atlantis() {
-        this.captured = new Stack<>();
         this.isCapturing = false;
-
+        this.captureLock = new Object();
+        this.captured = new Stack<>();
         this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
             @Override
             public Response serve(IHTTPSession session) {
@@ -151,32 +158,25 @@ public class Atlantis {
                 if (configuration == null)
                     return super.serve(session);
 
-                // Find a matching request configuration.
-                Request request = configuration.findRequest(
+                // Get a response to deliver.
+                com.echsylon.atlantis.Response response = getMockedResponse(
                         session.getUri(),
                         session.getMethod().name(),
                         session.getHeaders());
 
-                // Capture if in such a mode.
-                if (isCapturing)
-                    if (request != null)
-                        captured.push(request);
-                    else
-                        captured.push(new Request.Builder()
-                                .withHeaders(session.getHeaders())
-                                .withUrl(session.getUri())
-                                .withMethod(session.getMethod().name()));
+                // No response found, try to fall back to the real world.
+                if (response == null)
+                    if (configuration.hasAlternativeRoute())
+                        response = getRealResponse(configuration.fallbackBaseUrl(),
+                                session.getUri(),
+                                session.getMethod().name(),
+                                session.getHeaders());
 
-                // No matching request, fallback to default response.
-                if (request == null)
-                    return super.serve(session);
-
-                // Get a response to serve.
-                com.echsylon.atlantis.Response response = request.response();
+                // Nope, the real world isn't any better. Bail out and serve default response.
                 if (response == null)
                     return super.serve(session);
 
-                // Maybe delay before actually serving the response.
+                // We have a response. Maybe delay before actually delivering it.
                 long delay = response.delay();
                 if (delay > 0L)
                     try {
@@ -185,7 +185,7 @@ public class Atlantis {
                         // For some reason we weren't allowed to sleep as long as we wanted.
                     }
 
-                // Now finally try to serve.
+                // Now, finally, deliver.
                 try {
                     NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
                     String mime = response.mimeType();
@@ -194,7 +194,10 @@ public class Atlantis {
                             response.content().getBytes();
                     return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
                 } catch (Exception e) {
-                    return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "");
+                    return newFixedLengthResponse(
+                            Response.Status.INTERNAL_ERROR,
+                            NanoHTTPD.MIME_PLAINTEXT,
+                            "SERVER INTERNAL ERROR: Exception: " + e.getMessage());
                 }
             }
         };
@@ -209,8 +212,6 @@ public class Atlantis {
         nanoHTTPD.stop();
         nanoHTTPD = null;
         isCapturing = false;
-        captured.clear();
-        captured = null;
     }
 
     /**
@@ -262,13 +263,18 @@ public class Atlantis {
     }
 
     /**
-     * Returns a reference to the capture history stack. This method leaves the stack intact, but
-     * new requests may be added by the local serer at any time.
+     * Returns a snapshot of the capture history stack as it looks right this moment. This method
+     * leaves the actual stack intact, but new requests may be added to it at any time. These new
+     * additions won't be reflected in the output of this method though.
      *
-     * @return A reference to the captured history stack.
+     * @return A snapshot of the captured history stack.
      */
     public Stack<Request> getCapturedRequests() {
-        return captured;
+        Stack<Request> result = new Stack<>();
+        synchronized (captureLock) {
+            result.addAll(captured);
+        }
+        return result;
     }
 
     /**
@@ -276,7 +282,9 @@ public class Atlantis {
      * state.
      */
     public void clearCapturedRequests() {
-        captured.clear();
+        synchronized (captureLock) {
+            captured.clear();
+        }
     }
 
     // Creates a new AsyncTask instance and executes a callable from it. AsyncTasks will by default
@@ -305,6 +313,59 @@ public class Atlantis {
                 }
             }
         }.execute();
+    }
+
+    // Tries to find a response configuration that matches the given request parameters. Also
+    // captures the request if in such a mode.
+    private Response getMockedResponse(String url, String method, Map<String, String> headers) {
+        Request request = configuration.findRequest(url, method, headers);
+
+        if (isCapturing)
+            synchronized (captureLock) {
+                captured.push(request != null ?
+                        request :
+                        new Request.Builder()
+                                .withUrl(url)
+                                .withMethod(method)
+                                .withHeaders(headers));
+            }
+
+        return request != null ?
+                request.response() :
+                null;
+    }
+
+    // Synchronously makes a real network request and returns the response as an Atlantis response
+    // or null, would anything go wrong.
+    private Response getRealResponse(String realBaseUrl, String requestUrl, String method, Map<String, String> headers) {
+        HttpURLConnection connection = null;
+        String realUrl = String.format("%s%s%s%s", realBaseUrl,
+                UrlUtils.getPath(requestUrl),
+                UrlUtils.getQuery(requestUrl),
+                UrlUtils.getFragment(requestUrl));
+
+        try {
+            headers.remove("host");
+
+            URL url = new URL(realUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod(method);
+
+            if (headers != null && !headers.isEmpty())
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+
+
+            return new com.echsylon.atlantis.Response.Builder()
+                    .withStatus(UrlUtils.getResponseCode(connection), UrlUtils.getResponseMessage(connection))
+                    .withMimeType(UrlUtils.getResponseMimeType(connection))
+                    .withHeaders(UrlUtils.getResponseHeaders(connection))
+                    .withAsset(UrlUtils.getResponseBody(connection));
+        } catch (IOException e) {
+            return null;
+        } finally {
+            UrlUtils.closeSilently(connection);
+        }
     }
 
 }

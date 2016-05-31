@@ -137,6 +137,17 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
+         * Sets the asset resource bytes of this response.
+         *
+         * @param assetBytes The new asset as a byte array.
+         * @return This buildable response instance, allowing chaining of method calls.
+         */
+        public Builder withAsset(byte[] assetBytes) {
+            this.assetBytes = assetBytes;
+            return this;
+        }
+
+        /**
          * Sets the default delay for this response, disabling the max delay. Doesn't do anything if
          * the default delay isn't greater than zero.
          *
@@ -185,6 +196,7 @@ public class Response extends HttpEntity implements Serializable {
         }
     }
 
+    // JSON API
     protected Code responseCode = null;
     protected String mime = null;
     protected String text = null;
@@ -192,6 +204,8 @@ public class Response extends HttpEntity implements Serializable {
     protected Integer delay = null;
     protected Integer maxDelay = null;
 
+    // Part of extra feature offered by the Builder
+    protected byte[] assetBytes = null;
 
     // Intentionally hidden constructor.
     protected Response() {
@@ -243,12 +257,14 @@ public class Response extends HttpEntity implements Serializable {
      * Returns the response asset content as an array of bytes. It's up to the caller to decide how
      * to further process the result.
      *
-     * @param context The context the asset is to be opened from.
+     * @param context The context the resource asset is to be opened from.
      * @return The asset byte array, may be empty but never null.
      * @throws IOException If for some reason the asset file could not be read.
      */
     public byte[] asset(Context context) throws IOException {
-        return Utils.readAsset(context, asset);
+        return assetBytes != null ?
+                assetBytes :
+                Utils.readAsset(context, asset);
     }
 
     /**
@@ -303,7 +319,7 @@ public class Response extends HttpEntity implements Serializable {
      */
     @SuppressWarnings("ConstantConditions")
     public boolean hasAsset() {
-        return Utils.notEmpty(asset) && asset.startsWith(ASSET_SCHEME);
+        return Utils.notEmpty(assetBytes) || (Utils.notEmpty(asset) && asset.startsWith(ASSET_SCHEME));
     }
 
 }
