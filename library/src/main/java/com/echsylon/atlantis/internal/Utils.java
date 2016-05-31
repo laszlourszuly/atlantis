@@ -142,6 +142,17 @@ public class Utils {
     }
 
     /**
+     * Tests if the given byte array is a null pointer or has no length.
+     *
+     * @param byteArray The byte array to test.
+     * @return Boolean true if the given byte array is a null pointer or has no length, false
+     * otherwise.
+     */
+    public static boolean isEmpty(byte[] byteArray) {
+        return byteArray == null || byteArray.length == 0;
+    }
+
+    /**
      * The inverse of {@link #isAnyEmpty(String...)}.
      *
      * @param strings The strings to test.
@@ -183,6 +194,16 @@ public class Utils {
     }
 
     /**
+     * The inverse of {@link #isEmpty(byte[])}.
+     *
+     * @param byteArray The byte array to test.
+     * @return Boolean true if the string isn't a null pointer or empty, false otherwise.
+     */
+    public static boolean notEmpty(byte[] byteArray) {
+        return !isEmpty(byteArray);
+    }
+
+    /**
      * Tries to read the entire content of the given asset file.
      *
      * @param context   The context to read the assets from.
@@ -198,16 +219,33 @@ public class Utils {
         byte[] bytes;
 
         try {
-            // Try to open the asset
             AssetManager assetManager = context.getAssets();
             inputStream = assetManager.open(assetName);
-
-            // Read the entire content
             bytes = ByteStreams.toByteArray(inputStream);
         } finally {
             closeSilently(inputStream);
         }
 
+        return bytes;
+    }
+
+    /**
+     * Tries to read the entire content of the given input stream.
+     *
+     * @param inputStream The input stream to read bytes from.
+     * @return The content of the input stream as a byte array.
+     * @throws IOException If failed reading from the input stream.
+     */
+    public static byte[] readAsset(InputStream inputStream) throws IOException {
+        if (inputStream == null)
+            return new byte[0];
+
+        byte[] bytes;
+        try {
+            bytes = ByteStreams.toByteArray(inputStream);
+        } finally {
+            closeSilently(inputStream);
+        }
         return bytes;
     }
 
