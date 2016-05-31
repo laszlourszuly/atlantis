@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,8 +23,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
-    private static final int MENU_GET = Menu.FIRST;
-
     private ProgressDialog progress;
     private TextView output;
 
@@ -36,17 +35,24 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, MENU_GET, Menu.NONE, "Get")
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case MENU_GET:
-                performNetworkRequest(BuildConfig.BASE_URL, output);
+            case R.id.get_123: {
+                String url = String.format("%s/one/1/two/2/three/3", BuildConfig.BASE_URL);
+                performNetworkRequest(url, output);
                 return true;
+            }
+            case R.id.get_abc: {
+                String url = String.format("%s/aye/a/bee/b/cee/c", BuildConfig.BASE_URL);
+                performNetworkRequest(url, output);
+                return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -74,26 +80,41 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             protected String doInBackground(Void... params) {
+                InputStream inputStream = null;
+                long startTime = System.currentTimeMillis();
                 try {
-                    time = System.currentTimeMillis();
+
                     URL url = new URL(urlString);
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
-                    String result = readNetworkResponse(connection.getInputStream());
-                    time = System.currentTimeMillis() - time;
-                    return result;
+                    connection.setRequestProperty("X-MyHeader", "MY_VALUE");
+                    int statusCode = connection.getResponseCode();
+                    inputStream = statusCode < 200 || statusCode > 399 ?
+                            connection.getErrorStream() :
+                            connection.getInputStream();
+
+                    return readNetworkResponse(inputStream);
                 } catch (MalformedURLException e) {
                     return printThrowableToString(e);
                 } catch (IOException e) {
                     return printThrowableToString(e);
+                } finally {
+                    time = System.currentTimeMillis() - startTime;
+                    if (inputStream != null)
+                        try {
+                            inputStream.close();
+                        } catch (IOException e) {
+                        }
                 }
             }
 
             @Override
             protected void onPostExecute(String result) {
                 progress.dismiss();
+
                 if (resultContainer != null)
                     resultContainer.setText(result);
+
                 Toast.makeText(MainActivity.this, "Turn around time: " + time, Toast.LENGTH_SHORT)
                         .show();
             }

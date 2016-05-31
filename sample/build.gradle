@@ -13,7 +13,7 @@ android {
     }
     buildTypes {
         release {
-            buildConfigField 'String', 'BASE_URL', '"http://time.jsontest.com"'
+            buildConfigField 'String', 'BASE_URL', '"http://echo.jsontest.com"'
             signingConfig signingConfigs.debug
             minifyEnabled false
         }
