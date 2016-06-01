@@ -336,7 +336,11 @@ public class Atlantis {
     }
 
     // Synchronously makes a real network request and returns the response as an Atlantis response
-    // or null, would anything go wrong.
+    // or null, would anything go wrong. This request is completely anonymous from the local web
+    // servers (currently NanoHTTPD) point of view, as in the internal state won't be updated with
+    // these real world parameters. Would the real world request fail, then the local web server
+    // would serve a response suggesting the local request failed (i.e. "http://localhost:8080" and
+    // not "http://www.realworld.com").
     private Response getRealResponse(String realBaseUrl, String requestUrl, String method, Map<String, String> headers) {
         HttpURLConnection connection = null;
         String realUrl = String.format("%s%s%s%s", realBaseUrl,
@@ -345,17 +349,24 @@ public class Atlantis {
                 UrlUtils.getFragment(requestUrl));
 
         try {
-            headers.remove("host");
-
+            // Initiate the real world request.
             URL url = new URL(realUrl);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
+            connection.getRequestProperties();
 
-            if (headers != null && !headers.isEmpty())
+            // Some headers we don't want to leak to the real world at all.
+            headers.remove("host");
+            headers.remove("remote-addr");
+            headers.remove("http-client-ip");
+
+            // But the rest we might want to expose, still making sure we don't overwrite stuff.
+            if (!headers.isEmpty())
                 for (Map.Entry<String, String> entry : headers.entrySet())
-                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                    if (connection.getRequestProperty(entry.getKey()) == null)
+                        connection.setRequestProperty(entry.getKey(), entry.getValue());
 
-
+            // And so build an Atlantis response from the real world response.
             return new com.echsylon.atlantis.Response.Builder()
                     .withStatus(UrlUtils.getResponseCode(connection), UrlUtils.getResponseMessage(connection))
                     .withMimeType(UrlUtils.getResponseMimeType(connection))
