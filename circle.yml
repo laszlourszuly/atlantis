@@ -11,9 +11,12 @@ machine:
 
 # Custom Android dependency config
 dependencies:
+  name: Install Android Dependencies
   pre:
-    - echo y | android update sdk --no-ui --all --filter "tools,platform-tools,android-24"
-    - echo y | android update sdk --no-ui --all --filter "build-tools-24.0.3"
+    - echo $ANDROID_SDK_LICENSE > $HOME/$CIRCLE_PROJECT_REPONAME/android-sdk-license
+    - echo $ANDROID_SDK_PREVIEW_LICENSE > $HOME/$CIRCLE_PROJECT_REPONAME/android-sdk-preview-license
+    - android update sdk --no-ui --all --filter "tools,platform-tools,android-24"
+    - android update sdk --no-ui --all --filter "build-tools-24.0.3"
 
 # Run library release tests and publish test results.
 test:
