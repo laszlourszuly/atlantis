@@ -18,7 +18,7 @@ public class AtlantisSampleApplication extends SampleApplication {
                     @Override
                     public void onSuccess() {
                         Toast.makeText(AtlantisSampleApplication.this,
-                                "Atlantis server is up and runnint",
+                                "Atlantis server is up and running",
                                 Toast.LENGTH_SHORT).show();
                     }
                 },
