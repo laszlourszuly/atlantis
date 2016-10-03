@@ -10,7 +10,7 @@ If you're using Android Studio and Gradle you can easily start using Atlantis si
 
 ```groovy
 dependencies {
-    compile 'com.echsylon.atlantis:atlantis:1.3.1'
+    compile 'com.echsylon.atlantis:atlantis:1.3.2'
 }
 ```
 
