@@ -9,6 +9,12 @@ machine:
   java:
     version: oraclejdk8
 
+# Custom Android dependency config
+dependencies:
+  pre:
+    - echo y | android update sdk --no-ui --all --filter "tools,platform-tools,android-24"
+    - echo y | android update sdk --no-ui --all --filter "build-tools-24.0.3"
+
 # Run library release tests and publish test results.
 test:
   override:
