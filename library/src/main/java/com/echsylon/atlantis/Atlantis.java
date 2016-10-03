@@ -87,10 +87,16 @@ public class Atlantis {
      */
     public static Atlantis start(OnSuccessListener successListener, OnErrorListener errorListener) {
         Atlantis atlantis = new Atlantis();
-        atlantis.enqueueTask(() -> {
+
+        try {
             atlantis.nanoHTTPD.start();
-            return null;
-        }, successListener, errorListener);
+            if (successListener != null)
+                successListener.onSuccess();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
         return atlantis;
     }
 
@@ -105,12 +111,16 @@ public class Atlantis {
      */
     public static Atlantis start(Context context, String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
         Atlantis atlantis = new Atlantis();
-        atlantis.enqueueTask(() -> {
-                    atlantis.nanoHTTPD.start();
-                    return null;
-                },
-                () -> atlantis.setConfiguration(context, configAssetName, successListener, errorListener),
-                errorListener);
+
+        try {
+            // See comment in alternative #start(...) method.
+            atlantis.nanoHTTPD.start();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
+        atlantis.setConfiguration(context, configAssetName, successListener, errorListener);
         return atlantis;
     }
 
@@ -125,15 +135,22 @@ public class Atlantis {
      */
     public static Atlantis start(Context context, Configuration configuration, OnSuccessListener successListener, OnErrorListener errorListener) {
         Atlantis atlantis = new Atlantis();
-        atlantis.enqueueTask(() -> {
-                    atlantis.nanoHTTPD.start();
-                    return null;
-                },
-                () -> {
-                    atlantis.setConfiguration(context, configuration);
-                    successListener.onSuccess();
-                },
-                errorListener);
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configuration);
+
+            if (successListener != null)
+                successListener.onSuccess();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
         return atlantis;
     }
 
