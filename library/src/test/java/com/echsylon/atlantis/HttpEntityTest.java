@@ -1,6 +1,5 @@
 package com.echsylon.atlantis;
 
-import com.echsylon.atlantis.HttpEntity;
 import com.google.gson.Gson;
 
 import org.junit.Test;

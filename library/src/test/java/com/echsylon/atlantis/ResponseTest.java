@@ -3,14 +3,12 @@ package com.echsylon.atlantis;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import com.echsylon.atlantis.BuildConfig;
-import com.echsylon.atlantis.Response;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
@@ -27,7 +25,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -35,7 +33,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Verifies expected behavior on the {@link Response} class.
  */
-@RunWith(RobolectricGradleTestRunner.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class, sdk = 16)
 public class ResponseTest {
 

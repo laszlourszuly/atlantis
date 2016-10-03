@@ -14,7 +14,6 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
-import java.util.concurrent.Callable;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -22,6 +21,7 @@ import fi.iki.elonen.NanoHTTPD;
  * This is the local web server that will serve the template responses. This web server will only
  * handle requests issued targeting "localhost", "192.168.0.1" or "127.0.0.1".
  */
+@SuppressWarnings("WeakerAccess") // Suppress Lint Warning on public method visibility
 public class Atlantis {
     private static final String HOSTNAME = "localhost";
     private static final int PORT = 8080;
@@ -87,10 +87,16 @@ public class Atlantis {
      */
     public static Atlantis start(OnSuccessListener successListener, OnErrorListener errorListener) {
         Atlantis atlantis = new Atlantis();
-        atlantis.enqueueTask(() -> {
+
+        try {
             atlantis.nanoHTTPD.start();
-            return null;
-        }, successListener, errorListener);
+            if (successListener != null)
+                successListener.onSuccess();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
         return atlantis;
     }
 
@@ -105,12 +111,16 @@ public class Atlantis {
      */
     public static Atlantis start(Context context, String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
         Atlantis atlantis = new Atlantis();
-        atlantis.enqueueTask(() -> {
-                    atlantis.nanoHTTPD.start();
-                    return null;
-                },
-                () -> atlantis.setConfiguration(context, configAssetName, successListener, errorListener),
-                errorListener);
+
+        try {
+            // See comment in alternative #start(...) method.
+            atlantis.nanoHTTPD.start();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
+        atlantis.setConfiguration(context, configAssetName, successListener, errorListener);
         return atlantis;
     }
 
@@ -125,21 +135,28 @@ public class Atlantis {
      */
     public static Atlantis start(Context context, Configuration configuration, OnSuccessListener successListener, OnErrorListener errorListener) {
         Atlantis atlantis = new Atlantis();
-        atlantis.enqueueTask(() -> {
-                    atlantis.nanoHTTPD.start();
-                    return null;
-                },
-                () -> {
-                    atlantis.setConfiguration(context, configuration);
-                    successListener.onSuccess();
-                },
-                errorListener);
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configuration);
+
+            if (successListener != null)
+                successListener.onSuccess();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
         return atlantis;
     }
 
     private Context context;
-    private Configuration configuration;
     private NanoHTTPD nanoHTTPD;
+    private Configuration configuration;
 
     private boolean isCapturing;
     private final Object captureLock;
@@ -181,8 +198,7 @@ public class Atlantis {
                 if (delay > 0L)
                     try {
                         Thread.sleep(delay);
-                    } catch (InterruptedException e) {
-                        // For some reason we weren't allowed to sleep as long as we wanted.
+                    } catch (InterruptedException ignored) {
                     }
 
                 // Now, finally, deliver.
@@ -190,7 +206,7 @@ public class Atlantis {
                     NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
                     String mime = response.mimeType();
                     byte[] bytes = response.hasAsset() ?
-                            response.asset(Atlantis.this.context) :
+                            response.asset(context) :
                             response.content().getBytes();
                     return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
                 } catch (Exception e) {
@@ -235,14 +251,37 @@ public class Atlantis {
      * @param successListener The success callback.
      * @param errorListener   The error callback.
      */
-    public void setConfiguration(final Context context, final String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
-        enqueueTask(() -> {
-            byte[] bytes = Utils.readAsset(context, configAssetName);
-            String json = new String(bytes);
-            this.configuration = new JsonParser().fromJson(json, Configuration.class);
-            this.context = context;
-            return null;
-        }, successListener, errorListener);
+    public void setConfiguration(final Context context, final String configAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        this.context = context;
+        if (configAssetName == null)
+            this.configuration = null;
+
+        new AsyncTask<Void, Void, Throwable>() {
+            @Override
+            protected Throwable doInBackground(Void... nothings) {
+                try {
+                    byte[] bytes = Utils.readAsset(context, configAssetName);
+                    JsonParser jsonParser = new JsonParser();
+                    String json = new String(bytes);
+
+                    Atlantis.this.configuration = jsonParser.fromJson(json, Configuration.class);
+                    return null;
+                } catch (Exception e) {
+                    return e;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Throwable throwable) {
+                if (throwable == null) {
+                    if (successListener != null)
+                        successListener.onSuccess();
+                } else {
+                    if (errorListener != null)
+                        errorListener.onError(throwable);
+                }
+            }
+        }.execute();
     }
 
     /**
@@ -285,34 +324,6 @@ public class Atlantis {
         synchronized (captureLock) {
             captured.clear();
         }
-    }
-
-    // Creates a new AsyncTask instance and executes a callable from it. AsyncTasks will by default
-    // be queued up in a serial executor, which ensures they are operated on in the very same order
-    // they were once enqueued.
-    private void enqueueTask(final Callable<Void> callable, final OnSuccessListener successListener, final OnErrorListener errorListener) {
-        new AsyncTask<Void, Void, Throwable>() {
-            @Override
-            protected Throwable doInBackground(Void... params) {
-                try {
-                    callable.call();
-                    return null;
-                } catch (Exception e) {
-                    return e;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(Throwable throwable) {
-                if (throwable == null) {
-                    if (successListener != null)
-                        successListener.onSuccess();
-                } else {
-                    if (errorListener != null)
-                        errorListener.onError(throwable);
-                }
-            }
-        }.execute();
     }
 
     // Tries to find a response configuration that matches the given request parameters. Also
