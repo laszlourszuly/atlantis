@@ -31,8 +31,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 17
-        versionName '1.3.2'
+        versionCode 18
+        versionName '1.3.3'
         project.archivesBaseName = 'atlantis'
         project.version = android.defaultConfig.versionName
     }
