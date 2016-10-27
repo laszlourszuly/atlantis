@@ -21,7 +21,7 @@ task sourceJar(type: Jar) {
 }
 
 task slimJar(type: Jar) {
-    from("${buildDir}/intermediates/classes/release/") {
+    from("${buildDir}/intermediates/transforms/retrolambda/release/folders/1/1/retrolambda") {
         exclude '**/BuildConfig.class'
         exclude '**/R$*.class'
         exclude '**/R.class'
@@ -37,7 +37,7 @@ task fatJar(type: Jar) {
         it.isDirectory() ? it : zipTree(it)
     }
     // Add Atlantis classes
-    from("${buildDir}/intermediates/classes/release/") {
+    from("${buildDir}/intermediates/transforms/retrolambda/release/folders/1/1/retrolambda") {
         exclude '**/BuildConfig.class'
         exclude '**/R$*.class'
         exclude '**/R.class'
