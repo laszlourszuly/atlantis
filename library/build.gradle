@@ -18,6 +18,10 @@ buildscript {
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.android.library'
 
+retrolambda {
+    bytecodeVersion 51
+}
+
 // Android configuration
 android {
     compileSdkVersion 24
@@ -66,3 +70,4 @@ apply from: 'jacoco.gradle'
 apply from: 'publish.gradle'
 apply from: 'bintray.gradle'
 apply from: 'coveralls.gradle'
+
