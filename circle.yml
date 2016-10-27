@@ -33,5 +33,7 @@ deployment:
     tag: /v[0-9]+(\.[0-9]+)*/
     owner: echsylon
     commands:
-      - ./gradlew :library:clean :library:assembleRelease :library:bintrayUpload
+      - ./gradlew :library:clean
+      - ./gradlew :library:assembleRelease
+      - ./gradlew :library:bintrayUpload
 
