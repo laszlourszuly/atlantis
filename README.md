@@ -10,7 +10,7 @@ If you're using Android Studio and Gradle you can easily start using Atlantis si
 
 ```groovy
 dependencies {
-    compile 'com.echsylon.atlantis:atlantis:1.3.2'
+    compile 'com.echsylon.atlantis:atlantis:1.3.3'
 }
 ```
 
@@ -84,28 +84,3 @@ Note that the example host, the `jsontest.com` service, is heavily used by many 
 
 ### More
 The [Wiki](https://github.com/echsylon/atlantis/wiki) contains more details and information.
-
-### License
-
-The Atlantis library is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-2.0) license and depends internally on the listed libraries below. Gradle will see to it so they all are linked properly, without you having to do anything.
-
-* [Google Gson](https://github.com/google/gson)
-
-* [Guava](https://github.com/google/guava)
-
-* [Nano HTTPD](https://github.com/NanoHttpd/nanohttpd)
-
-All dependencies are licensed under [Apache 2](http://www.apache.org/licenses/LICENSE-2.0), except Nano HTTPD, which is licensed as:
-
-> Copyright (c) 2012-2013 by Paul S. Hawke, 2001,2005-2013 by Jarno Elonen, 2010 by Konstantinos Togias
-> All rights reserved.
-> 
-> Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-> 
-> * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-> 
-> * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-> 
-> * Neither the name of the NanoHttpd organization nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-> 
-> THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
