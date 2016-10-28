@@ -2,7 +2,7 @@
 general:
   branches:
     only:
-      - stage
+      - master
       
 # Configure the virtual machine. Set a Java 8 environment.
 machine:
