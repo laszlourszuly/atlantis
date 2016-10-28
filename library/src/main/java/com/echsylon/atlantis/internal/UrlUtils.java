@@ -9,15 +9,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is a convenience class, holding helper methods for URL related operations.
+ * This is a convenience class, holding helper methods for URL related operations. All methods in
+ * this class expect the urls to follow the below pattern:
+ * <p>
+ * [scheme://][[user:password@]host[:port]][/path][?query][#fragment]
  */
 public class UrlUtils {
     private static final String SCHEMA_SEPARATOR = "://";
 
     /**
      * Returns the path part of the given url. The path is considered to be everything between the
-     * first single "/" character and the "?" query separator sign, or the "#" fragment separator
-     * sign if there is no query part.
+     * first single "/" character (included) and the "?" query separator sign (excluded), or the "#"
+     * fragment separator sign if there is no query part.
      *
      * @param url The url to extract the path part from.
      * @return The extracted path or an empty string. Never null.
@@ -44,7 +47,7 @@ public class UrlUtils {
 
     /**
      * Returns the query part of the given url. The query part is considered to be everything
-     * between "?" query separator sign and the "#" fragment separator sign.
+     * between "?" query separator sign (included) and the "#" fragment separator sign (excluded).
      *
      * @param url The url to extract the query part from.
      * @return The extracted query or an empty string. Never null.
@@ -55,7 +58,7 @@ public class UrlUtils {
             return "";
 
         // Try to find the end of the query string. It ends where the fragment starts, or, if there
-        // is no fragment, where the url ends.
+        // is no fragment or the fragment is put before the query (valid?), where the url ends.
         int queryEnd = url.indexOf("#", queryStart);
         if (queryEnd == -1)
             queryEnd = url.length();
@@ -65,7 +68,7 @@ public class UrlUtils {
 
     /**
      * Returns the fragment part of the given url. The fragment part is considered to be everything
-     * after the "#" fragment separator sign.
+     * after the "#" fragment separator sign (included).
      *
      * @param url The url to extract the fragment part from.
      * @return The extracted fragment or an empty string. Never null.
@@ -141,7 +144,7 @@ public class UrlUtils {
         InputStream inputStream = null;
         try {
             int statusCode = connection.getResponseCode();
-            inputStream = statusCode < 200 || statusCode > 299 ?
+            inputStream = statusCode < 200 || statusCode > 399 ?
                     connection.getErrorStream() :
                     connection.getInputStream();
             bytes = ByteStreams.toByteArray(inputStream);
@@ -161,8 +164,12 @@ public class UrlUtils {
      * @return The content type or an empty string. Never null.
      */
     public static String getResponseMimeType(HttpURLConnection connection) {
-        return connection != null ?
-                connection.getContentType() :
+        if (connection == null)
+            return "";
+
+        String contentType = connection.getContentType();
+        return contentType != null ?
+                contentType :
                 "";
     }
 
