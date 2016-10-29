@@ -1,9 +1,6 @@
 package com.echsylon.atlantis.internal;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +20,6 @@ import static org.mockito.Mockito.mock;
 /**
  * Verifies expected behavior on the {@link UrlUtils} class.
  */
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 16)
 public class UrlUtilsTest {
 
     @Test
