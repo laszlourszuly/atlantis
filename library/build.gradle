@@ -1,8 +1,4 @@
 // Module specific build settings
-repositories {
-    jcenter()
-}
-
 buildscript {
     repositories {
         jcenter()
@@ -31,8 +27,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 18
-        versionName '1.3.3'
+        versionCode System.getProperty('VERSION_CODE', '0').toInteger()
+        versionName System.getProperty('VERSION_NAME', '0.0.0')
         project.archivesBaseName = 'atlantis'
         project.version = android.defaultConfig.versionName
     }
@@ -49,6 +45,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_7
     }
+}
+
+repositories {
+    jcenter()
 }
 
 dependencies {
@@ -70,4 +70,4 @@ apply from: 'jacoco.gradle'
 apply from: 'publish.gradle'
 apply from: 'bintray.gradle'
 apply from: 'coveralls.gradle'
-
+apply from: 'version.gradle'

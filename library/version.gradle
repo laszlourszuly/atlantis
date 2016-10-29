@@ -1,0 +1,116 @@
+/**
+ * This task will prepare the current VERSION_NAME and VERSION_CODE to use for the project. The
+ * VERSION_NAME will follow the SEMVER pattern of ${major}.${minor}.${patch}. If this task isn't
+ * issued from the production environment, then "-SNAPSHOT" will be appended to the version name.
+ * The parts of the version name will be extracted from the latest release tag in git repository.
+ * This task will try to fetch any tags from the remote repository first.
+ *
+ * The flow of this task is:
+ *
+ * 1. Get the version name and version code from the latest tag's subject line.
+ * 2. If this isn't the production environment, add "-SNAPSHOT" to the version name.
+ * 3. Store the version name in the "VERSION_NAME" system property.
+ * 4. Store the version code in the "VERSION_CODE" system property.
+ */
+task prepare << {
+    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
+    System.out.println("Prepared version: ${versionName} (${versionCode})")
+
+    if (!versionName.isEmpty())
+        System.setProperty('VERSION_NAME', System.hasProperty('CIRCLECI') ? versionName : "${versionName}-SNAPSHOT")
+
+    if (versionCode.isInteger())
+        System.setProperty('VERSION_CODE', versionCode)
+}
+
+/**
+ * This task will trigger a new major release. An exception will be thrown if the desired version
+ * name segment or the version code couldn't be incremented properly. This task will trigger the
+ * production environment to perform the actual release. Local releases can only be performed
+ * manually for now.
+ *
+ * The flow for triggering the release is as follows:
+ *
+ * 1. Get the version name and version code from the latest tag's subject line.
+ * 2. Split the version name into ${major}.${minor}.${patch} segments.
+ * 3. Increase the ${major} segment and the version code by one.
+ * 4. Create a new annotated tag and push it to the remote repository.
+ */
+task triggerMajorRelease << {
+    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def (major, minor, patch) = versionName.tokenize('.')
+    createAndPushNewTag(major.toInteger() + 1, minor.toInteger(), patch.toInteger(), versionCode.toInteger() + 1)
+}
+
+/**
+ * This task will trigger a new minor release. An exception will be thrown if the desired version
+ * name segment or the version code couldn't be incremented properly. This task will trigger the
+ * production environment to perform the actual release. Local releases can only be performed
+ * manually for now.
+ *
+ * The flow for triggering the release is as follows:
+ *
+ * 1. Get the version name and version code from the latest tag's subject line.
+ * 2. Split the version name into ${major}.${minor}.${patch} segments.
+ * 3. Increase the ${minor} segment and the version code by one.
+ * 4. Create a new annotated tag and push it to the remote repository.
+ */
+task triggerMinorRelease << {
+    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def (major, minor, patch) = versionName.tokenize('.')
+    createAndPushNewTag(major.toInteger(), minor.toInteger() + 1, patch.toInteger(), versionCode.toInteger() + 1)
+}
+
+/**
+ * This task will trigger a new patch release. An exception will be thrown if the desired version
+ * name segment or the version code couldn't be incremented properly. This task will trigger the
+ * production environment to perform the actual release. Local releases can only be performed
+ * manually for now.
+ *
+ * The flow for triggering the release is as follows:
+ *
+ * 1. Get the version name and version code from the latest tag's subject line.
+ * 2. Split the version name into ${major}.${minor}.${patch} segments.
+ * 3. Increase the ${patch} segment and the version code by one.
+ * 4. Create a new annotated tag and push it to the remote repository.
+ */
+task triggerPatchRelease << {
+    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def (major, minor, patch) = versionName.tokenize('.')
+    createAndPushNewTag(major.toInteger(), minor.toInteger(), patch.toInteger() + 1, versionCode.toInteger() + 1)
+}
+
+/**
+ * Fetches all tags from the remote repository and extracts the version name and version code from
+ * the latest release tag. If there is a numeric system property set for a build number, then that
+ * value will override any version code found in the tag.
+ *
+ * @return The version notation as a string: "${major}.${minor}.${path} ${versionCode}
+ */
+def getVersionFromLatestTag() {
+    "git fetch origin 'refs/tags/*:refs/tags/*'".execute().waitForOrKill(10_000)
+    def tag = "git for-each-ref --sort=-taggerdate --format=%(contents:subject) --count=1 refs/tags".execute().text
+    def buildNumber = System.getenv('CIRCLE_BUILD_NUM')
+    def filter = buildNumber && buildNumber.isInteger() ?
+            "s/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*/\\1 ${buildNumber}/p" :
+            's/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*(\\([0-9]\\{1,\\}\\))/\\1 \\2/p'
+
+    def versions = ['sh', '-c', "echo '${tag}' | sed -n '${filter}'"].execute().text.trim()
+    if (versions.isEmpty())
+        throw new IllegalStateException("Couldn't extract version from tag: '${tag}'")
+
+    return versions
+}
+
+/**
+ * Creates a new annotated version tag and pushes it to the remote repository.
+ *
+ * @param major The new major version segment.
+ * @param minor The new minor version segment.
+ * @param patch The new patch version segment.
+ * @param versionCode The new version code.
+ */
+def createAndPushNewTag(int major, int minor, int patch, int versionCode) {
+    def nextVersionName = "${major}.${minor}.${patch}"
+    System.out.println("git tag -a v${nextVersionName} -m \"Version ${nextVersionName} (${versionCode})\" && git push --tags")
+}
