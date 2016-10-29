@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -81,7 +82,11 @@ public class UrlUtilsTest {
         doReturn("key1", null, "key3").when(mockConnection).getHeaderFieldKey(anyInt());
         doReturn(null, null, "value3").when(mockConnection).getHeaderField(anyInt());
 
-        Map<String, String> headers = UrlUtils.getResponseHeaders(mockConnection);
+        Map<String, String> headers = UrlUtils.getResponseHeaders(null);
+        assertThat(headers, is(notNullValue()));
+        assertThat(headers.size(), is(0));
+
+        headers = UrlUtils.getResponseHeaders(mockConnection);
         assertThat(headers.size(), is(1));
         assertThat(headers.get("key3"), is("value3"));
     }
@@ -103,6 +108,11 @@ public class UrlUtilsTest {
         HttpURLConnection mockConnection = mock(HttpURLConnection.class);
         doReturn(mockInputStream).when(mockConnection).getInputStream();
         doReturn(mockInputStream).when(mockConnection).getErrorStream();
+
+        doThrow(IOException.class).when(mockConnection).getResponseCode();
+        byte[] result = UrlUtils.getResponseBody(mockConnection);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.length, is(0));
 
         mark[0] = 12;
         doReturn(200).when(mockConnection).getResponseCode();
