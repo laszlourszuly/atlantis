@@ -15,6 +15,7 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
  * local web server expects it. It will use this template when trying to identify which response to
  * serve to a user provided request.
  */
+@SuppressWarnings("WeakerAccess")
 public class Request extends HttpEntity implements Serializable {
 
     /**
@@ -40,6 +41,7 @@ public class Request extends HttpEntity implements Serializable {
      * This class offers means of building a request configuration directly from code (as opposed to
      * configure one in a JSON asset).
      */
+    @SuppressWarnings("WeakerAccess")
     public static final class Builder extends Request {
 
         /**
@@ -130,6 +132,15 @@ public class Request extends HttpEntity implements Serializable {
          */
         public Builder withResponseFilter(Response.Filter responseFilter) {
             this.responseFilter = responseFilter;
+            return this;
+        }
+
+        /**
+         * Returns a sealed request object which can not be further built on.
+         *
+         * @return The final request object.
+         */
+        public Request build() {
             return this;
         }
 

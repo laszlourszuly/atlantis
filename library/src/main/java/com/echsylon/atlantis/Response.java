@@ -17,6 +17,7 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
  * This class contains all the data required by the {@link com.echsylon.atlantis.Atlantis Atlantis}
  * to serve a response.
  */
+@SuppressWarnings("WeakerAccess")
 public class Response extends HttpEntity implements Serializable {
     private static final String ASSET_SCHEME = "asset://";
     public static final Response EMPTY = new Response();
@@ -42,6 +43,7 @@ public class Response extends HttpEntity implements Serializable {
      * This class offers means of building a response configuration directly from code (as opposed
      * to configure one in a JSON asset).
      */
+    @SuppressWarnings("WeakerAccess")
     public static final class Builder extends Response {
 
         /**
@@ -178,6 +180,15 @@ public class Response extends HttpEntity implements Serializable {
                         maxMilliseconds :
                         null;
             }
+            return this;
+        }
+
+        /**
+         * Returns a sealed response object which can not be further built on.
+         *
+         * @return The final response object.
+         */
+        public Response build() {
             return this;
         }
 

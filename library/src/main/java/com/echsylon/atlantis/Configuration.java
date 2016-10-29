@@ -10,14 +10,16 @@ import java.util.Map;
 
 /**
  * This class contains all request templates the {@link com.echsylon.atlantis.Atlantis Atlantis}
- * local web server will ever serve. This is the "downloaded Internet".
+ * local web server will ever serve. This is the "mocked Internet".
  */
+@SuppressWarnings("WeakerAccess")
 public class Configuration implements Serializable {
 
     /**
      * This class offers means of building a configuration object directly from code (as opposed to
      * configure one in a JSON asset).
      */
+    @SuppressWarnings("WeakerAccess")
     public static final class Builder extends Configuration {
 
         /**
@@ -28,8 +30,8 @@ public class Configuration implements Serializable {
          */
         public Builder withRequest(Request request) {
             if (request != null) {
-                if (this.requests == null)
-                    this.requests = new ArrayList<>();
+                if (requests == null)
+                    requests = new ArrayList<>();
 
                 requests.add(request);
             }
@@ -57,6 +59,15 @@ public class Configuration implements Serializable {
          */
         public Builder withFallbackBaseUrl(String realBaseUrl) {
             this.fallbackBaseUrl = realBaseUrl;
+            return this;
+        }
+
+        /**
+         * Returns a sealed configuration object which can not be further built on.
+         *
+         * @return The final configuration object.
+         */
+        public Configuration build() {
             return this;
         }
 
