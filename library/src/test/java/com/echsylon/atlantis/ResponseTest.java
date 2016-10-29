@@ -34,7 +34,7 @@ import static org.mockito.Mockito.mock;
  * Verifies expected behavior on the {@link Response} class.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk = 16)
+@Config(manifest = Config.NONE, sdk = 16)
 public class ResponseTest {
 
     @Test

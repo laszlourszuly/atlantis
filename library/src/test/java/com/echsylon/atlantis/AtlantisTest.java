@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk = 16)
+@Config(manifest = Config.NONE, sdk = 16)
 public class AtlantisTest {
     private static final String AUTHORITY = "http://localhost:8080";
 

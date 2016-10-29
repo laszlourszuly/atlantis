@@ -3,8 +3,6 @@ package com.echsylon.atlantis.internal;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import com.echsylon.atlantis.BuildConfig;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -30,7 +28,7 @@ import static org.mockito.Mockito.mock;
  * Verifies expected behavior on the {@link Utils} class.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk = 16)
+@Config(manifest = Config.NONE, sdk = 16)
 public class UtilsTest {
 
     @Test
