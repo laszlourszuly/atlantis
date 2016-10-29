@@ -3,6 +3,17 @@ apply plugin: 'jacoco'
 jacoco {
     reportsDir = file("${buildDir}/reports/coverage/")
 }
+
+android {
+    testOptions {
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+            }
+        }
+    }
+}
+
 task jacoco(type: JacocoReport) {
     group = "Reporting"
     description = "Generate Jacoco Robolectric unit test coverage reports"
