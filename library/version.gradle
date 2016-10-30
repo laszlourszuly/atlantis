@@ -89,7 +89,7 @@ task triggerPatchRelease << {
  */
 def getVersionFromLatestTag() {
     "git fetch origin 'refs/tags/*:refs/tags/*'".execute().waitForOrKill(10_000)
-    def tag = "git for-each-ref --sort=-taggerdate --format=%(contents:subject) --count=1 refs/tags".execute().text
+    def tag = "git for-each-ref --count=1 --sort=-taggerdate --format=%(contents:subject) 'refs/tags/v[0-9]*.[0-9]*.[0-9]*'".execute().text
     def buildNumber = System.getenv('CIRCLE_BUILD_NUM')
     def filter = buildNumber && buildNumber.isInteger() ?
             "s/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*/\\1 ${buildNumber}/p" :
