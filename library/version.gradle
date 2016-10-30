@@ -37,9 +37,10 @@ task prepare << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task triggerMajorRelease << {
-    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
-    def (major, minor, patch) = versionName.tokenize('.')
-    createAndPushNewTag(major.toInteger() + 1, minor.toInteger(), patch.toInteger(), versionCode.toInteger() + 1)
+    def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def (major, minor, patch) = oldVersionName.tokenize('.')
+    def newVersionName = [major.toInteger() + 1, minor, patch].join('.')
+    createNewTag(oldVersionName, newVersionName, versionCode.toInteger() + 1)
 }
 
 /**
@@ -56,9 +57,10 @@ task triggerMajorRelease << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task triggerMinorRelease << {
-    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
-    def (major, minor, patch) = versionName.tokenize('.')
-    createAndPushNewTag(major.toInteger(), minor.toInteger() + 1, patch.toInteger(), versionCode.toInteger() + 1)
+    def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def (major, minor, patch) = oldVersionName.tokenize('.')
+    def newVersionName = [major, minor.toInteger() + 1, patch].join('.')
+    createNewTag(oldVersionName, newVersionName, versionCode.toInteger() + 1)
 }
 
 /**
@@ -75,9 +77,10 @@ task triggerMinorRelease << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task triggerPatchRelease << {
-    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
-    def (major, minor, patch) = versionName.tokenize('.')
-    createAndPushNewTag(major.toInteger(), minor.toInteger(), patch.toInteger() + 1, versionCode.toInteger() + 1)
+    def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def (major, minor, patch) = oldVersionName.tokenize('.')
+    def newVersionName = [major, minor, patch.toInteger() + 1].join('.')
+    createNewTag(oldVersionName, newVersionName, versionCode.toInteger() + 1)
 }
 
 /**
@@ -104,16 +107,32 @@ private def getVersionFromLatestTag() {
 }
 
 /**
- * Creates a new annotated version tag and pushes it to the remote repository.
+ * Creates a new annotated version tag.
  *
- * @param major The new major version segment.
- * @param minor The new minor version segment.
- * @param patch The new patch version segment.
- * @param versionCode The new version code.
+ * @param oldVersionName Used for collecting all commits pushed since.
+ * @param newVersionName Used for creating the new tag.
+ * @param newVersionCode The new version code.
  */
-def createAndPushNewTag(int major, int minor, int patch, int versionCode) {
-    def nextVersionName = "${major}.${minor}.${patch}"
-    System.out.println("git tag -a v${nextVersionName} -m \"Version ${nextVersionName} (${versionCode})\" && git push --tags")
+private def createNewTag(String oldVersionName, String newVersionName, int newVersionCode) {
+    def subject = "Version ${newVersionName} (${newVersionCode})"
+    def body = "git log --pretty=format:'* %s' v${oldVersionName}...HEAD".bash()
+    "git tag -a v${newVersionName} -m '${subject}\n\n${body}\n\n'".bash()
+
+    println("\n\nSuccessfully created tag: v${newVersionName}")
+    println('\nYou can now:')
+    println("  1. Show the tag details:     git show v${newVersionName}")
+    println("  2. Edit the tag message:     git tag -a -f v${newVersionName}")
+    println("  3. Delete the new tag:       git tag -d v${newVersionName}")
+    println('  4. Push the tag to remote:   git push --tags')
+}
+
+/**
+ * Adds the "bash()" method to all strings. The method will allow for evaluating the string in the
+ * bash shell and returns any produced output. If the process doesn't terminate in 10 seconds, then
+ * the evaluation is aborted and an empty string is returned.
+ *
+ * @return The output of the evaluation or an empty string.
+ */
 String.metaClass.bash = { ->
     ProcessBuilder processBuilder = new ProcessBuilder('bash', '-c', delegate)
     processBuilder.redirectErrorStream(true)
