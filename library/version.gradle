@@ -12,9 +12,9 @@
  * 3. Store the version name in the "VERSION_NAME" system property.
  * 4. Store the version code in the "VERSION_CODE" system property.
  */
-task prepare << {
+task prepareVersion << {
     def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
-    System.out.println("Prepared version: ${versionName} (${versionCode})")
+    println("Prepared version: ${versionName} (${versionCode})")
 
     if (!versionName.isEmpty())
         System.setProperty('VERSION_NAME', System.hasProperty('CIRCLECI') ? versionName : "${versionName}-SNAPSHOT")

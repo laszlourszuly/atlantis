@@ -71,3 +71,5 @@ apply from: 'publish.gradle'
 apply from: 'bintray.gradle'
 apply from: 'coveralls.gradle'
 apply from: 'version.gradle'
+
+clean.dependsOn prepareVersion
