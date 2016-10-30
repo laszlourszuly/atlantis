@@ -36,7 +36,7 @@ task prepare << {
  * 3. Increase the ${major} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task triggerMajorRelease << {
+task prepareMajorRelease << {
     def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major.toInteger() + 1, minor, patch].join('.')
@@ -56,7 +56,7 @@ task triggerMajorRelease << {
  * 3. Increase the ${minor} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task triggerMinorRelease << {
+task prepareMinorRelease << {
     def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor.toInteger() + 1, patch].join('.')
@@ -76,7 +76,7 @@ task triggerMinorRelease << {
  * 3. Increase the ${patch} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task triggerPatchRelease << {
+task preparePatchRelease << {
     def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor, patch.toInteger() + 1].join('.')
