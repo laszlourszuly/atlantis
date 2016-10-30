@@ -87,15 +87,16 @@ task triggerPatchRelease << {
  *
  * @return The version notation as a string: "${major}.${minor}.${path} ${versionCode}
  */
-def getVersionFromLatestTag() {
-    "git fetch origin 'refs/tags/*:refs/tags/*'".execute().waitForOrKill(10_000)
-    def tag = "git for-each-ref --count=1 --sort=-taggerdate --format=%(contents:subject) 'refs/tags/v[0-9]*.[0-9]*.[0-9]*'".execute().text
+private def getVersionFromLatestTag() {
+    'git fetch origin \'refs/tags/*:refs/tags/*\''.bash()
+
+    def tag = 'git for-each-ref --count=1 --sort=-taggerdate --format=\'%(contents:subject)\' \'refs/tags/v[0-9]*.[0-9]*.[0-9]*\''.bash()
     def buildNumber = System.getenv('CIRCLE_BUILD_NUM')
     def filter = buildNumber && buildNumber.isInteger() ?
             "s/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*/\\1 ${buildNumber}/p" :
             's/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*(\\([0-9]\\{1,\\}\\))/\\1 \\2/p'
 
-    def versions = ['sh', '-c', "echo '${tag}' | sed -n '${filter}'"].execute().text.trim()
+    def versions = "echo '${tag}' | sed -n '${filter}'".bash().trim()
     if (versions.isEmpty())
         throw new IllegalStateException("Couldn't extract version from tag: '${tag}'")
 
@@ -113,4 +114,18 @@ def getVersionFromLatestTag() {
 def createAndPushNewTag(int major, int minor, int patch, int versionCode) {
     def nextVersionName = "${major}.${minor}.${patch}"
     System.out.println("git tag -a v${nextVersionName} -m \"Version ${nextVersionName} (${versionCode})\" && git push --tags")
+String.metaClass.bash = { ->
+    ProcessBuilder processBuilder = new ProcessBuilder('bash', '-c', delegate)
+    processBuilder.redirectErrorStream(true)
+
+    Process process = processBuilder.start()
+    process.getOutputStream().close()
+
+    try {
+        process.waitForOrKill(10_000)
+        def output = process.text
+        return output ? output : ''
+    } catch (IOException | InterruptedException ignore) {
+        return ''
+    }
 }
