@@ -1,5 +1,3 @@
-apply plugin: 'com.jfrog.bintray'
-
 bintray {
     user = System.getenv('ATLANTIS_BINTRAY_USER')
     key = System.getenv('ATLANTIS_BINTRAY_KEY')

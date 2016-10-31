@@ -1,17 +1,10 @@
-// Module specific build settings
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath 'me.tatarka:gradle-retrolambda:3.3.1'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.2'
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0x'
-    }
+// 3rd party plugins definition
+plugins {
+    id 'com.github.kt3k.coveralls' version '2.4.0x'
+    id 'me.tatarka.retrolambda' version '3.3.1'
+    id 'com.jfrog.bintray' version '1.7.2'
 }
 
-// Plugins targeting this particular module
-apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.android.library'
 
 retrolambda {
