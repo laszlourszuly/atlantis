@@ -12,7 +12,6 @@ bintray {
         issueTrackerUrl = 'https://github.com/echsylon/atlantis/issues'
         vcsUrl = 'https://github.com/echsylon/atlantis.git'
         githubRepo = 'echsylon/atlantis'
-        githubReleaseNotesFile = 'README.md'
 
         version {
             name = android.defaultConfig.versionName
