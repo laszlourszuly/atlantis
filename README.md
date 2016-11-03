@@ -4,17 +4,17 @@
 
 The Atlantis library will aid you in "mocking the Internet" for your Android app. It offers an isolated and ideal representation of the Internet, as you want it, without forcing you to do any changes to your code.
 
-### Integrate
+### How to integrate
 
 If you're using Android Studio and Gradle you can easily start using Atlantis simply by listing it in your Gradle `dependencies` section:
 
 ```groovy
 dependencies {
-    compile 'com.echsylon.atlantis:atlantis:1.3.3'
+    compile 'com.echsylon.atlantis:atlantis:1.4.0'
 }
 ```
 
-### Configure
+### How to configure
 
 You need to define which requests you're mocking and what response they should deliver. You do this in a JSON file that could look something like:
 
@@ -46,7 +46,7 @@ You need to define which requests you're mocking and what response they should d
 }
 ```
 
-### Use
+### How to use
 
 Atlantis offers a very straight forward default API; at a minimum you can start it:
 
