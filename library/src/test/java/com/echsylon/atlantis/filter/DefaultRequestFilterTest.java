@@ -108,6 +108,23 @@ public class DefaultRequestFilterTest {
     }
 
     @Test
+    public void match_doesNotFindUrlForInvalidUrlPattern() throws Exception {
+        // Prepare the mocked request configurations. Our test configuration will
+        // hold a single mocked request with a "get" method and an invalid URL.
+        Request mockedRequest = mock(Request.class);
+        doReturn("get").when(mockedRequest).method();
+        doReturn("[a-zA-Z").when(mockedRequest).url();
+
+        List<Request> templates = Collections.singletonList(mockedRequest);
+        DefaultRequestFilter defaultRequestFilter = new DefaultRequestFilter();
+
+        // Try to find a request configuration for a valid url.
+        String url1 = "path?query=true#fragment";
+        Request result1 = defaultRequestFilter.getRequest(templates, url1, "get", null);
+        assertThat(result1, is(nullValue()));
+    }
+
+    @Test
     public void match_doesNotFindNonMatchingRegexUrl() throws Exception {
         // Prepare the mocked request configurations. Our test configuration will
         // hold a single mocked request with a "get" method and a path that consists
@@ -126,10 +143,16 @@ public class DefaultRequestFilterTest {
         Request result1 = defaultRequestFilter.getRequest(templates, url1, "get", null);
         assertThat(result1, is(nullValue()));
 
-        // Try to find a request configuration for an empty url.
-        String url2 = "";
+        // Try to find a request configuration for a url with invalid query and fragment.
+        String url2 = "?q=%20#f321";
         Request result2 = defaultRequestFilter.getRequest(templates, url2, "get", null);
         assertThat(result2, is(nullValue()));
+
+
+        // Try to find a request configuration for an empty url.
+        String url3 = "";
+        Request result3 = defaultRequestFilter.getRequest(templates, url3, "get", null);
+        assertThat(result3, is(nullValue()));
     }
 
     @Test

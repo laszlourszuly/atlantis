@@ -71,8 +71,8 @@ public class DefaultRequestFilter implements Request.Filter {
 
         try {
             String test = stringBuilder.toString();
-            return test.matches(regex) || test.equals(regex);
-        } catch (PatternSyntaxException e) {
+            return test.matches(regex);
+        } catch (PatternSyntaxException | NullPointerException e) {
             return false;
         }
     }
