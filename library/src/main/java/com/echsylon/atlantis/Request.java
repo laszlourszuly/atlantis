@@ -45,8 +45,8 @@ public class Request extends HttpEntity implements Serializable {
     public static final class Builder extends Request {
 
         /**
-         * Adds a header to the request being built. Doesn't add anything if either {@code key} or
-         * {@code value} is empty (null pointers are considered empty).
+         * Adds a header to the request being built. This method doesn't add anything if either
+         * {@code key} or {@code value} is empty (null pointers are considered empty).
          *
          * @param key   The header key.
          * @param value The header value.
@@ -83,7 +83,7 @@ public class Request extends HttpEntity implements Serializable {
         }
 
         /**
-         * Adds a response to the request being built. Doesn't add null pointers.
+         * Adds a response to the request being built. This method doesn't add null pointers.
          *
          * @param response The response to add.
          * @return This buildable request instance, allowing chaining of method calls.
@@ -124,14 +124,14 @@ public class Request extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the response filter logic to use when deciding which response to serve. Null is a
-         * valid value, even though in practice it doesn't make any sense.
+         * Sets the response filter logic to use when deciding which response to serve.
          *
-         * @param responseFilter The response filter implementation.
+         * @param responseFilter The response filter implementation. May be null in which case a
+         *                       default response filter will be used.
          * @return This buildable request instance, allowing chaining of method calls.
          */
         public Builder withResponseFilter(Response.Filter responseFilter) {
-            this.responseFilter = responseFilter;
+            this.responseFilter = responseFilter != null ? responseFilter : new DefaultResponseFilter();
             return this;
         }
 
@@ -171,6 +171,15 @@ public class Request extends HttpEntity implements Serializable {
      */
     public String url() {
         return url;
+    }
+
+    /**
+     * Returns the filter that picks a response to serve for this request.
+     *
+     * @return The response filter. Should never be null.
+     */
+    public Response.Filter responseFilter() {
+        return responseFilter;
     }
 
     /**

@@ -222,8 +222,9 @@ public class Response extends HttpEntity implements Serializable {
     protected Integer delay = null;
     protected Integer maxDelay = null;
 
-    // Part of extra feature offered by the Builder
-    protected byte[] assetBytes = null;
+    // Part of extra feature offered by the Builder.
+    // This field should be ignored during serialization, hence transient.
+    protected transient byte[] assetBytes = null;
 
     // Intentionally hidden constructor.
     protected Response() {

@@ -23,7 +23,7 @@ public class Configuration implements Serializable {
     public static final class Builder extends Configuration {
 
         /**
-         * Adds a request to the configuration being built. Doesn't add null pointers.
+         * Adds a request to the configuration being built. This method doesn't add null pointers.
          *
          * @param request The request to add.
          * @return This buildable configuration object, allowing chaining of method calls.
@@ -40,14 +40,14 @@ public class Configuration implements Serializable {
         }
 
         /**
-         * Sets the request filter logic to use when matching a request to serve. Null is a valid
-         * value, even though it doesn't make sense.
+         * Sets the request filter logic to use when matching a request to serve.
          *
-         * @param requestFilter The request filter implementation.
+         * @param requestFilter The request filter implementation. May be null in which case a
+         *                      default request filter will be used.
          * @return This buildable configuration object, allowing chaining of method calls.
          */
         public Builder withRequestFilter(Request.Filter requestFilter) {
-            this.requestFilter = requestFilter;
+            this.requestFilter = requestFilter != null ? requestFilter : new DefaultRequestFilter();
             return this;
         }
 
@@ -100,6 +100,16 @@ public class Configuration implements Serializable {
      */
     public boolean hasAlternativeRoute() {
         return Utils.notEmpty(fallbackBaseUrl);
+    }
+
+    /**
+     * Returns the filter that matches any requests in this configuration against the HTTP
+     * parameters the client is trying to target.
+     *
+     * @return The request filter. Should never be null.
+     */
+    public Request.Filter requestFilter() {
+        return requestFilter;
     }
 
     /**

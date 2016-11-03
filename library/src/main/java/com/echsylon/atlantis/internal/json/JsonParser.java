@@ -33,14 +33,32 @@ public class JsonParser {
     public <T> T fromJson(String json, Class<T> expectedResultType) throws JsonException {
         try {
             return new GsonBuilder()
-                    .registerTypeAdapter(Configuration.class, Deserializers.newConfigurationDeserializer())
-                    .registerTypeAdapter(Response.class, Deserializers.newResponseDeserializer())
-                    .registerTypeAdapter(Request.class, Deserializers.newRequestDeserializer())
+                    .registerTypeAdapter(Configuration.class, Serializers.newConfigurationDeserializer())
+                    .registerTypeAdapter(Response.class, Serializers.newResponseDeserializer())
+                    .registerTypeAdapter(Request.class, Serializers.newRequestDeserializer())
                     .create()
                     .fromJson(json, expectedResultType);
         } catch (IllegalArgumentException | JsonSyntaxException e) {
             throw new JsonException(e);
         }
+    }
+
+    /**
+     * Serializes the given object into a JSON string.
+     *
+     * @param object The object to serialize.
+     * @param <T>    The type of object.
+     * @return The JSON string notation of the given object.
+     */
+    public <T> String toJson(Object object, Class<T> classOfObject) {
+        return new GsonBuilder()
+                .registerTypeAdapter(Configuration.class, Serializers.newConfigurationSerializer())
+                .registerTypeAdapter(Response.class, Serializers.newResponseSerializer())
+                .registerTypeAdapter(Request.class, Serializers.newRequestSerializer())
+                .disableHtmlEscaping()
+                .setPrettyPrinting()
+                .create()
+                .toJson(object, classOfObject);
     }
 
 }

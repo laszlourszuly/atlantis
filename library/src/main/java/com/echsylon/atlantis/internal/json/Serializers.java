@@ -1,19 +1,21 @@
 package com.echsylon.atlantis.internal.json;
 
-import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.Configuration;
 import com.echsylon.atlantis.Request;
 import com.echsylon.atlantis.Response;
+import com.echsylon.atlantis.internal.Utils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 /**
  * This class provides a set of custom JSON deserializers.
  */
-class Deserializers {
+class Serializers {
 
     /**
      * Returns a new JSON deserializer, specialized for {@link Configuration} objects.
@@ -22,6 +24,15 @@ class Deserializers {
      */
     static JsonDeserializer<Configuration> newConfigurationDeserializer() {
         return (json, typeOfT, context) -> deserializeConfiguration(json, context);
+    }
+
+    /**
+     * Returns a new JSON serializer, specialized for {@link Configuration} objects.
+     *
+     * @return The serializer to serialize {@code Configuration} objects with.
+     */
+    static JsonSerializer<Configuration> newConfigurationSerializer() {
+        return (object, typeOfObject, context) -> serializeConfiguration(object, context);
     }
 
     /**
@@ -34,16 +45,33 @@ class Deserializers {
     }
 
     /**
+     * Returns a new JSON serializer, specialized for {@link Request} objects.
+     *
+     * @return The serializer to serialize {@code Request} objects with.
+     */
+    static JsonSerializer<Request> newRequestSerializer() {
+        return (object, typeOfObject, context) -> serializeRequest(object, context);
+    }
+
+    /**
      * Returns a new JSON deserializer, specialized for {@link Response} objects.
      *
      * @return The deserializer to parse {@code Response} objects with.
      */
-    static JsonDeserializer<Object> newResponseDeserializer() {
+    static JsonDeserializer<Response> newResponseDeserializer() {
         return (json, typeOfT, context) -> deserializeResponse(json, context);
     }
 
-    // De-serializes a configuration JSON object, preparing any header attributes as well as
-    // instantiating any request filter classes.
+    /**
+     * Returns a new JSON serializer, specialized for {@link Response} objects.
+     *
+     * @return The serializer to serialize {@code Response} objects with.
+     */
+    static JsonSerializer<Response> newResponseSerializer() {
+        return (object, typeOfObject, context) -> serializeResponse(object, context);
+    }
+
+    // De-serializes a configuration JSON object, instantiating any request filter classes.
     private static Configuration deserializeConfiguration(JsonElement json, JsonDeserializationContext context) {
         // Remove the 'requestFilter' attribute as it's a string in the JSON. The Configuration
         // object expects it to be a Java object. We'll later parse the removed string (which just
@@ -70,10 +98,34 @@ class Deserializers {
         }
     }
 
+    // Serializes a configuration object, serializing any request filter to its class name.
+    private static JsonElement serializeConfiguration(Configuration configuration, JsonSerializationContext context) {
+        JsonElement jsonElement = context.serialize(configuration);
+        if (jsonElement == null)
+            return null;
+
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+        jsonObject.remove("requestFilter");
+
+        // If the configuration object has a request filter (which it's expected to have), then
+        // replace the complex object with the corresponding class name in the configuration JSON
+        // object.
+        Request.Filter filter = configuration.requestFilter();
+        if (filter != null)
+            jsonObject.addProperty("requestFilter", filter.getClass().getName());
+
+        return jsonObject;
+    }
+
     // De-serializes a response JSON object, preparing any header attributes.
     private static Response deserializeResponse(JsonElement json, JsonDeserializationContext context) {
         JsonObject jsonObject = prepareHeaders(json);
         return context.deserialize(jsonObject, Response.Builder.class);
+    }
+
+    // Serializes a response object to a JSON string.
+    private static JsonElement serializeResponse(Response response, JsonSerializationContext context) {
+        return context.serialize(response);
     }
 
     // De-serializes a request JSON object, preparing any header attributes as well as instantiating
@@ -102,6 +154,25 @@ class Deserializers {
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    // Serializes a request object, serializing any response filter to its class name.
+    private static JsonElement serializeRequest(Request request, JsonSerializationContext context) {
+        JsonElement jsonElement = context.serialize(request);
+        if (jsonElement == null)
+            return null;
+
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+        jsonObject.remove("responseFilter");
+
+        // If the request object has a response filter (which it's expected to have), then
+        // replace the complex object with the corresponding class name in the request JSON object.
+        Response.Filter filter = request.responseFilter();
+        if (filter != null) {
+            jsonObject.addProperty("responseFilter", filter.getClass().getName());
+        }
+
+        return jsonObject;
     }
 
     // Ensures any header attribute in the JSON object is formatted properly as a dictionary.
