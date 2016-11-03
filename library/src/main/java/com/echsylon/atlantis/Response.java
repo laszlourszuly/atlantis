@@ -150,36 +150,43 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the default delay for this response, disabling the max delay. Doesn't do anything if
-         * the default delay isn't greater than zero.
+         * Sets the default delay for this response, disabling the max delay. If the new default
+         * delay is less than or equal to zero, then the delay feature is reset.
          *
          * @param milliseconds The new amount of milliseconds to delay this response.
          * @return This buildable response instance, allowing chaining of method calls.
          */
         public Builder withDelay(int milliseconds) {
+            this.delay = null;
+            this.maxDelay = null;
+
             if (milliseconds > 0) {
                 this.delay = milliseconds;
-                this.maxDelay = null;
             }
+
             return this;
         }
 
         /**
-         * Sets the random delay metrics for this response. Doesn't do anything if default delay
-         * isn't greater than zero and only sets the max delay if it's greater than the default
-         * delay (otherwise it's reset).
+         * Sets the random delay metrics for this response. If the new min delay is less than or
+         * equal to zero, or the max delay is less than the min delay, then the delay feature is
+         * reset.
          *
          * @param milliseconds    The minimum amount of random milliseconds to delay this response.
          * @param maxMilliseconds The maximum amount of random milliseconds to delay this response.
          * @return This buildable response instance, allowing chaining of method calls.
          */
         public Builder withDelay(int milliseconds, int maxMilliseconds) {
+            this.delay = null;
+            this.maxDelay = null;
+
             if (milliseconds > 0 && maxMilliseconds >= milliseconds) {
                 this.delay = milliseconds;
                 this.maxDelay = maxMilliseconds > milliseconds ?
                         maxMilliseconds :
                         null;
             }
+
             return this;
         }
 
