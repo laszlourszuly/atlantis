@@ -6,8 +6,11 @@ import android.os.AsyncTask;
 import com.echsylon.atlantis.internal.UrlUtils;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.internal.json.JsonParser;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -251,7 +254,7 @@ public class Atlantis {
     }
 
     /**
-     * Reconfigures Atlantis from a configuration JSON asset. The asset is read read from disk on a
+     * Reconfigures Atlantis from a configuration JSON asset. The asset is read from disk on a
      * worker thread. Any results are notified through the given callbacks, if given.
      *
      * @param context         The context to use when reading assets.
@@ -270,10 +273,46 @@ public class Atlantis {
             protected Throwable doInBackground(Void... nothings) {
                 try {
                     byte[] bytes = Utils.readAsset(context, configAssetName);
-                    JsonParser jsonParser = new JsonParser();
                     String json = new String(bytes);
 
+                    JsonParser jsonParser = new JsonParser();
                     Atlantis.this.configuration = jsonParser.fromJson(json, Configuration.class);
+                    return null;
+                } catch (Exception e) {
+                    return e;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Throwable throwable) {
+                if (throwable == null) {
+                    if (successListener != null)
+                        successListener.onSuccess();
+                } else {
+                    if (errorListener != null)
+                        errorListener.onError(throwable);
+                }
+            }
+        }.execute();
+    }
+
+    /**
+     * Writes the current Atlantis configuration to a file on the filesystem. The configuration is
+     * written to disk on a worker thread. Any results are notified through the given callbacks, if
+     * given.
+     *
+     * @param file            The file to write the configuration to.
+     * @param successListener The success callback.
+     * @param errorListener   The error callback.
+     */
+    public void writeConfigurationToFile(final File file, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        new AsyncTask<Void, Void, Throwable>() {
+            @Override
+            protected Throwable doInBackground(Void... nothings) {
+                try {
+                    JsonParser jsonParser = new JsonParser();
+                    String json = jsonParser.toJson(Atlantis.this.configuration, Configuration.class);
+                    Files.write(json, file, Charsets.UTF_8);
                     return null;
                 } catch (Exception e) {
                     return e;
