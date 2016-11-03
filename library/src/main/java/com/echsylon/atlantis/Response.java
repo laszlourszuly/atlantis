@@ -14,7 +14,7 @@ import java.util.Random;
 import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 
 /**
- * This class contains all the data required by the {@link com.echsylon.atlantis.Atlantis Atlantis}
+ * This class contains all the data required by {@link com.echsylon.atlantis.Atlantis Atlantis}
  * to serve a response.
  */
 @SuppressWarnings("WeakerAccess")
@@ -23,8 +23,8 @@ public class Response extends HttpEntity implements Serializable {
     public static final Response EMPTY = new Response();
 
     /**
-     * This interface describes the features for filtering out a particular response based solely on
-     * internal logic.
+     * This interface describes the features for filtering out a particular response based on the
+     * implemented logic.
      */
     public interface Filter {
 
@@ -40,15 +40,15 @@ public class Response extends HttpEntity implements Serializable {
     }
 
     /**
-     * This class offers means of building a response configuration directly from code (as opposed
-     * to configure one in a JSON asset).
+     * This class offers means of building a mocked response configuration directly from code (as
+     * opposed to configure one in a JSON asset).
      */
     @SuppressWarnings("WeakerAccess")
     public static final class Builder extends Response {
 
         /**
          * Adds a header to the response being built. Doesn't add anything if either {@code key} or
-         * {@code value} is empty (null pointers are considered as empty).
+         * {@code value} is empty (null pointers are considered empty).
          *
          * @param key   The header key.
          * @param value The header value.
@@ -89,7 +89,7 @@ public class Response extends HttpEntity implements Serializable {
          * nor the name. It's up to the caller to ensure they make sense in the given context.
          *
          * @param code The new HTTP status code.
-         * @param name The corresponding human readable status text ("OK", "Not found", etc).
+         * @param name The corresponding human readable status text (e.g. "OK", "Not found", etc).
          * @return This buildable response instance, allowing chaining of method calls.
          */
         public Builder withStatus(int code, String name) {
@@ -102,9 +102,9 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the mime type of this response. Doesn't validate the input.
+         * Sets the MIME type of this response. This method doesn't validate the input.
          *
-         * @param mimeType The new mime type.
+         * @param mimeType The new MIME type.
          * @return This buildable response instance, allowing chaining of method calls.
          */
         public Builder withMimeType(String mimeType) {
@@ -113,8 +113,8 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the plain text context of this response. Doesn't validate the input or that it
-         * matches any set mime types.
+         * Sets the plain text content of this response. This method doesn't validate the input or
+         * that it matches any set MIME type.
          *
          * @param content The new plain text content.
          * @return This buildable response instance, allowing chaining of method calls.
@@ -125,10 +125,10 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the asset resource path (relative to the apps 'assets' folder) of this response. The
+         * Sets the asset resource path of this response (relative to the apps 'assets' folder). The
          * only validation being done is that the asset starts with "asset://".
          *
-         * @param assetName The new asset path.
+         * @param assetName The new asset relative path.
          * @return This buildable response instance, allowing chaining of method calls.
          */
         public Builder withAsset(String assetName) {
@@ -249,7 +249,7 @@ public class Response extends HttpEntity implements Serializable {
     /**
      * Returns the MIME type of the response.
      *
-     * @return The MIME type.
+     * @return The MIME type. May be null.
      */
     public String mimeType() {
         return mime;
@@ -258,7 +258,7 @@ public class Response extends HttpEntity implements Serializable {
     /**
      * Returns the response body string.
      *
-     * @return The content or null.
+     * @return The content. May be null.
      */
     public String content() {
         return text;
@@ -269,7 +269,7 @@ public class Response extends HttpEntity implements Serializable {
      * to further process the result.
      *
      * @param context The context the resource asset is to be opened from.
-     * @return The asset byte array, may be empty but never null.
+     * @return The asset byte array. May be empty but never null.
      * @throws IOException If for some reason the asset file could not be read.
      */
     public byte[] asset(Context context) throws IOException {
@@ -323,7 +323,7 @@ public class Response extends HttpEntity implements Serializable {
     /**
      * Returns a flag telling whether the response has a valid, non-empty asset file pointer. This
      * flag doesn't say anything about the actual content in such an asset file which very well may
-     * be empty.
+     * be empty or invalid.
      *
      * @return Boolean true if the content asset file pointer is not a null pointer or an empty
      * string and that it points to an asset file (i.e. starts with "asset://"), otherwise false.

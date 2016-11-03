@@ -59,7 +59,7 @@ public class RequestTest {
     }
 
     @Test
-    public void method_returnsExpectedMethodOrNull() throws Exception {
+    public void get_returnsExpectedMethodOrNull() throws Exception {
         Request requestOne = new Gson().fromJson("{method:'get'}", Request.class);
         assertThat(requestOne.method(), is("get"));
 
@@ -68,7 +68,7 @@ public class RequestTest {
     }
 
     @Test
-    public void url_returnsExpectedUrlOrNull() throws Exception {
+    public void get_returnsExpectedUrlOrNull() throws Exception {
         Request requestOne = new Gson().fromJson("{url:'/one'}", Request.class);
         assertThat(requestOne.url(), is("/one"));
 
@@ -77,7 +77,7 @@ public class RequestTest {
     }
 
     @Test
-    public void response_returnsExpectedResponseOrNull() throws Exception {
+    public void get_returnsExpectedResponseOrNull() throws Exception {
         Request requestOne = new Gson().fromJson("{url:'/one', responses:[{text:'{}'}]}", Request.class);
         assertThat(requestOne.response(), is(notNullValue()));
 

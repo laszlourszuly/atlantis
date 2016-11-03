@@ -19,7 +19,9 @@ import fi.iki.elonen.NanoHTTPD;
 
 /**
  * This is the local web server that will serve the template responses. This web server will only
- * handle requests issued targeting "localhost", "192.168.0.1" or "127.0.0.1".
+ * serve mocked responses for requests targeting "localhost". If configured so, a request can be
+ * delegated to a "real world" server if no corresponding configuration is found for a certain
+ * request.
  */
 @SuppressWarnings("WeakerAccess") // Suppress Lint Warning on public method visibility
 public class Atlantis {
@@ -77,11 +79,10 @@ public class Atlantis {
 
     /**
      * Starts the local Atlantis server. The caller must manually set a configuration (either by
-     * pointing to a JSON asset or by injecting programmatically defined requests). The success
-     * callback is called once the server is fully operational. Note that the configuration can be
-     * injected regardless of the current start-up state of the local server.
+     * pointing to a JSON asset or by injecting programmatically defined request templates). The
+     * success callback is called once the server is fully operational.
      *
-     * @param successListener The success state callback implementation.
+     * @param successListener The success callback implementation.
      * @param errorListener   The error callback implementation.
      * @return An Atlantis object instance.
      */
@@ -89,6 +90,10 @@ public class Atlantis {
         Atlantis atlantis = new Atlantis();
 
         try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
             atlantis.nanoHTTPD.start();
             if (successListener != null)
                 successListener.onSuccess();
@@ -103,9 +108,9 @@ public class Atlantis {
     /**
      * Starts the local Atlantis server and automatically loads a configuration from a JSON asset.
      *
-     * @param context         The context to use while loading assets.
-     * @param configAssetName The name of the configuration asset to load.
-     * @param successListener The success state callback implementation.
+     * @param context         The context to use while loading any assets.
+     * @param configAssetName The name of the configuration asset file to load.
+     * @param successListener The success callback implementation.
      * @param errorListener   The error callback implementation.
      * @return An Atlantis object instance.
      */
@@ -113,7 +118,10 @@ public class Atlantis {
         Atlantis atlantis = new Atlantis();
 
         try {
-            // See comment in alternative #start(...) method.
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
             atlantis.nanoHTTPD.start();
         } catch (IOException e) {
             if (errorListener != null)
@@ -129,7 +137,7 @@ public class Atlantis {
      *
      * @param context         The context to use while loading any response assets.
      * @param configuration   The built configuration object.
-     * @param successListener The success state callback implementation.
+     * @param successListener The success callback implementation.
      * @param errorListener   The error callback implementation.
      * @return An Atlantis object instance.
      */
@@ -193,7 +201,8 @@ public class Atlantis {
                 if (response == null)
                     return super.serve(session);
 
-                // We have a response. Maybe delay before actually delivering it.
+                // We have a response. Maybe delay before actually delivering it. Relax, this
+                // is a worker thread.
                 long delay = response.delay();
                 if (delay > 0L)
                     try {
@@ -246,8 +255,8 @@ public class Atlantis {
      * worker thread. Any results are notified through the given callbacks, if given.
      *
      * @param context         The context to use when reading assets.
-     * @param configAssetName The name of the configuration asset (relative to the apps 'assets'
-     *                        folder).
+     * @param configAssetName The name of the configuration asset file (relative to the apps
+     *                        'assets' folder).
      * @param successListener The success callback.
      * @param errorListener   The error callback.
      */
@@ -303,8 +312,8 @@ public class Atlantis {
 
     /**
      * Returns a snapshot of the capture history stack as it looks right this moment. This method
-     * leaves the actual stack intact, but new requests may be added to it at any time. These new
-     * additions won't be reflected in the output of this method though.
+     * leaves the actual stack intact, but new requests may be added to it at any time and these new
+     * additions won't be reflected in the output of this method.
      *
      * @return A snapshot of the captured history stack.
      */
@@ -327,7 +336,7 @@ public class Atlantis {
     }
 
     // Tries to find a response configuration that matches the given request parameters. Also
-    // captures the request if in such a mode.
+    // pushes the request to the capture stack if in such a state.
     private Response getMockedResponse(String url, String method, Map<String, String> headers) {
         Request request = configuration.findRequest(url, method, headers);
 
@@ -346,12 +355,12 @@ public class Atlantis {
                 null;
     }
 
-    // Synchronously makes a real network request and returns the response as an Atlantis response
-    // or null, would anything go wrong. This request is completely anonymous from the local web
-    // servers (currently NanoHTTPD) point of view, as in the internal state won't be updated with
-    // these real world parameters. Would the real world request fail, then the local web server
-    // would serve a response suggesting the local request failed (i.e. "http://localhost:8080" and
-    // not "http://www.realworld.com").
+    // Synchronously makes a real network request and returns the response as an Atlantis response,
+    // or null would anything go wrong. This request is completely anonymous from the local web
+    // servers (currently NanoHTTPD) point of view as the internal state (cookies and what-not)
+    // won't be updated with these real world parameters. Would the real world request fail, then
+    // the local web server would serve a response suggesting the local request failed (i.e.
+    // "http://localhost:8080" and not "http://www.realworld.com").
     private Response getRealResponse(String realBaseUrl, String requestUrl, String method, Map<String, String> headers) {
         HttpURLConnection connection = null;
         String realUrl = String.format("%s%s%s%s", realBaseUrl,
@@ -367,6 +376,7 @@ public class Atlantis {
             connection.getRequestProperties();
 
             // Some headers we don't want to leak to the real world at all.
+            // These seem to be added by NanoHttpd.
             headers.remove("host");
             headers.remove("remote-addr");
             headers.remove("http-client-ip");

@@ -12,26 +12,26 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 
 /**
  * This class represents a request template as the {@link com.echsylon.atlantis.Atlantis Atlantis}
- * local web server expects it. It will use this template when trying to identify which response to
- * serve to a user provided request.
+ * local web server expects it. Atlantis will use this template when trying to identify which
+ * response to serve to a user-provided request.
  */
 @SuppressWarnings("WeakerAccess")
 public class Request extends HttpEntity implements Serializable {
 
     /**
-     * This interface describes the features for filtering out a particular request based on a set
-     * of hints describing the desired result.
+     * This interface describes the features for filtering out a particular request template based
+     * on a set of hints describing the desired result.
      */
     public interface Filter {
 
         /**
-         * Returns a request object based on the internal filtering logic.
+         * Returns a request template based on the implemented filtering logic.
          *
-         * @param requests All available requests
-         * @param url      The url giving a hint of which request to find.
+         * @param requests All available request templates.
+         * @param url      The url giving a hint of which template to find.
          * @param method   The corresponding request method to filter on.
          * @param headers  The headers hint.
-         * @return The filtered request or null if no match found.
+         * @return The filtered request, or null if no match found.
          */
         Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers);
 
@@ -46,7 +46,7 @@ public class Request extends HttpEntity implements Serializable {
 
         /**
          * Adds a header to the request being built. Doesn't add anything if either {@code key} or
-         * {@code value} is empty (null pointer is considered as empty).
+         * {@code value} is empty (null pointers are considered empty).
          *
          * @param key   The header key.
          * @param value The header value.
@@ -100,8 +100,8 @@ public class Request extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the method of the request.  Allows null pointers and empty strings, even though it
-         * in practice doesn't make any sense.
+         * Sets the method of the request. Allows null pointers and empty strings even though in
+         * practice such values doesn't make any sense.
          *
          * @param method The new HTTP request method.
          * @return This buildable request instance, allowing chaining of method calls.
@@ -112,8 +112,8 @@ public class Request extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the url of the request. Allows null pointers and empty strings, even though it in
-         * practice doesn't make any sense.
+         * Sets the url of the request. Allows null pointers and empty strings even though in
+         * practice such values doesn't make any sense.
          *
          * @param url The new url.
          * @return This buildable request instance, allowing chaining of method calls.
@@ -125,7 +125,7 @@ public class Request extends HttpEntity implements Serializable {
 
         /**
          * Sets the response filter logic to use when deciding which response to serve. Null is a
-         * valid value, even though it doesn't make sense.
+         * valid value, even though in practice it doesn't make any sense.
          *
          * @param responseFilter The response filter implementation.
          * @return This buildable request instance, allowing chaining of method calls.
@@ -174,9 +174,9 @@ public class Request extends HttpEntity implements Serializable {
     }
 
     /**
-     * Returns the corresponding response for this request.
+     * Returns the response for this request, as filtered by the current response filter.
      *
-     * @return The response.
+     * @return The mocked response.
      */
     public Response response() {
         return responseFilter != null ?

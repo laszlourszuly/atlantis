@@ -52,7 +52,7 @@ public class Configuration implements Serializable {
         }
 
         /**
-         * Sets the fallback base url to try to hit when no no mocked request was found.
+         * Sets the fallback base url to hit when no mocked request was found.
          *
          * @param realBaseUrl The real-world base URL, including scheme.
          * @return This buildable configuration object, allowing chaining of method calls.
@@ -82,7 +82,9 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Returns the fallback base url for this configuration.
+     * Returns the fallback base url for this configuration. If given, this is the suggested real
+     * world base URL to target (replacing "localhost:8080") if no configuration was found for a
+     * request.
      *
      * @return The fallback base url or null.
      */
@@ -92,7 +94,7 @@ public class Configuration implements Serializable {
 
     /**
      * Returns a flag telling whether this configuration can present an alternative route to a
-     * supposedly "real" response.
+     * supposedly "real" response if no configuration is found for a request.
      *
      * @return Boolean true if the configuration has a fallback base url, false otherwise.
      */
@@ -102,7 +104,7 @@ public class Configuration implements Serializable {
 
     /**
      * Tries to find a request configuration. The actual logic behind the matching is delegated to
-     * the current {@link com.echsylon.atlantis.Request.Filter} implementation.
+     * the current {@link com.echsylon.atlantis.Request.Filter Request#Filter} implementation.
      *
      * @param url     The url.
      * @param method  The request method.
