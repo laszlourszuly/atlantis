@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
@@ -11,6 +10,11 @@
     <item
         android:id="@+id/get_123"
         android:title="@string/get_123"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/save_configuration"
+        android:title="@string/save_configuration"
         app:showAsAction="never" />
 
 </menu>

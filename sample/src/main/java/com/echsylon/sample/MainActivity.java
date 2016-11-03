@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
+        menu.findItem(R.id.save_configuration).setVisible(BuildConfig.DEBUG);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -51,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
             case R.id.get_abc: {
                 String url = String.format("%s/aye/a/bee/b/cee/c", BuildConfig.BASE_URL);
                 performNetworkRequest(url, output);
+                return true;
+            }
+            case R.id.save_configuration: {
+                ((SampleApplication) getApplication()).saveConfiguration();
                 return true;
             }
             default:
