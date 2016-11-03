@@ -37,10 +37,10 @@ task prepareVersion << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task prepareMajorRelease << {
-    def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major.toInteger() + 1, minor, patch].join('.')
-    createNewTag(oldVersionName, newVersionName, versionCode.toInteger() + 1)
+    createNewTag(oldVersionName, newVersionName)
 }
 
 /**
@@ -57,10 +57,10 @@ task prepareMajorRelease << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task prepareMinorRelease << {
-    def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor.toInteger() + 1, patch].join('.')
-    createNewTag(oldVersionName, newVersionName, versionCode.toInteger() + 1)
+    createNewTag(oldVersionName, newVersionName)
 }
 
 /**
@@ -77,10 +77,10 @@ task prepareMinorRelease << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task preparePatchRelease << {
-    def (oldVersionName, versionCode) = getVersionFromLatestTag().tokenize()
+    def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor, patch.toInteger() + 1].join('.')
-    createNewTag(oldVersionName, newVersionName, versionCode.toInteger() + 1)
+    createNewTag(oldVersionName, newVersionName)
 }
 
 /**
@@ -93,12 +93,8 @@ task preparePatchRelease << {
 private def getVersionFromLatestTag() {
     'git fetch origin \'refs/tags/*:refs/tags/*\''.bash()
 
-    def tag = 'git for-each-ref --count=1 --sort=-taggerdate --format=\'%(contents:subject)\' \'refs/tags/v[0-9]*.[0-9]*.[0-9]*\''.bash()
-    def buildNumber = System.getenv('CIRCLE_BUILD_NUM')
-    def filter = buildNumber && buildNumber.isInteger() ?
-            "s/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*/\\1 ${buildNumber}/p" :
-            's/.*\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\).*(\\([0-9]\\{1,\\}\\))/\\1 \\2/p'
-
+    def tag = 'git for-each-ref --count=1 --sort=-taggerdate --format=\'%(tag)\' \'refs/tags/v[0-9]*.[0-9]*.[0-9]*\''.bash()
+    def filter = 's/v\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\)/\\1/p'
     def versions = "echo '${tag}' | sed -n '${filter}'".bash().trim()
     if (versions.isEmpty())
         throw new IllegalStateException("Couldn't extract version from tag: '${tag}'")
@@ -111,12 +107,10 @@ private def getVersionFromLatestTag() {
  *
  * @param oldVersionName Used for collecting all commits pushed since.
  * @param newVersionName Used for creating the new tag.
- * @param newVersionCode The new version code.
  */
-private def createNewTag(String oldVersionName, String newVersionName, int newVersionCode) {
-    def subject = "Version ${newVersionName} (${newVersionCode})"
+private def createNewTag(String oldVersionName, String newVersionName) {
     def body = "git log --pretty=format:'* %s' v${oldVersionName}...HEAD".bash()
-    "git tag -a v${newVersionName} -m '${subject}\n\n${body}\n\n'".bash()
+    "git tag -a v${newVersionName} -m '${body}'".bash()
 
     println("\n\nSuccessfully created tag: v${newVersionName}")
     println('\nYou can now:')
