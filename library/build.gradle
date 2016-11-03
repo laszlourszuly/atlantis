@@ -6,6 +6,7 @@ plugins {
 }
 
 apply plugin: 'com.android.library'
+apply from: 'version.gradle'
 
 retrolambda {
     bytecodeVersion 51
@@ -20,8 +21,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionName System.getProperty('VERSION_NAME', '0.0.0')
         versionCode Integer.parseInt(System.getenv('CIRCLE_BUILD_NUM') ?: '0')
+        versionName prepareVersionName()
         project.archivesBaseName = 'atlantis'
         project.version = android.defaultConfig.versionName
     }
@@ -63,6 +64,3 @@ apply from: 'jacoco.gradle'
 apply from: 'publish.gradle'
 apply from: 'bintray.gradle'
 apply from: 'coveralls.gradle'
-apply from: 'version.gradle'
-
-clean.dependsOn prepareVersion

@@ -1,29 +1,4 @@
 /**
- * This task will prepare the current VERSION_NAME and VERSION_CODE to use for the project. The
- * VERSION_NAME will follow the SEMVER pattern of ${major}.${minor}.${patch}. If this task isn't
- * issued from the production environment, then "-SNAPSHOT" will be appended to the version name.
- * The parts of the version name will be extracted from the latest release tag in git repository.
- * This task will try to fetch any tags from the remote repository first.
- *
- * The flow of this task is:
- *
- * 1. Get the version name and version code from the latest tag's subject line.
- * 2. If this isn't the production environment, add "-SNAPSHOT" to the version name.
- * 3. Store the version name in the "VERSION_NAME" system property.
- * 4. Store the version code in the "VERSION_CODE" system property.
- */
-task prepareVersion << {
-    def (versionName, versionCode) = getVersionFromLatestTag().tokenize()
-    println("Prepared version: ${versionName} (${versionCode})")
-
-    if (!versionName.isEmpty())
-        System.setProperty('VERSION_NAME', System.hasProperty('CIRCLECI') ? versionName : "${versionName}-SNAPSHOT")
-
-    if (versionCode.isInteger())
-        System.setProperty('VERSION_CODE', versionCode)
-}
-
-/**
  * This task will trigger a new major release. An exception will be thrown if the desired version
  * name segment or the version code couldn't be incremented properly. This task will trigger the
  * production environment to perform the actual release. Local releases can only be performed
@@ -81,6 +56,25 @@ task preparePatchRelease << {
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor, patch.toInteger() + 1].join('.')
     createNewTag(oldVersionName, newVersionName)
+}
+
+/**
+ * Prepares the current version name to use for the project. The version name will follow the SEMVER
+ * pattern of ${major}.${minor}.${patch}. If this method is called from a non-production environment
+ * then "-SNAPSHOT" will be appended to the version name. The parts of the version name will be
+ * extracted from the latest release tag in git repository.
+ *
+ * @return The version name or an empty string
+ */
+ext.prepareVersionName = {
+    def versionName = getVersionFromLatestTag()
+
+    if (!versionName.isEmpty()) {
+        versionName = System.getenv('CIRCLECI') ? versionName : "${versionName}-SNAPSHOT"
+        println("Prepared version: ${versionName}")
+    }
+
+    return versionName
 }
 
 /**
