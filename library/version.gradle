@@ -13,8 +13,8 @@
  */
 task prepareMajorRelease << {
     def oldVersionName = getVersionFromLatestTag()
-    def (major, minor, patch) = oldVersionName.tokenize('.')
-    def newVersionName = [major.toInteger() + 1, minor, patch].join('.')
+    def segments = oldVersionName.tokenize('.')
+    def newVersionName = [segments[0].toInteger() + 1, 0, 0].join('.')
     createNewTag(oldVersionName, newVersionName)
 }
 
@@ -33,8 +33,8 @@ task prepareMajorRelease << {
  */
 task prepareMinorRelease << {
     def oldVersionName = getVersionFromLatestTag()
-    def (major, minor, patch) = oldVersionName.tokenize('.')
-    def newVersionName = [major, minor.toInteger() + 1, patch].join('.')
+    def (major, minor) = oldVersionName.tokenize('.')
+    def newVersionName = [major, minor.toInteger() + 1, 0].join('.')
     createNewTag(oldVersionName, newVersionName)
 }
 
@@ -104,7 +104,7 @@ private def getVersionFromLatestTag() {
  */
 private def createNewTag(String oldVersionName, String newVersionName) {
     def body = "git log --pretty=format:'* %s' v${oldVersionName}...HEAD".bash()
-    "git tag -a v${newVersionName} -m '${body}'".bash()
+    "git tag -a v${newVersionName} -m 'Version ${newVersionName}\n\n${body}'".bash()
 
     println("\n\nSuccessfully created tag: v${newVersionName}")
     println('\nYou can now:')
