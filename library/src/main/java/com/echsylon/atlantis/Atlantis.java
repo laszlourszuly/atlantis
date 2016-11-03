@@ -126,12 +126,39 @@ public class Atlantis {
             // the calling thread to sleep. The sleep is for a very short amount of time, but
             // nonetheless forceful. We need to keep an eye on this.
             atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configAssetName, successListener, errorListener);
         } catch (IOException e) {
             if (errorListener != null)
                 errorListener.onError(e);
         }
 
-        atlantis.setConfiguration(context, configAssetName, successListener, errorListener);
+        return atlantis;
+    }
+
+    /**
+     * Starts the local Atlantis server and automatically loads a configuration from a JSON file.
+     *
+     * @param context         The context to use while loading any assets.
+     * @param configFile      The file to load the configuration from.
+     * @param successListener The success callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start(Context context, File configFile, OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configFile, successListener, errorListener);
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
         return atlantis;
     }
 
@@ -275,6 +302,47 @@ public class Atlantis {
                     byte[] bytes = Utils.readAsset(context, configAssetName);
                     String json = new String(bytes);
 
+                    JsonParser jsonParser = new JsonParser();
+                    Atlantis.this.configuration = jsonParser.fromJson(json, Configuration.class);
+                    return null;
+                } catch (Exception e) {
+                    return e;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Throwable throwable) {
+                if (throwable == null) {
+                    if (successListener != null)
+                        successListener.onSuccess();
+                } else {
+                    if (errorListener != null)
+                        errorListener.onError(throwable);
+                }
+            }
+        }.execute();
+    }
+
+    /**
+     * Reconfigures Atlantis from a configuration JSON file. The asset is read from disk on a
+     * worker thread. Any results are notified through the given callbacks, if given.
+     *
+     * @param context         The context to use when reading assets.
+     * @param file            The configuration JSON file to read.
+     * @param successListener The success callback.
+     * @param errorListener   The error callback.
+     */
+    public void setConfiguration(final Context context, final File file, final OnSuccessListener successListener, final OnErrorListener errorListener) {
+        this.context = context;
+        if (file == null)
+            this.configuration = null;
+
+        new AsyncTask<Void, Void, Throwable>() {
+            @Override
+            protected Throwable doInBackground(Void... nothings) {
+                try {
+                    //noinspection ConstantConditions
+                    String json = Files.toString(file, Charsets.UTF_8);
                     JsonParser jsonParser = new JsonParser();
                     Atlantis.this.configuration = jsonParser.fromJson(json, Configuration.class);
                     return null;
