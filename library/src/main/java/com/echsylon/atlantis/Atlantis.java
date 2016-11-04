@@ -6,8 +6,6 @@ import android.os.AsyncTask;
 import com.echsylon.atlantis.internal.UrlUtils;
 import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.internal.json.JsonParser;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -303,7 +301,7 @@ public class Atlantis {
                     String json = new String(bytes);
 
                     JsonParser jsonParser = new JsonParser();
-                    Atlantis.this.configuration = jsonParser.fromJson(json, Configuration.class);
+                    configuration = jsonParser.fromJson(json, Configuration.class);
                     return null;
                 } catch (Exception e) {
                     return e;
@@ -342,9 +340,9 @@ public class Atlantis {
             protected Throwable doInBackground(Void... nothings) {
                 try {
                     //noinspection ConstantConditions
-                    String json = Files.toString(file, Charsets.UTF_8);
+                    String json = new String(Utils.readFile(file));
                     JsonParser jsonParser = new JsonParser();
-                    Atlantis.this.configuration = jsonParser.fromJson(json, Configuration.class);
+                    configuration = jsonParser.fromJson(json, Configuration.class);
                     return null;
                 } catch (Exception e) {
                     return e;
@@ -379,8 +377,8 @@ public class Atlantis {
             protected Throwable doInBackground(Void... nothings) {
                 try {
                     JsonParser jsonParser = new JsonParser();
-                    String json = jsonParser.toJson(Atlantis.this.configuration, Configuration.class);
-                    Files.write(json, file, Charsets.UTF_8);
+                    String json = jsonParser.toJson(configuration, Configuration.class);
+                    Utils.writeFile(json, file);
                     return null;
                 } catch (Exception e) {
                     return e;
