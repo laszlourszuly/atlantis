@@ -2,6 +2,7 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.echsylon.atlantis.internal.UrlUtils;
 import com.echsylon.atlantis.internal.Utils;
@@ -15,24 +16,25 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
+import java.util.UUID;
 
 import fi.iki.elonen.NanoHTTPD;
 
 /**
- * This is the local web server that will serve the template responses. This web server will only
- * serve mocked responses for requests targeting "localhost". If configured so, a request can be
- * delegated to a "real world" server if no corresponding configuration is found for a certain
- * request.
+ * This is the local web server that will serve the template responses. This web
+ * server will only serve mocked responses for requests targeting "localhost".
+ * If configured so, a request can be delegated to a "real world" server if no
+ * corresponding configuration is found for a certain request.
  */
-@SuppressWarnings("WeakerAccess") // Suppress Lint Warning on public method visibility
+@SuppressWarnings("WeakerAccess")
 public class Atlantis {
     private static final String HOSTNAME = "localhost";
     private static final int PORT = 8080;
 
     /**
-     * This is a converter class, representing an HTTP status as the NanoHTTPD class knows it.
-     * Atlantis only works with integers and strings when it comes to HTTP status code, hence the
-     * need for this class.
+     * This is a converter class, representing an HTTP status as the NanoHTTPD
+     * class knows it. Atlantis only works with integers and strings when it
+     * comes to HTTP status code, hence the need for this class.
      */
     private static final class NanoStatus implements NanoHTTPD.Response.IStatus {
         private final int code;
@@ -55,7 +57,8 @@ public class Atlantis {
     }
 
     /**
-     * This is a callback interface through which any asynchronous success states are notified.
+     * This is a callback interface through which any asynchronous success
+     * states are notified.
      */
     public interface OnSuccessListener {
 
@@ -66,7 +69,8 @@ public class Atlantis {
     }
 
     /**
-     * THis is a callback interface through which any asynchronous exceptions are notified.
+     * THis is a callback interface through which any asynchronous exceptions
+     * are notified.
      */
     public interface OnErrorListener {
 
@@ -79,9 +83,10 @@ public class Atlantis {
     }
 
     /**
-     * Starts the local Atlantis server. The caller must manually set a configuration (either by
-     * pointing to a JSON asset or by injecting programmatically defined request templates). The
-     * success callback is called once the server is fully operational.
+     * Starts the local Atlantis server. The caller must manually set a
+     * configuration (either by pointing to a JSON asset or by injecting
+     * programmatically defined request templates). The success callback is
+     * called once the server is fully operational.
      *
      * @param successListener The success callback implementation.
      * @param errorListener   The error callback implementation.
@@ -107,7 +112,8 @@ public class Atlantis {
     }
 
     /**
-     * Starts the local Atlantis server and automatically loads a configuration from a JSON asset.
+     * Starts the local Atlantis server and automatically loads a configuration
+     * from a JSON asset.
      *
      * @param context         The context to use while loading any assets.
      * @param configAssetName The name of the configuration asset file to load.
@@ -134,7 +140,8 @@ public class Atlantis {
     }
 
     /**
-     * Starts the local Atlantis server and automatically loads a configuration from a JSON file.
+     * Starts the local Atlantis server and automatically loads a configuration
+     * from a JSON file.
      *
      * @param context         The context to use while loading any assets.
      * @param configFile      The file to load the configuration from.
@@ -161,9 +168,11 @@ public class Atlantis {
     }
 
     /**
-     * Starts the local Atlantis server and automatically sets a built configuration.
+     * Starts the local Atlantis server and automatically sets a built
+     * configuration.
      *
-     * @param context         The context to use while loading any response assets.
+     * @param context         The context to use while loading any response
+     *                        assets.
      * @param configuration   The built configuration object.
      * @param successListener The success callback implementation.
      * @param errorListener   The error callback implementation.
@@ -190,13 +199,16 @@ public class Atlantis {
         return atlantis;
     }
 
+    private boolean isCapturing;
+    private boolean isRecording;
+
     private Context context;
     private NanoHTTPD nanoHTTPD;
     private Configuration configuration;
-
-    private boolean isCapturing;
-    private final Object captureLock;
+    private File recordedAssetsDirectory;
     private volatile Stack<Request> captured;
+
+    private final Object captureLock;
 
 
     // Intentionally hidden constructor.
@@ -207,39 +219,42 @@ public class Atlantis {
         this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
             @Override
             public Response serve(IHTTPSession session) {
-                // Early bail-out.
                 if (configuration == null)
                     return super.serve(session);
 
-                // Get a response to deliver.
-                com.echsylon.atlantis.Response response = getMockedResponse(
-                        session.getUri(),
-                        session.getMethod().name(),
-                        session.getHeaders());
+                String url = session.getUri();
+                String method = session.getMethod().name();
+                Map<String, String> headers = session.getHeaders();
 
-                // No response found, try to fall back to the real world.
-                if (response == null)
-                    if (configuration.hasAlternativeRoute())
-                        response = getRealResponse(configuration.fallbackBaseUrl(),
-                                session.getUri(),
-                                session.getMethod().name(),
-                                session.getHeaders());
+                // Try to find a mock request and response configuration for
+                // the target HTTP params.
+                Request request = configuration.findRequest(url, method, headers);
+                com.echsylon.atlantis.Response response = request != null ?
+                        request.response() :
+                        configuration.hasAlternativeRoute() ?
+                                getRealResponse(configuration.fallbackBaseUrl(), url, method, headers) :
+                                null;
 
-                // Nope, the real world isn't any better. Bail out and serve default response.
+                // Bummer! Bail out.
                 if (response == null)
                     return super.serve(session);
 
-                // We have a response. Maybe delay before actually delivering it. Relax, this
-                // is a worker thread.
-                long delay = response.delay();
-                if (delay > 0L)
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException ignored) {
-                    }
+                // Prepare a valid request for any capturing and recording.
+                if (request == null)
+                    request = new Request.Builder()
+                            .withUrl(url)
+                            .withMethod(method)
+                            .withHeaders(headers)
+                            .withResponse(response);
 
-                // Now, finally, deliver.
+                captureRequest(request);
+                recordRequest(request);
+
+                // Deliver the response, maybe delay before actually delivering
+                // it. Relax, this is a worker thread.
                 try {
+                    long delay = response.delay();
+                    Thread.sleep(delay);
                     NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
                     String mime = response.mimeType();
                     byte[] bytes = response.hasAsset() ?
@@ -279,12 +294,13 @@ public class Atlantis {
     }
 
     /**
-     * Reconfigures Atlantis from a configuration JSON asset. The asset is read from disk on a
-     * worker thread. Any results are notified through the given callbacks, if given.
+     * Reconfigures Atlantis from a configuration JSON asset. The asset is read
+     * from disk on a worker thread. Any results are notified through the given
+     * callbacks, if given.
      *
      * @param context         The context to use when reading assets.
-     * @param configAssetName The name of the configuration asset file (relative to the apps
-     *                        'assets' folder).
+     * @param configAssetName The name of the configuration asset file (relative
+     *                        to the apps 'assets' folder).
      * @param successListener The success callback.
      * @param errorListener   The error callback.
      */
@@ -322,8 +338,9 @@ public class Atlantis {
     }
 
     /**
-     * Reconfigures Atlantis from a configuration JSON file. The asset is read from disk on a
-     * worker thread. Any results are notified through the given callbacks, if given.
+     * Reconfigures Atlantis from a configuration JSON file. The asset is read
+     * from disk on a worker thread. Any results are notified through the given
+     * callbacks, if given.
      *
      * @param context         The context to use when reading assets.
      * @param file            The configuration JSON file to read.
@@ -363,9 +380,9 @@ public class Atlantis {
     }
 
     /**
-     * Writes the current Atlantis configuration to a file on the filesystem. The configuration is
-     * written to disk on a worker thread. Any results are notified through the given callbacks, if
-     * given.
+     * Writes the current Atlantis configuration to a file on the filesystem.
+     * The configuration is written to disk on a worker thread. Any results are
+     * notified through the given callbacks, if given.
      *
      * @param file            The file to write the configuration to.
      * @param successListener The success callback.
@@ -399,8 +416,11 @@ public class Atlantis {
     }
 
     /**
-     * Tells the local web server to start capturing a copy of any served requests. This method will
-     * start a new capture session by clearing the capture history stack.
+     * Tells the local web server to start capturing a copy of any served
+     * requests. This will start tracking a "request history" which the caller
+     * later can use to verify that certain requests have been made.
+     * <p>
+     * This method will clear any existing capture history stack.
      */
     public void startCapturing() {
         clearCapturedRequests();
@@ -408,17 +428,47 @@ public class Atlantis {
     }
 
     /**
-     * Tells the local web server to stop capturing any served requests. This method leaves the
-     * capture history stack intact.
+     * Tells the local web server to stop capturing any served requests. This
+     * method leaves the capture history stack intact.
+     *
+     * @see #startCapturing()
      */
     public void stopCapturing() {
         isCapturing = false;
     }
 
     /**
-     * Returns a snapshot of the capture history stack as it looks right this moment. This method
-     * leaves the actual stack intact, but new requests may be added to it at any time and these new
-     * additions won't be reflected in the output of this method.
+     * Enables dynamically adding requests and responses that where dispatched
+     * to the reality (by the fallbackUrl field in the configuration). This
+     * command is ignored if the configuration doesn't have a fallback url.
+     *
+     * @param assetDirectory The root directory of the recorded response
+     *                       assets.
+     */
+    public void startRecordingFallbackRequests(File assetDirectory) {
+        recordedAssetsDirectory = assetDirectory;
+        isRecording = true;
+    }
+
+    /**
+     * Disables any dynamically adding of fallback requests and responses.
+     * Stopping the recording will leave any previously recorded assets intact
+     * and the correspondingly added request and response configurations will be
+     * included if also writing the configuration file to disk.
+     *
+     * @see #startRecordingFallbackRequests(File)
+     * @see #writeConfigurationToFile(File, OnSuccessListener, OnErrorListener)
+     */
+    public void stopRecordingFallbackRequests() {
+        recordedAssetsDirectory = null;
+        isRecording = false;
+    }
+
+    /**
+     * Returns a snapshot of the capture history stack as it looks right this
+     * moment. This method leaves the actual stack intact, but new requests may
+     * be added to it at any time and these new additions won't be reflected in
+     * the output of this method.
      *
      * @return A snapshot of the captured history stack.
      */
@@ -431,8 +481,8 @@ public class Atlantis {
     }
 
     /**
-     * Clears any captured requests in the history stack. This method will not affect the capturing
-     * state.
+     * Clears any captured requests in the history stack. This method will not
+     * affect the capturing state.
      */
     public void clearCapturedRequests() {
         synchronized (captureLock) {
@@ -440,32 +490,26 @@ public class Atlantis {
         }
     }
 
-    // Tries to find a response configuration that matches the given request parameters. Also
-    // pushes the request to the capture stack if in such a state.
-    private Response getMockedResponse(String url, String method, Map<String, String> headers) {
-        Request request = configuration.findRequest(url, method, headers);
-
-        if (isCapturing)
+    private void captureRequest(Request request) {
+        if (isCapturing && request != null)
             synchronized (captureLock) {
-                captured.push(request != null ?
-                        request :
-                        new Request.Builder()
-                                .withUrl(url)
-                                .withMethod(method)
-                                .withHeaders(headers));
+                captured.push(request);
             }
-
-        return request != null ?
-                request.response() :
-                null;
     }
 
-    // Synchronously makes a real network request and returns the response as an Atlantis response,
-    // or null would anything go wrong. This request is completely anonymous from the local web
-    // servers (currently NanoHTTPD) point of view as the internal state (cookies and what-not)
-    // won't be updated with these real world parameters. Would the real world request fail, then
-    // the local web server would serve a response suggesting the local request failed (i.e.
-    // "http://localhost:8080" and not "http://www.realworld.com").
+    private void recordRequest(Request request) {
+        if (isRecording) {
+            configuration.requests.add(request);
+        }
+    }
+
+    // Synchronously makes a real network request and returns the response as
+    // an Atlantis response or null, would anything go wrong. If Atlantis is in
+    // a recording mode then the real response content is written to the file
+    // system and the returned Atlantis response is configured to refer to that
+    // resource. If no recording is active, then the returned Atlantis response
+    // will hold the actual response byte array and nothing is written to the
+    // file system.
     private Response getRealResponse(String realBaseUrl, String requestUrl, String method, Map<String, String> headers) {
         HttpURLConnection connection = null;
         String realUrl = String.format("%s%s%s%s", realBaseUrl,
@@ -486,19 +530,38 @@ public class Atlantis {
             headers.remove("remote-addr");
             headers.remove("http-client-ip");
 
-            // But the rest we might want to expose, still making sure we don't overwrite stuff.
+            // The rest we might want to expose, still making sure we don't
+            // overwrite stuff.
             if (!headers.isEmpty())
                 for (Map.Entry<String, String> entry : headers.entrySet())
                     if (connection.getRequestProperty(entry.getKey()) == null)
                         connection.setRequestProperty(entry.getKey(), entry.getValue());
 
-            // And so build an Atlantis response from the real world response.
-            return new com.echsylon.atlantis.Response.Builder()
+            // Build an Atlantis response from the real world response.
+            com.echsylon.atlantis.Response.Builder builder = new com.echsylon.atlantis.Response.Builder()
                     .withStatus(UrlUtils.getResponseCode(connection), UrlUtils.getResponseMessage(connection))
                     .withMimeType(UrlUtils.getResponseMimeType(connection))
-                    .withHeaders(UrlUtils.getResponseHeaders(connection))
-                    .withAsset(UrlUtils.getResponseBody(connection));
+                    .withHeaders(UrlUtils.getResponseHeaders(connection));
+
+            // Write the response asset to a file if we're in recording mode.
+            // Note that the response will reference the asset in such case,
+            // while it will hold the actual byte array otherwise.
+            if (isRecording) {
+                File methodFile = new File(recordedAssetsDirectory, method);
+                File requestFile = new File(methodFile, UrlUtils.getPath(realUrl));
+
+                if (requestFile.mkdirs()) {
+                    File responseFile = new File(requestFile, UUID.randomUUID().toString());
+                    Utils.writeFile(UrlUtils.getResponseBody(connection), responseFile);
+                    builder.withAsset(String.format("file://%s", responseFile.getAbsolutePath()));
+                }
+            } else {
+                builder.withAsset(UrlUtils.getResponseBody(connection));
+            }
+
+            return builder.build();
         } catch (IOException e) {
+            Log.e("NON-FATAL", "Couldn't get real response", e);
             return null;
         } finally {
             UrlUtils.closeSilently(connection);

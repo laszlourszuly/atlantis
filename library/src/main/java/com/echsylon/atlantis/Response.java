@@ -320,7 +320,7 @@ public class Response extends HttpEntity implements Serializable {
      * <p>
      * If only the "delay" variable exists, then that value is returned.
      * <p>
-     * If both "delay" and "maxDelay" are given, then a different random number
+     * If both "delay" and "maxDelay" is given, then a different random number
      * between those values is returned every time this method is called.
      * <p>
      * If only "maxDelay" is given then a different random number between zero
@@ -328,23 +328,20 @@ public class Response extends HttpEntity implements Serializable {
      * <p>
      * If neither "delay" nor "maxDelay" is given, then zero (0) is returned.
      * <p>
-     * A "maxDelay" less than "delay" is considered illegal and will cause an
-     * exception to be thrown.
+     * If "maxDelay" is less than "delay" then "delay" is returned.
      *
-     * @return Number of milliseconds. Zero (0) means "no delay".
-     * @throws IllegalArgumentException if "maxDelay" is less than "delay".
+     * @return Number of milliseconds. Never less than zero (0). Zero means no
+     * delay.
      */
-    @SuppressWarnings("ConstantConditions")
-    public long delay() throws IllegalArgumentException {
+    public long delay() {
         if (maxDelay == null || maxDelay.equals(delay))
-            return Utils.getNative(delay, 0);
+            return Math.max(0, Utils.getNative(delay, 0));
 
-        int min = Utils.getNative(delay, 0);
-        int max = Utils.getNative(maxDelay, 0);
-        if (max < min)
-            throw new IllegalArgumentException("'maxDelay' mustn't be less than 'delay'");
-
-        return new Random().nextInt(max - min) + min;
+        int min = Math.max(0, Utils.getNative(delay, 0));
+        int max = Math.max(0, Utils.getNative(maxDelay, 0));
+        return max > min ?
+                new Random().nextInt(max - min) + min :
+                min;
     }
 
     /**
