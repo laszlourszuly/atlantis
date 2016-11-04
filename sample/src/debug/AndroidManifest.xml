@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    package="com.echsylon.sample"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.echsylon.sample">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -11,7 +10,7 @@
         android:allowBackup="true"
         android:label="Sample"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
+        android:theme="@style/Theme.AppCompat.Light"
         tools:replace="android:name">
         <activity android:name=".MainActivity">
             <intent-filter>

@@ -7,12 +7,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,13 +26,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
+    private File atlantisRootDirectory;
     private ProgressDialog progress;
     private TextView output;
+    private Switch record;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        atlantisRootDirectory = new File(getExternalFilesDir(null), "atlantis");
+        atlantisRootDirectory.mkdirs();
         output = (TextView) findViewById(R.id.output);
     }
 
@@ -38,6 +45,18 @@ public class MainActivity extends AppCompatActivity {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
         menu.findItem(R.id.save_configuration).setVisible(BuildConfig.DEBUG);
+        menu.findItem(R.id.record).setVisible(BuildConfig.DEBUG);
+        record = (Switch) menu.findItem(R.id.record).getActionView();
+        record.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (isChecked) {
+                    ((SampleApplication) getApplication()).startRecording(atlantisRootDirectory);
+                } else {
+                    ((SampleApplication) getApplication()).stopRecording();
+                }
+            }
+        });
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -55,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.save_configuration: {
-                ((SampleApplication) getApplication()).saveConfiguration();
+                File configFile = new File(atlantisRootDirectory, "configuration.json");
+                ((SampleApplication) getApplication()).saveConfiguration(configFile);
                 return true;
             }
             default:
@@ -64,12 +84,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Tries to send a request to the given url and read the response from it. The work is done in a
-     * spawned worker thread and upon finish the result is written to the given output text view. As
-     * a courtesy this method will show a progress dialog while working (and dismiss it when done).
+     * Tries to send a request to the given url and read the response from it.
+     * The work is done in a spawned worker thread and upon finish the result is
+     * written to the given output text view. As a courtesy this method will
+     * show a progress dialog while working (and dismiss it when done).
      *
      * @param urlString       The target url.
-     * @param resultContainer The text view to output the result to. May be null.
+     * @param resultContainer The text view to output the result to. May be
+     *                        null.
      */
     private void performNetworkRequest(final String urlString, final TextView resultContainer) {
         new AsyncTask<Void, Void, String>() {
@@ -77,10 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             protected void onPreExecute() {
-                if (progress != null && progress.isShowing())
-                    progress.dismiss();
-
-                progress = ProgressDialog.show(MainActivity.this, null, "fetching content...", true);
+                showProgress("fetching content...");
             }
 
             @Override
@@ -115,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(String result) {
-                progress.dismiss();
+                hideProgress();
 
                 if (resultContainer != null)
                     resultContainer.setText(result);
@@ -127,12 +146,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Manually tries to read all content from the given input stream and return it as a string.
-     * Would anything go wrong, then the exception stack trace is returned as a string. Any internal
-     * stream wrappers are closed, but the given input stream is left to the caller to deal with.
+     * Shows a progress dialog with a custom message.
+     *
+     * @param message The message to show in the dialog. May be null.
+     */
+    private void showProgress(String message) {
+        if (progress != null && progress.isShowing())
+            progress.dismiss();
+
+        progress = ProgressDialog.show(MainActivity.this, null, message, true);
+    }
+
+    /**
+     * Hides any shown progress dialog.
+     */
+    private void hideProgress() {
+        if (progress != null && progress.isShowing())
+            progress.dismiss();
+
+        progress = null;
+    }
+
+    /**
+     * Manually tries to read all content from the given input stream and return
+     * it as a string. Would anything go wrong, then the exception stack trace
+     * is returned as a string. Any internal stream wrappers are closed, but the
+     * given input stream is left to the caller to deal with.
      *
      * @param stream The input stream to read content content from.
-     * @return A string containing either the read content or an exception stack trace. Never null.
+     * @return A string containing either the read content or an exception stack
+     * trace. Never null.
      */
     private String readNetworkResponse(InputStream stream) {
         InputStream inputStream = new BufferedInputStream(stream);
@@ -156,8 +199,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Tries to silently close something that claims to be closeable. Any exceptions thrown are
-     * silently consumed.
+     * Tries to silently close something that claims to be closeable. Any
+     * exceptions thrown are silently consumed.
      *
      * @param closeable The thing to close.
      */
@@ -173,7 +216,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Writes the stack trace of the given throwable to a string variable and returns it.
+     * Writes the stack trace of the given throwable to a string variable and
+     * returns it.
      *
      * @param throwable The stack trace container.
      * @return A string containing the stack trace. Never null.

@@ -10,9 +10,7 @@ public class AtlantisSampleApplication extends SampleApplication {
     private Atlantis atlantis = null;
 
     @Override
-    public void saveConfiguration() {
-        final File file = new File(getExternalFilesDir(null), "atlantis.json");
-
+    public void saveConfiguration(final File file) {
         //noinspection ResultOfMethodCallIgnored
         file.delete();
 
@@ -33,6 +31,22 @@ public class AtlantisSampleApplication extends SampleApplication {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    @Override
+    public void startRecording(final File assetDirectory) {
+        atlantis.startRecordingFallbackRequests(assetDirectory);
+        Toast.makeText(AtlantisSampleApplication.this,
+                "ENABLED: recording",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void stopRecording() {
+        atlantis.stopRecordingFallbackRequests();
+        Toast.makeText(AtlantisSampleApplication.this,
+                "DISABLED: recording",
+                Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -3,6 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/record"
+        android:checkable="true"
+        android:enabled="true"
+        android:title="@string/record"
+        app:actionLayout="@layout/layout_switch"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/get_abc"
         android:title="@string/get_abc"
         app:showAsAction="never" />

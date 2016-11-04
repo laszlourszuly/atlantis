@@ -2,5 +2,6 @@
 <resources>
     <string name="get_abc">Get ABC-JSON</string>
     <string name="get_123">Get 123-JSON</string>
+    <string name="record">Record</string>
     <string name="save_configuration">Save Configuration</string>
 </resources>
