@@ -2,6 +2,7 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.text.format.DateFormat;
 import android.util.Log;
 
 import com.echsylon.atlantis.internal.UrlUtils;
@@ -13,10 +14,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
-import java.util.UUID;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -544,11 +545,12 @@ public class Atlantis {
             // Note that the response will reference the asset in such case,
             // while it will hold the actual byte array otherwise.
             if (isRecording) {
-                File methodFile = new File(recordedAssetsDirectory, method);
+                File methodFile = new File(recordedAssetsDirectory, method.toLowerCase());
                 File requestFile = new File(methodFile, UrlUtils.getPath(realUrl));
 
                 if (requestFile.mkdirs()) {
-                    File responseFile = new File(requestFile, UUID.randomUUID().toString());
+                    String fileName = DateFormat.format("yyyy-MM-dd_hh:mm:ss", new Date()).toString();
+                    File responseFile = new File(requestFile, fileName);
                     Utils.writeFile(UrlUtils.getResponseBody(connection), responseFile);
                     builder.withAsset(String.format("file://%s", responseFile.getAbsolutePath()));
                 }
