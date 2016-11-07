@@ -72,8 +72,9 @@ public class ResponseTest {
                 .withStatus(200, "OK")
                 .withMimeType("application/json")
                 .withContent("{}")
-                .withAsset("hejhopp.bin")
+                .withAsset("asset://hejhopp.bin")
                 .withDelay(12);
+
         assertThat(response.headers().get("h1"), is("v1"));
         assertThat(response.headers().get("invalid"), is(nullValue()));
         assertThat(response.statusCode(), is(200));
@@ -199,16 +200,13 @@ public class ResponseTest {
     }
 
     @Test
-    public void delay_exceptionThrownIfMaxDelayLessThanDefaultDelay() throws Exception {
+    public void delay_defaultDelayReturnedIfMaxDelayLessThanDefaultDelay() throws Exception {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("delay", 110L);
         jsonObject.addProperty("maxDelay", 90L);
         Response response = new Gson().fromJson(jsonObject, Response.class);
 
-        assertThatThrownBy(response::delay)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("'maxDelay' mustn't be less than 'delay'")
-                .hasNoCause();
+        assertThat(response.delay(), is(110L));
     }
 
 }
