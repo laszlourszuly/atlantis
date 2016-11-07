@@ -548,12 +548,18 @@ public class Atlantis {
                 File methodFile = new File(recordedAssetsDirectory, method.toLowerCase());
                 File requestFile = new File(methodFile, UrlUtils.getPath(realUrl));
 
-                if (requestFile.mkdirs()) {
-                    String fileName = DateFormat.format("yyyy-MM-dd_hh:mm:ss", new Date()).toString();
-                    File responseFile = new File(requestFile, fileName);
-                    Utils.writeFile(UrlUtils.getResponseBody(connection), responseFile);
-                    builder.withAsset(String.format("file://%s", responseFile.getAbsolutePath()));
-                }
+                // This method returns "true" if and only if there was a folder
+                // actually created. The return value is hence to be seen as
+                // "did create folder", rather than a "does folder exist" flag.
+                // It is therefore not really relevant to check and decide upon
+                // whether to continue further execution or not.
+                //noinspection ResultOfMethodCallIgnored
+                requestFile.mkdirs();
+
+                String fileName = DateFormat.format("yyyy-MM-dd_hh:mm:ss", new Date()).toString();
+                File responseFile = new File(requestFile, fileName);
+                Utils.writeFile(UrlUtils.getResponseBody(connection), responseFile);
+                builder.withAsset(String.format("file://%s", responseFile.getAbsolutePath()));
             } else {
                 builder.withAsset(UrlUtils.getResponseBody(connection));
             }
