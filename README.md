@@ -71,11 +71,11 @@ protected void onCreate(Bundle savedInstanceState) {
 ...and you can shut it down:
 
 ```java
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mServer.close();
-    }
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    mServer.close();
+}
 ```
 
 A more complete documentation can be found on the Wiki (see below). There is also a sample implementation along the code which you can have a peek on.
