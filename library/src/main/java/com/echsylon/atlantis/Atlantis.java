@@ -229,6 +229,16 @@ public class Atlantis {
                 // Try to find a mock request and response configuration for
                 // the target HTTP params.
                 Request request = configuration.findRequest(url, method, headers);
+                if (isCapturing)
+                    synchronized (captureLock) {
+                        captured.push(request != null ?
+                                request :
+                                new Request.Builder()
+                                        .withUrl(url)
+                                        .withMethod(method)
+                                        .withHeaders(headers));
+                    }
+
                 com.echsylon.atlantis.Response response = request != null ?
                         request.response() :
                         configuration.hasAlternativeRoute() ?
@@ -239,16 +249,16 @@ public class Atlantis {
                 if (response == null)
                     return super.serve(session);
 
-                // Prepare a valid request for any capturing and recording.
-                if (request == null)
-                    request = new Request.Builder()
-                            .withUrl(url)
-                            .withMethod(method)
-                            .withHeaders(headers)
-                            .withResponse(response);
-
-                captureRequest(request);
-                recordRequest(request);
+                // We should record fallback requests, make sure we have
+                // something to record as well.
+                if (isRecording)
+                    configuration.requests.add(request != null ?
+                            request :
+                            new Request.Builder()
+                                    .withUrl(url)
+                                    .withMethod(method)
+                                    .withHeaders(headers)
+                                    .withResponse(response));
 
                 // Deliver the response, maybe delay before actually delivering
                 // it. Relax, this is a worker thread.
@@ -487,19 +497,6 @@ public class Atlantis {
     public void clearCapturedRequests() {
         synchronized (captureLock) {
             captured.clear();
-        }
-    }
-
-    private void captureRequest(Request request) {
-        if (isCapturing && request != null)
-            synchronized (captureLock) {
-                captured.push(request);
-            }
-    }
-
-    private void recordRequest(Request request) {
-        if (isRecording) {
-            configuration.requests.add(request);
         }
     }
 
