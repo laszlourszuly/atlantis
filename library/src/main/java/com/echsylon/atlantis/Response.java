@@ -361,7 +361,7 @@ public class Response extends HttpEntity implements Serializable {
      * such an asset file which very well may even be empty or invalid.
      *
      * @return Boolean true if the content asset file pointer points to an asset
-     * file (i.e. starts with "asset://"), otherwise false.
+     * file, otherwise false.
      */
     @SuppressWarnings("ConstantConditions")
     public boolean hasAsset() {
