@@ -1,19 +1,23 @@
 {
   "fallbackBaseUrl": "http://echo.jsontest.com",
-  "requests": [{
-    "headers": "",
-    "url": "/one/1/two/2/three/3",
-    "method": "GET",
-    "responses": [{
-      "responseCode": {
-        "code": 200,
-        "name": "OK"
-      },
-      "delay": 1000,
-      "maxDelay": 1200,
-      "headers": {},
-      "mime": "application/json",
-      "text": "{\"mock_attr\":\"mock value\"}"
-    }]
-  }]
+  "requests": [
+    {
+      "headers": "",
+      "url": "/one/1/two/2/three/3",
+      "method": "GET",
+      "responses": [
+        {
+          "responseCode": {
+            "code": 200,
+            "name": "OK"
+          },
+          "delay": 1000,
+          "maxDelay": 1200,
+          "headers": {},
+          "mime": "application/json",
+          "text": "{'mock_attr_1': 'mock value 1', 'mock_attr_2': 'mock value 2'}"
+        }
+      ]
+    }
+  ]
 }

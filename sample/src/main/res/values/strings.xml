@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="get_abc">Get ABC-JSON</string>
-    <string name="get_123">Get 123-JSON</string>
+    <string name="configuration_written_to_s">Configuration written to: %s</string>
+    <string name="could_not_write_configuration_to_file">Couldn\'t write configuration to file</string>
+    <string name="disabled_recording">Disabled recording</string>
+    <string name="enabled_recording">Enabled recording of fallback requests and responses</string>
+    <string name="get_mocked_content">Get mocked</string>
+    <string name="get_real_content">Get real</string>
+    <string name="help">Help</string>
+    <string name="help_text">
+        <strong><big>Get Real</big></strong>\n\nPressing this button will trigger a request that doesn\'t have a corresponding mock request configuration. It will allow Atlantis to fallback to the \"fallbackUrl\" and do a real network request.\n\n
+        <strong><big>Get Mocked</big></strong>\n\nPressing this button will trigger a request that has a mocked response configuration. Atlantis will return the mocked content and won\'t even try to reach the real target url.\n\n
+        <strong><big>Record</big></strong>\n\nThis action will toggle the Record mode in Atlantis. While enabled it will record all requests fetched from real servers and the corresponding response. Note that you need to have configured a fallback url for this to work.\n\n
+        <strong><big>Save Configuration</big></strong>\n\nThis action will write the current configuration to a file on the file system. This will, of course, also include any recorded requests and responses.\n\n
+    </string>
+    <string name="how_to_use_app">How to use the Sample app</string>
+    <string name="output">Output</string>
     <string name="record">Record</string>
-    <string name="save_configuration">Save Configuration</string>
+    <string name="save_configuration">Save configuration</string>
+    <string name="send_feedback">Send feedback</string>
+    <string name="turn_around_time_x">Turn-around time: %d</string>
 </resources>

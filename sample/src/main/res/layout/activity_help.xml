@@ -5,7 +5,7 @@
     android:id="@+id/coordinator_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/icons">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/app_bar"
@@ -17,7 +17,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:elevation="8dp"
+            app:elevation="40dp"
             app:popupTheme="@style/AppTheme.Toolbar.Popup"/>
 
     </android.support.design.widget.AppBarLayout>
@@ -30,54 +30,28 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:showDividers="middle">
 
             <TextView
-                style="@style/TextAppearance.AppCompat.Caption"
+                style="@style/TextAppearance.AppCompat.Headline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
-                android:text="@string/output"/>
+                android:background="@color/background"
+                android:fontFamily="sans-serif-light"
+                android:padding="16dp"
+                android:text="@string/how_to_use_app"
+                android:textColor="@color/secondary_text"/>
 
             <TextView
-                android:id="@+id/output"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="8dp"
+                android:layout_margin="16dp"
                 android:background="@color/icons"
-                android:minLines="6"
-                android:padding="4dp"/>
+                android:text="@string/help_text"/>
 
         </LinearLayout>
 
     </android.support.v4.widget.NestedScrollView>
-
-    <LinearLayout
-        style="?android:attr/buttonBarStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        app:layout_dodgeInsetEdges="bottom">
-
-        <Button
-            android:id="@+id/get_real"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/get_real_content"/>
-
-        <Button
-            android:id="@+id/get_mocked"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/get_mocked_content"/>
-
-    </LinearLayout>
 
 </android.support.design.widget.CoordinatorLayout>

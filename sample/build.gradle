@@ -1,5 +1,6 @@
-repositories {
-    jcenter()
+// 3rd party plugins definition
+plugins {
+    id 'me.tatarka.retrolambda' version '3.3.1'
 }
 
 apply plugin: 'com.android.application'
@@ -14,6 +15,7 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName '1.0'
+        vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {
@@ -27,9 +29,18 @@ android {
             minifyEnabled false
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+}
+
+repositories {
+    jcenter()
 }
 
 dependencies {
     compile 'com.android.support:appcompat-v7:25.0.0'
+    compile 'com.android.support:design:25.0.0'
     debugCompile project(':library')
 }

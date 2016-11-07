@@ -1,16 +1,20 @@
 package com.echsylon.sample;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.CompoundButton;
-import android.widget.Switch;
+import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -26,61 +30,127 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
-    private File atlantisRootDirectory;
     private ProgressDialog progress;
     private TextView output;
-    private Switch record;
+    private View anchor;
+
+    private Drawable iconSave;
+    private Drawable iconEnableRecording;
+    private Drawable iconDisableRecording;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        atlantisRootDirectory = new File(getExternalFilesDir(null), "atlantis");
-        atlantisRootDirectory.mkdirs();
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         output = (TextView) findViewById(R.id.output);
+        anchor = findViewById(R.id.coordinator_layout);
+        iconSave = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_save_black_24px)).mutate();
+        iconEnableRecording = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_radio_button_checked_black_24px)).mutate();
+        iconDisableRecording = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_radio_button_unchecked_black_24px)).mutate();
+
+        DrawableCompat.setTint(iconSave, ContextCompat.getColor(this, R.color.icons));
+        DrawableCompat.setTint(iconEnableRecording, ContextCompat.getColor(this, R.color.icons));
+        DrawableCompat.setTint(iconDisableRecording, ContextCompat.getColor(this, R.color.icons));
+
+        findViewById(R.id.get_real).setOnClickListener(view -> {
+            String url = String.format("%s/aye/a/bee/b/cee/c", BuildConfig.BASE_URL);
+            performNetworkRequest(url, output);
+        });
+
+        findViewById(R.id.get_mocked).setOnClickListener(view -> {
+            String url = String.format("%s/one/1/two/2/three/3", BuildConfig.BASE_URL);
+            performNetworkRequest(url, output);
+        });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-        menu.findItem(R.id.save_configuration).setVisible(BuildConfig.DEBUG);
-        menu.findItem(R.id.record).setVisible(BuildConfig.DEBUG);
-        record = (Switch) menu.findItem(R.id.record).getActionView();
-        record.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if (isChecked) {
-                    ((SampleApplication) getApplication()).startRecording(atlantisRootDirectory);
-                } else {
-                    ((SampleApplication) getApplication()).stopRecording();
-                }
-            }
-        });
+
+        MenuItem save = menu.findItem(R.id.save_configuration);
+        save.setIcon(iconSave);
+        save.setVisible(BuildConfig.DEBUG);
+
+        // Initialize the "record" menu item with the correct icon.
+        MenuItem record = menu.findItem(R.id.record);
+        record.setIcon(record.isChecked() ? iconEnableRecording : iconDisableRecording);
+        record.setVisible(BuildConfig.DEBUG);
+
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.get_123: {
-                String url = String.format("%s/one/1/two/2/three/3", BuildConfig.BASE_URL);
-                performNetworkRequest(url, output);
-                return true;
-            }
-            case R.id.get_abc: {
-                String url = String.format("%s/aye/a/bee/b/cee/c", BuildConfig.BASE_URL);
-                performNetworkRequest(url, output);
+            case R.id.record: {
+                boolean isEnabled = !item.isChecked();
+                item.setChecked(isEnabled);
+                item.setIcon(isEnabled ? iconEnableRecording : iconDisableRecording);
+                setRecordingState(isEnabled);
                 return true;
             }
             case R.id.save_configuration: {
-                File configFile = new File(atlantisRootDirectory, "configuration.json");
-                ((SampleApplication) getApplication()).saveConfiguration(configFile);
+                saveConfiguration();
+                return true;
+            }
+            case R.id.help: {
+                Intent intent = new Intent(this, HelpActivity.class);
+                startActivity(intent);
                 return true;
             }
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void setRecordingState(boolean isRecordingEnabled) {
+        if (isRecordingEnabled) {
+            File root = new File(getExternalFilesDir(null), "atlantis");
+            root.mkdirs();
+            ((SampleApplication) getApplication()).startRecording(root, error ->
+                    Snackbar.make(anchor, R.string.enabled_recording, Snackbar.LENGTH_LONG).show());
+        } else {
+            ((SampleApplication) getApplication()).stopRecording(error ->
+                    Snackbar.make(anchor, R.string.disabled_recording, Snackbar.LENGTH_SHORT).show());
+        }
+    }
+
+    private void saveConfiguration() {
+        File root = new File(getExternalFilesDir(null), "atlantis");
+        File configFile = new File(root, "configuration.json");
+        root.mkdirs();
+
+        ((SampleApplication) getApplication()).saveConfiguration(configFile,
+                error -> {
+                    String message = error == null ?
+                            getString(R.string.configuration_written_to_s, configFile.getAbsolutePath()) :
+                            getString(R.string.could_not_write_configuration_to_file);
+
+                    final Snackbar snackbar = Snackbar.make(anchor, message, Snackbar.LENGTH_INDEFINITE);
+                    snackbar.setAction(android.R.string.ok, view -> snackbar.dismiss());
+                    TextView textView = (TextView) snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+                    textView.setMaxLines(5);
+                    snackbar.show();
+                });
+    }
+
+    private void showProgress(String message) {
+        if (progress != null && progress.isShowing())
+            progress.dismiss();
+
+        progress = ProgressDialog.show(MainActivity.this, null, message, true);
+    }
+
+    private void hideProgress() {
+        if (progress != null && progress.isShowing())
+            progress.dismiss();
+
+        progress = null;
     }
 
     /**
@@ -124,11 +194,7 @@ public class MainActivity extends AppCompatActivity {
                     return printThrowableToString(e);
                 } finally {
                     time = System.currentTimeMillis() - startTime;
-                    if (inputStream != null)
-                        try {
-                            inputStream.close();
-                        } catch (IOException e) {
-                        }
+                    closeSilently(inputStream);
                 }
             }
 
@@ -137,34 +203,12 @@ public class MainActivity extends AppCompatActivity {
                 hideProgress();
 
                 if (resultContainer != null)
-                    resultContainer.setText(result);
+                    resultContainer.setText(result.replaceAll("\n", System.getProperty("line.separator")));
 
-                Toast.makeText(MainActivity.this, "Turn around time: " + time, Toast.LENGTH_SHORT)
-                        .show();
+                String message = getString(R.string.turn_around_time_x, time);
+                Snackbar.make(anchor, message, Snackbar.LENGTH_SHORT).show();
             }
         }.execute();
-    }
-
-    /**
-     * Shows a progress dialog with a custom message.
-     *
-     * @param message The message to show in the dialog. May be null.
-     */
-    private void showProgress(String message) {
-        if (progress != null && progress.isShowing())
-            progress.dismiss();
-
-        progress = ProgressDialog.show(MainActivity.this, null, message, true);
-    }
-
-    /**
-     * Hides any shown progress dialog.
-     */
-    private void hideProgress() {
-        if (progress != null && progress.isShowing())
-            progress.dismiss();
-
-        progress = null;
     }
 
     /**
