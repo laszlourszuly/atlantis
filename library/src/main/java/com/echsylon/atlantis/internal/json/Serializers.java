@@ -18,7 +18,8 @@ import com.google.gson.JsonSerializer;
 class Serializers {
 
     /**
-     * Returns a new JSON deserializer, specialized for {@link Configuration} objects.
+     * Returns a new JSON deserializer, specialized for {@link Configuration}
+     * objects.
      *
      * @return The deserializer to parse {@code Configuration} JSON with.
      */
@@ -27,7 +28,8 @@ class Serializers {
     }
 
     /**
-     * Returns a new JSON serializer, specialized for {@link Configuration} objects.
+     * Returns a new JSON serializer, specialized for {@link Configuration}
+     * objects.
      *
      * @return The serializer to serialize {@code Configuration} objects with.
      */
@@ -36,7 +38,8 @@ class Serializers {
     }
 
     /**
-     * Returns a new JSON deserializer, specialized for {@link Request} objects.
+     * Returns a new JSON deserializer, specialized for {@link Request}
+     * objects.
      *
      * @return The deserializer to parse {@code Request} JSON with.
      */
@@ -54,7 +57,8 @@ class Serializers {
     }
 
     /**
-     * Returns a new JSON deserializer, specialized for {@link Response} objects.
+     * Returns a new JSON deserializer, specialized for {@link Response}
+     * objects.
      *
      * @return The deserializer to parse {@code Response} objects with.
      */

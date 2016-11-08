@@ -20,9 +20,144 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
  */
 @SuppressWarnings("WeakerAccess")
 public class Response extends HttpEntity implements Serializable {
+    public static final Response EMPTY = new Response();
     private static final String ASSET_SCHEME = "asset://";
     private static final String FILE_SCHEME = "file://";
-    public static final Response EMPTY = new Response();
+    // JSON API
+    protected Code responseCode = null;
+    protected String mime = null;
+    protected String text = null;
+    protected String asset = null;
+    protected Integer delay = null;
+    protected Integer maxDelay = null;
+    // Part of extra feature offered by the Builder.
+    // This field should be ignored during serialization, hence transient.
+    protected transient byte[] assetBytes = null;
+    // Intentionally hidden constructor.
+    protected Response() {
+    }
+
+    /**
+     * Returns the HTTP status code of the response.
+     *
+     * @return The numeric HTTP status code.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public int statusCode() {
+        return responseCode != null ?
+                Utils.getNative(responseCode.code, 0) :
+                0;
+    }
+
+    /**
+     * Returns the HTTP status name of the response.
+     *
+     * @return The human readable name of the HTTP status.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public String statusName() {
+        return responseCode != null ?
+                responseCode.name :
+                null;
+    }
+
+    /**
+     * Returns the MIME type of the response.
+     *
+     * @return The MIME type. May be null.
+     */
+    public String mimeType() {
+        return mime;
+    }
+
+    /**
+     * Returns the response body string.
+     *
+     * @return The content. May be null.
+     */
+    public String content() {
+        return text;
+    }
+
+    /**
+     * Returns the response asset content as an array of bytes. It's up to the
+     * caller to decide how to further process the result.
+     * <p>
+     * NOTE! This method will read data from disk on the calling thread.
+     *
+     * @param context The context the resource asset is to be opened from.
+     * @return The asset byte array. May be empty but never null.
+     * @throws IOException If for some reason the asset file could not be read.
+     */
+    public byte[] asset(Context context) throws IOException {
+        if (assetBytes != null)
+            return assetBytes;
+
+        if (asset == null)
+            return new byte[0];
+
+        if (asset.startsWith(ASSET_SCHEME))
+            return Utils.readAsset(context, asset);
+
+        if (asset.startsWith(FILE_SCHEME))
+            return Utils.readFile(new File(asset.substring(FILE_SCHEME.length())));
+
+        return new byte[0];
+    }
+
+    /**
+     * Returns the amount of milliseconds to wait before serving this particular
+     * response.
+     * <p>
+     * If only the "delay" variable exists, then that value is returned.
+     * <p>
+     * If both "delay" and "maxDelay" is given, then a different random number
+     * between those values is returned every time this method is called.
+     * <p>
+     * If only "maxDelay" is given then a different random number between zero
+     * (0) and "maxDelay" is returned every time this method is called.
+     * <p>
+     * If neither "delay" nor "maxDelay" is given, then zero (0) is returned.
+     * <p>
+     * If "maxDelay" is less than "delay" then "delay" is returned.
+     *
+     * @return Number of milliseconds. Never less than zero (0). Zero means no
+     * delay.
+     */
+    public long delay() {
+        if (maxDelay == null || maxDelay.equals(delay))
+            return Math.max(0, Utils.getNative(delay, 0));
+
+        int min = Math.max(0, Utils.getNative(delay, 0));
+        int max = Math.max(0, Utils.getNative(maxDelay, 0));
+        return max > min ?
+                new Random().nextInt(max - min) + min :
+                min;
+    }
+
+    /**
+     * Returns a flag telling whether the response has a non-empty content
+     * text.
+     *
+     * @return Boolean true if the content text is not a null pointer or an
+     * empty string, otherwise false.
+     */
+    public boolean hasContent() {
+        return Utils.notEmpty(text);
+    }
+
+    /**
+     * Returns a flag telling whether the response has a valid, non-empty asset
+     * file pointer. This flag doesn't say anything about the actual content in
+     * such an asset file which very well may even be empty or invalid.
+     *
+     * @return Boolean true if the content asset file pointer points to an asset
+     * file, otherwise false.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public boolean hasAsset() {
+        return Utils.notEmpty(assetBytes) || (Utils.notEmpty(asset) && (asset.startsWith(ASSET_SCHEME) || asset.startsWith(FILE_SCHEME)));
+    }
 
     /**
      * This interface describes the features for filtering out a particular
@@ -217,7 +352,6 @@ public class Response extends HttpEntity implements Serializable {
 
     }
 
-
     /**
      * This class represents a status code on a response.
      */
@@ -228,144 +362,6 @@ public class Response extends HttpEntity implements Serializable {
         // Intentionally hidden constructor.
         private Code() {
         }
-    }
-
-    // JSON API
-    protected Code responseCode = null;
-    protected String mime = null;
-    protected String text = null;
-    protected String asset = null;
-    protected Integer delay = null;
-    protected Integer maxDelay = null;
-
-    // Part of extra feature offered by the Builder.
-    // This field should be ignored during serialization, hence transient.
-    protected transient byte[] assetBytes = null;
-
-    // Intentionally hidden constructor.
-    protected Response() {
-    }
-
-    /**
-     * Returns the HTTP status code of the response.
-     *
-     * @return The numeric HTTP status code.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public int statusCode() {
-        return responseCode != null ?
-                Utils.getNative(responseCode.code, 0) :
-                0;
-    }
-
-    /**
-     * Returns the HTTP status name of the response.
-     *
-     * @return The human readable name of the HTTP status.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public String statusName() {
-        return responseCode != null ?
-                responseCode.name :
-                null;
-    }
-
-    /**
-     * Returns the MIME type of the response.
-     *
-     * @return The MIME type. May be null.
-     */
-    public String mimeType() {
-        return mime;
-    }
-
-    /**
-     * Returns the response body string.
-     *
-     * @return The content. May be null.
-     */
-    public String content() {
-        return text;
-    }
-
-    /**
-     * Returns the response asset content as an array of bytes. It's up to the
-     * caller to decide how to further process the result.
-     * <p>
-     * NOTE! This method will read data from disk on the calling thread.
-     *
-     * @param context The context the resource asset is to be opened from.
-     * @return The asset byte array. May be empty but never null.
-     * @throws IOException If for some reason the asset file could not be read.
-     */
-    public byte[] asset(Context context) throws IOException {
-        if (assetBytes != null)
-            return assetBytes;
-
-        if (asset == null)
-            return new byte[0];
-
-        if (asset.startsWith(ASSET_SCHEME))
-            return Utils.readAsset(context, asset);
-
-        if (asset.startsWith(FILE_SCHEME))
-            return Utils.readFile(new File(asset.substring(FILE_SCHEME.length())));
-
-        return new byte[0];
-    }
-
-    /**
-     * Returns the amount of milliseconds to wait before serving this particular
-     * response.
-     * <p>
-     * If only the "delay" variable exists, then that value is returned.
-     * <p>
-     * If both "delay" and "maxDelay" is given, then a different random number
-     * between those values is returned every time this method is called.
-     * <p>
-     * If only "maxDelay" is given then a different random number between zero
-     * (0) and "maxDelay" is returned every time this method is called.
-     * <p>
-     * If neither "delay" nor "maxDelay" is given, then zero (0) is returned.
-     * <p>
-     * If "maxDelay" is less than "delay" then "delay" is returned.
-     *
-     * @return Number of milliseconds. Never less than zero (0). Zero means no
-     * delay.
-     */
-    public long delay() {
-        if (maxDelay == null || maxDelay.equals(delay))
-            return Math.max(0, Utils.getNative(delay, 0));
-
-        int min = Math.max(0, Utils.getNative(delay, 0));
-        int max = Math.max(0, Utils.getNative(maxDelay, 0));
-        return max > min ?
-                new Random().nextInt(max - min) + min :
-                min;
-    }
-
-    /**
-     * Returns a flag telling whether the response has a non-empty content
-     * text.
-     *
-     * @return Boolean true if the content text is not a null pointer or an
-     * empty string, otherwise false.
-     */
-    public boolean hasContent() {
-        return Utils.notEmpty(text);
-    }
-
-    /**
-     * Returns a flag telling whether the response has a valid, non-empty asset
-     * file pointer. This flag doesn't say anything about the actual content in
-     * such an asset file which very well may even be empty or invalid.
-     *
-     * @return Boolean true if the content asset file pointer points to an asset
-     * file, otherwise false.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public boolean hasAsset() {
-        return Utils.notEmpty(assetBytes) || (Utils.notEmpty(asset) && (asset.startsWith(ASSET_SCHEME) || asset.startsWith(FILE_SCHEME)));
     }
 
 }

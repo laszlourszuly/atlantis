@@ -4,8 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This class is responsible for holding any common type of data for HTTP entities like requests and
- * responses. An example of such type of data could be headers.
+ * This class is responsible for holding any common type of data for HTTP
+ * entities like requests and responses. An example of such type of data could
+ * be headers.
  */
 class HttpEntity {
 
@@ -20,8 +21,9 @@ class HttpEntity {
     }
 
     /**
-     * Returns a map of all currently held headers. The returned map is a copy of the internal
-     * headers container, hence making changes to it won't affect the internal state.
+     * Returns a map of all currently held headers. The returned map is a copy
+     * of the internal headers container, hence making changes to it won't
+     * affect the internal state.
      *
      * @return The map of request header.
      */

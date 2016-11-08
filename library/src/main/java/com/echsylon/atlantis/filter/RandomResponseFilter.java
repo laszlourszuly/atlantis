@@ -1,15 +1,16 @@
 package com.echsylon.atlantis.filter;
 
-import com.echsylon.atlantis.internal.Utils;
 import com.echsylon.atlantis.Request;
 import com.echsylon.atlantis.Response;
+import com.echsylon.atlantis.internal.Utils;
 
 import java.util.List;
 import java.util.Random;
 
 /**
- * This class implements random filter behaviour of a {@link Response.Filter}. It returns a random
- * response from the available ones, or null if there are no responses to pick from.
+ * This class implements random filter behaviour of a {@link Response.Filter}.
+ * It returns a random response from the available ones, or null if there are no
+ * responses to pick from.
  */
 public class RandomResponseFilter implements Response.Filter {
 

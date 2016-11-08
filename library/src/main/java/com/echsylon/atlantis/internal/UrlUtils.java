@@ -9,8 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is a convenience class, holding helper methods for URL related operations. All methods in
- * this class expect the urls to follow the below pattern:
+ * This is a convenience class, holding helper methods for URL related
+ * operations. All methods in this class expect the urls to follow the below
+ * pattern:
  * <p>
  * [scheme://][[user:password@]host[:port]][/path][?query][#fragment]
  */
@@ -18,9 +19,10 @@ public class UrlUtils {
     private static final String SCHEMA_SEPARATOR = "://";
 
     /**
-     * Returns the path part of the given url. The path is considered to be everything between the
-     * first single "/" character (included) and the "?" query separator sign (excluded), or the "#"
-     * fragment separator sign if there is no query part.
+     * Returns the path part of the given url. The path is considered to be
+     * everything between the first single "/" character (included) and the "?"
+     * query separator sign (excluded), or the "#" fragment separator sign if
+     * there is no query part.
      *
      * @param url The url to extract the path part from.
      * @return The extracted path or an empty string. Never null.
@@ -46,8 +48,9 @@ public class UrlUtils {
     }
 
     /**
-     * Returns the query part of the given url. The query part is considered to be everything
-     * between "?" query separator sign (included) and the "#" fragment separator sign (excluded).
+     * Returns the query part of the given url. The query part is considered to
+     * be everything between "?" query separator sign (included) and the "#"
+     * fragment separator sign (excluded).
      *
      * @param url The url to extract the query part from.
      * @return The extracted query or an empty string. Never null.
@@ -67,8 +70,9 @@ public class UrlUtils {
     }
 
     /**
-     * Returns the fragment part of the given url. The fragment part is considered to be everything
-     * after the "#" fragment separator sign (included).
+     * Returns the fragment part of the given url. The fragment part is
+     * considered to be everything after the "#" fragment separator sign
+     * (included).
      *
      * @param url The url to extract the fragment part from.
      * @return The extracted fragment or an empty string. Never null.
@@ -174,7 +178,8 @@ public class UrlUtils {
     }
 
     /**
-     * Tries to close an {@link HttpURLConnection}. Silently consumes any exceptions.
+     * Tries to close an {@link HttpURLConnection}. Silently consumes any
+     * exceptions.
      *
      * @param connection The connection to close.
      */

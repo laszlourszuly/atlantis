@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * This class implements the default behaviour of a {@link Request.Filter}. It returns the first
- * request available that matches all hints, or null if there are no requests to pick from or no
- * request could be matched.
+ * This class implements the default behaviour of a {@link Request.Filter}. It
+ * returns the first request available that matches all hints, or null if there
+ * are no requests to pick from or no request could be matched.
  */
 public class DefaultRequestFilter implements Request.Filter {
 
@@ -20,10 +20,12 @@ public class DefaultRequestFilter implements Request.Filter {
      * Returns the first request that matches all given hints.
      *
      * @param requests All available requests. Returns null if empty (or null).
-     * @param url      The url giving a hint of which request to find. Must not be null.
-     * @param method   The corresponding request method to filter on. Must not be null.
-     * @param headers  The minimum set of headers that must match. May be null, in which case
-     *                 headers are not matched.
+     * @param url      The url giving a hint of which request to find. Must not
+     *                 be null.
+     * @param method   The corresponding request method to filter on. Must not
+     *                 be null.
+     * @param headers  The minimum set of headers that must match. May be null,
+     *                 in which case headers are not matched.
      * @return The first matching request template or null.
      */
     @Override

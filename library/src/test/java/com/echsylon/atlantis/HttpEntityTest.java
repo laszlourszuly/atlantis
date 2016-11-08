@@ -10,7 +10,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Verifies expected behavior on any class implementing the {@link HttpEntity} feature.
+ * Verifies expected behavior on any class implementing the {@link HttpEntity}
+ * feature.
  */
 public class HttpEntityTest {
 

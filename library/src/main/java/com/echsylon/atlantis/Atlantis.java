@@ -31,56 +31,82 @@ import fi.iki.elonen.NanoHTTPD;
 public class Atlantis {
     private static final String HOSTNAME = "localhost";
     private static final int PORT = 8080;
+    private final Object captureLock;
+    private boolean isCapturing;
+    private boolean isRecording;
+    private Context context;
+    private NanoHTTPD nanoHTTPD;
+    private Configuration configuration;
+    private File recordedAssetsDirectory;
+    private volatile Stack<Request> captured;
+    // Intentionally hidden constructor.
+    private Atlantis() {
+        this.isCapturing = false;
+        this.captureLock = new Object();
+        this.captured = new Stack<>();
+        this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
+            @Override
+            public Response serve(IHTTPSession session) {
+                if (configuration == null)
+                    return super.serve(session);
 
-    /**
-     * This is a converter class, representing an HTTP status as the NanoHTTPD
-     * class knows it. Atlantis only works with integers and strings when it
-     * comes to HTTP status code, hence the need for this class.
-     */
-    private static final class NanoStatus implements NanoHTTPD.Response.IStatus {
-        private final int code;
-        private final String name;
+                String url = session.getUri();
+                String method = session.getMethod().name();
+                Map<String, String> headers = session.getHeaders();
 
-        private NanoStatus(int code, String name) {
-            this.code = code;
-            this.name = name;
-        }
+                // Try to find a mock request and response configuration for
+                // the target HTTP params.
+                Request request = configuration.findRequest(url, method, headers);
+                if (isCapturing)
+                    synchronized (captureLock) {
+                        captured.push(request != null ?
+                                request :
+                                new Request.Builder()
+                                        .withUrl(url)
+                                        .withMethod(method)
+                                        .withHeaders(headers));
+                    }
 
-        @Override
-        public String getDescription() {
-            return String.format(Locale.ENGLISH, "%d %s", code, name);
-        }
+                com.echsylon.atlantis.Response response = request != null ?
+                        request.response() :
+                        configuration.hasAlternativeRoute() ?
+                                getRealResponse(configuration.fallbackBaseUrl(), url, method, headers) :
+                                null;
 
-        @Override
-        public int getRequestStatus() {
-            return code;
-        }
-    }
+                // Bummer! Bail out.
+                if (response == null)
+                    return super.serve(session);
 
-    /**
-     * This is a callback interface through which any asynchronous success
-     * states are notified.
-     */
-    public interface OnSuccessListener {
+                // We should record fallback requests, make sure we have
+                // something to record as well.
+                if (isRecording)
+                    configuration.addRequest(request != null ?
+                            request :
+                            new Request.Builder()
+                                    .withUrl(url)
+                                    .withMethod(method)
+                                    .withHeaders(headers)
+                                    .withResponse(response));
 
-        /**
-         * Delivers a success notification.
-         */
-        void onSuccess();
-    }
-
-    /**
-     * THis is a callback interface through which any asynchronous exceptions
-     * are notified.
-     */
-    public interface OnErrorListener {
-
-        /**
-         * Delivers an error result.
-         *
-         * @param cause The cause of the error.
-         */
-        void onError(Throwable cause);
+                // Deliver the response, maybe delay before actually delivering
+                // it. Relax, this is a worker thread.
+                try {
+                    long delay = response.delay();
+                    Thread.sleep(delay);
+                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
+                    String mime = response.mimeType();
+                    byte[] bytes = response.hasAsset() ?
+                            response.asset(context) :
+                            response.content().getBytes();
+                    return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
+                } catch (Exception e) {
+                    return newFixedLengthResponse(
+                            Response.Status.INTERNAL_ERROR,
+                            NanoHTTPD.MIME_PLAINTEXT,
+                            "SERVER INTERNAL ERROR: Exception: " + e.getMessage());
+                }
+            }
+        };
     }
 
     /**
@@ -198,88 +224,6 @@ public class Atlantis {
         }
 
         return atlantis;
-    }
-
-    private boolean isCapturing;
-    private boolean isRecording;
-
-    private Context context;
-    private NanoHTTPD nanoHTTPD;
-    private Configuration configuration;
-    private File recordedAssetsDirectory;
-    private volatile Stack<Request> captured;
-
-    private final Object captureLock;
-
-
-    // Intentionally hidden constructor.
-    private Atlantis() {
-        this.isCapturing = false;
-        this.captureLock = new Object();
-        this.captured = new Stack<>();
-        this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
-            @Override
-            public Response serve(IHTTPSession session) {
-                if (configuration == null)
-                    return super.serve(session);
-
-                String url = session.getUri();
-                String method = session.getMethod().name();
-                Map<String, String> headers = session.getHeaders();
-
-                // Try to find a mock request and response configuration for
-                // the target HTTP params.
-                Request request = configuration.findRequest(url, method, headers);
-                if (isCapturing)
-                    synchronized (captureLock) {
-                        captured.push(request != null ?
-                                request :
-                                new Request.Builder()
-                                        .withUrl(url)
-                                        .withMethod(method)
-                                        .withHeaders(headers));
-                    }
-
-                com.echsylon.atlantis.Response response = request != null ?
-                        request.response() :
-                        configuration.hasAlternativeRoute() ?
-                                getRealResponse(configuration.fallbackBaseUrl(), url, method, headers) :
-                                null;
-
-                // Bummer! Bail out.
-                if (response == null)
-                    return super.serve(session);
-
-                // We should record fallback requests, make sure we have
-                // something to record as well.
-                if (isRecording)
-                    configuration.addRequest(request != null ?
-                            request :
-                            new Request.Builder()
-                                    .withUrl(url)
-                                    .withMethod(method)
-                                    .withHeaders(headers)
-                                    .withResponse(response));
-
-                // Deliver the response, maybe delay before actually delivering
-                // it. Relax, this is a worker thread.
-                try {
-                    long delay = response.delay();
-                    Thread.sleep(delay);
-                    NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                    String mime = response.mimeType();
-                    byte[] bytes = response.hasAsset() ?
-                            response.asset(context) :
-                            response.content().getBytes();
-                    return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
-                } catch (Exception e) {
-                    return newFixedLengthResponse(
-                            Response.Status.INTERNAL_ERROR,
-                            NanoHTTPD.MIME_PLAINTEXT,
-                            "SERVER INTERNAL ERROR: Exception: " + e.getMessage());
-                }
-            }
-        };
     }
 
     /**
@@ -570,6 +514,57 @@ public class Atlantis {
             return null;
         } finally {
             UrlUtils.closeSilently(connection);
+        }
+    }
+
+    /**
+     * This is a callback interface through which any asynchronous success
+     * states are notified.
+     */
+    public interface OnSuccessListener {
+
+        /**
+         * Delivers a success notification.
+         */
+        void onSuccess();
+    }
+
+    /**
+     * THis is a callback interface through which any asynchronous exceptions
+     * are notified.
+     */
+    public interface OnErrorListener {
+
+        /**
+         * Delivers an error result.
+         *
+         * @param cause The cause of the error.
+         */
+        void onError(Throwable cause);
+    }
+
+    /**
+     * This is a converter class, representing an HTTP status as the NanoHTTPD
+     * class knows it. Atlantis only works with integers and strings when it
+     * comes to HTTP status code, hence the need for this class.
+     */
+    private static final class NanoStatus implements NanoHTTPD.Response.IStatus {
+        private final int code;
+        private final String name;
+
+        private NanoStatus(int code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+
+        @Override
+        public String getDescription() {
+            return String.format(Locale.ENGLISH, "%d %s", code, name);
+        }
+
+        @Override
+        public int getRequestStatus() {
+            return code;
         }
     }
 

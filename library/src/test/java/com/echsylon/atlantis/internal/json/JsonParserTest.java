@@ -21,21 +21,6 @@ public class JsonParserTest {
     private static final Response MOCK_RESPONSE = new Response.Builder();
     private static final Request MOCK_REQUEST = new Request.Builder();
 
-    public static final class TestResponseFilter implements Response.Filter {
-        @Override
-        public Response getResponse(Request request, List<Response> responses) {
-            return MOCK_RESPONSE;
-        }
-    }
-
-    public static final class TestRequestFilter implements Request.Filter {
-        @Override
-        public Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers) {
-            return MOCK_REQUEST;
-        }
-    }
-
-
     @Test
     @SuppressWarnings("ConstantConditions")
     public void read_canParseStringHeadersCorrectly() throws Exception {
@@ -114,6 +99,20 @@ public class JsonParserTest {
         assertThat(entity.headers().size(), is(1));
         assertThat(entity.headers().get("Content-Type"), is("text/plain"));
         assertThat(entity.headers().get("Invalid-Header"), is(nullValue()));
+    }
+
+    public static final class TestResponseFilter implements Response.Filter {
+        @Override
+        public Response getResponse(Request request, List<Response> responses) {
+            return MOCK_RESPONSE;
+        }
+    }
+
+    public static final class TestRequestFilter implements Request.Filter {
+        @Override
+        public Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers) {
+            return MOCK_REQUEST;
+        }
     }
 
 }
