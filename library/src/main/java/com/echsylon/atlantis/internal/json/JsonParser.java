@@ -38,8 +38,9 @@ public class JsonParser {
     /**
      * Serializes the given object into a JSON string.
      *
-     * @param object The object to serialize.
-     * @param <T>    The type of object.
+     * @param object        The object to serialize.
+     * @param classOfObject The desired type of the object being serialized.
+     * @param <T>           The generic class type.
      * @return The JSON string notation of the given object.
      */
     public <T> String toJson(Object object, Class<T> classOfObject) {
