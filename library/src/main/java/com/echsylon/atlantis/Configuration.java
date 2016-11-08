@@ -75,7 +75,7 @@ public class Configuration implements Serializable {
 
     protected String fallbackBaseUrl = null;
     protected List<Request> requests = null;
-    protected Request.Filter requestFilter = new DefaultRequestFilter();
+    protected Request.Filter requestFilter = null;
 
     // Intentionally hidden constructor
     protected Configuration() {
@@ -103,10 +103,12 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Returns the filter that matches any requests in this configuration against the HTTP
-     * parameters the client is trying to target.
+     * Returns the filter that matches any requests in this configuration
+     * against the HTTP parameters the client is trying to target.
+     * <p>
+     * NOTE! This method should only be used internally.
      *
-     * @return The request filter. Should never be null.
+     * @return The request filter. May be null.
      */
     public Request.Filter requestFilter() {
         return requestFilter;
@@ -122,9 +124,9 @@ public class Configuration implements Serializable {
      * @return The first request configuration that matches the given criteria or null.
      */
     public Request findRequest(String url, String method, Map<String, String> headers) {
-        return requestFilter != null ?
-                requestFilter.getRequest(requests, url, method, headers) :
-                null;
+        return requestFilter == null ?
+                new DefaultRequestFilter().getRequest(requests, url, method, headers) :
+                requestFilter.getRequest(requests, url, method, headers);
     }
 
     /**
