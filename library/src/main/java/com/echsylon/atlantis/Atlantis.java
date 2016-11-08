@@ -253,7 +253,7 @@ public class Atlantis {
                 // We should record fallback requests, make sure we have
                 // something to record as well.
                 if (isRecording)
-                    configuration.requests.add(request != null ?
+                    configuration.addRequest(request != null ?
                             request :
                             new Request.Builder()
                                     .withUrl(url)

@@ -127,4 +127,21 @@ public class Configuration implements Serializable {
                 null;
     }
 
+    /**
+     * Adds a request to a collection of requests managed by this configuration
+     * object. This method ensures that null pointers are not added.
+     *
+     * @param request The new request being eligible to serve mock responses
+     *                when this method returns. Null pointers are ignored.
+     */
+    protected void addRequest(Request request) {
+        if (request != null) {
+            if (requests == null)
+                requests = new ArrayList<>();
+
+            if (!requests.contains(request))
+                requests.add(request);
+        }
+    }
+
 }
