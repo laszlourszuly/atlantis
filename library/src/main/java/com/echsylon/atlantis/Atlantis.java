@@ -2,7 +2,6 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.text.format.DateFormat;
 import android.util.Log;
 
 import com.echsylon.atlantis.internal.UrlUtils;
@@ -14,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -556,7 +556,7 @@ public class Atlantis {
                 //noinspection ResultOfMethodCallIgnored
                 requestFile.mkdirs();
 
-                String fileName = DateFormat.format("yyyy-MM-dd_hh:mm:ss", new Date()).toString();
+                String fileName = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss.SSS", Locale.getDefault()).format(new Date());
                 File responseFile = new File(requestFile, fileName);
                 Utils.writeFile(UrlUtils.getResponseBody(connection), responseFile);
                 builder.withAsset(String.format("file://%s", responseFile.getAbsolutePath()));
