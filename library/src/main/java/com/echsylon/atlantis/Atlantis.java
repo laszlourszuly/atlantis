@@ -2,6 +2,7 @@ package com.echsylon.atlantis;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.echsylon.atlantis.internal.UrlUtils;
@@ -11,10 +12,15 @@ import com.echsylon.atlantis.internal.json.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookieStore;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
@@ -37,6 +43,7 @@ public class Atlantis {
     private Context context;
     private NanoHTTPD nanoHTTPD;
     private Configuration configuration;
+    private CookieManager cookieManager;
     private File recordedAssetsDirectory;
     private volatile Stack<Request> captured;
 
@@ -45,7 +52,9 @@ public class Atlantis {
         this.isCapturing = false;
         this.captureLock = new Object();
         this.captured = new Stack<>();
+        this.cookieManager = new CookieManager();
         this.nanoHTTPD = new NanoHTTPD(HOSTNAME, PORT) {
+
             @Override
             public Response serve(IHTTPSession session) {
                 if (configuration == null)
@@ -236,6 +245,8 @@ public class Atlantis {
         nanoHTTPD.stop();
         nanoHTTPD = null;
         isCapturing = false;
+        cookieManager.getCookieStore().removeAll();
+        cookieManager = null;
     }
 
     /**
@@ -460,6 +471,13 @@ public class Atlantis {
             // Initiate the real world request.
             URL url = new URL(realUrl);
             connection = (HttpURLConnection) url.openConnection();
+
+            // Atlantis can't handle cookies, but "real" requests may still
+            // depend on them, hence, we must make sure that we handle cookies
+            // for external traffic.
+            addCookiesToRealRequest(connection);
+
+            connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
 
             // Some headers we don't want to leak to the real world at all.
@@ -478,6 +496,8 @@ public class Atlantis {
                     .withStatus(UrlUtils.getResponseCode(connection), UrlUtils.getResponseMessage(connection))
                     .withMimeType(UrlUtils.getResponseMimeType(connection))
                     .withHeaders(UrlUtils.getResponseHeaders(connection));
+
+            getCookiesFromRealResponse(connection);
 
             // Write the response asset to a file if we're in recording mode.
             // Note that the response will reference the asset in such case,
@@ -508,6 +528,57 @@ public class Atlantis {
             return null;
         } finally {
             UrlUtils.closeSilently(connection);
+        }
+    }
+
+    private void addCookiesToRealRequest(HttpURLConnection connection) {
+        if (connection == null)
+            return;
+
+        URL url = connection.getURL();
+        String realHost = url.getHost();
+        String realPath = url.getPath();
+        if (realHost == null || realPath == null)
+            return;
+
+        List<HttpCookie> allCookies = cookieManager.getCookieStore().getCookies();
+        List<HttpCookie> myCookies = new ArrayList<>();
+
+        for (HttpCookie cookie : allCookies) {
+            String domain = cookie.getDomain();
+            String path = cookie.getPath();
+
+            if (domain != null && domain.equals(realHost) && path != null && realPath.startsWith(path))
+                myCookies.add(cookie);
+        }
+
+        if (!myCookies.isEmpty())
+            connection.setRequestProperty("Cookie", TextUtils.join(";", myCookies));
+    }
+
+    private void getCookiesFromRealResponse(HttpURLConnection connection) {
+        if (connection == null)
+            return;
+
+        URL url = connection.getURL();
+        String realHost = url.getHost();
+        if (realHost == null)
+            return;
+
+        Map<String, List<String>> headerFields = connection.getHeaderFields();
+        List<String> cookiesHeader = headerFields.get("Set-Cookie");
+
+        if (cookiesHeader != null) {
+            CookieStore cookieStore = cookieManager.getCookieStore();
+
+            for (String cookieEntry : cookiesHeader) {
+                List<HttpCookie> cookies = HttpCookie.parse(cookieEntry);
+
+                for (HttpCookie cookie : cookies) {
+                    cookie.setDomain(realHost);
+                    cookieStore.add(null, cookie);
+                }
+            }
         }
     }
 
