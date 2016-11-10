@@ -461,7 +461,6 @@ public class Atlantis {
             URL url = new URL(realUrl);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(method);
-            connection.getRequestProperties();
 
             // Some headers we don't want to leak to the real world at all.
             // These seem to be added by NanoHttpd.
@@ -469,12 +468,10 @@ public class Atlantis {
             headers.remove("remote-addr");
             headers.remove("http-client-ip");
 
-            // The rest we might want to expose, still making sure we don't
-            // overwrite stuff.
+            // Make sure all provided headers make their way to the real server.
             if (!headers.isEmpty())
                 for (Map.Entry<String, String> entry : headers.entrySet())
-                    if (connection.getRequestProperty(entry.getKey()) == null)
-                        connection.setRequestProperty(entry.getKey(), entry.getValue());
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
 
             // Build an Atlantis response from the real world response.
             com.echsylon.atlantis.Response.Builder builder = new com.echsylon.atlantis.Response.Builder()
