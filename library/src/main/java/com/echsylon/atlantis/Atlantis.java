@@ -39,6 +39,7 @@ public class Atlantis {
     private Configuration configuration;
     private File recordedAssetsDirectory;
     private volatile Stack<Request> captured;
+
     // Intentionally hidden constructor.
     private Atlantis() {
         this.isCapturing = false;
@@ -261,9 +262,6 @@ public class Atlantis {
      */
     public void setConfiguration(final Context context, final String configAssetName, final OnSuccessListener successListener, final OnErrorListener errorListener) {
         this.context = context;
-        if (configAssetName == null)
-            this.configuration = null;
-
         new AsyncTask<Void, Void, Throwable>() {
             @Override
             protected Throwable doInBackground(Void... nothings) {
@@ -285,6 +283,7 @@ public class Atlantis {
                     if (successListener != null)
                         successListener.onSuccess();
                 } else {
+                    configuration = null;
                     if (errorListener != null)
                         errorListener.onError(throwable);
                 }
@@ -304,9 +303,6 @@ public class Atlantis {
      */
     public void setConfiguration(final Context context, final File file, final OnSuccessListener successListener, final OnErrorListener errorListener) {
         this.context = context;
-        if (file == null)
-            this.configuration = null;
-
         new AsyncTask<Void, Void, Throwable>() {
             @Override
             protected Throwable doInBackground(Void... nothings) {
@@ -327,6 +323,7 @@ public class Atlantis {
                     if (successListener != null)
                         successListener.onSuccess();
                 } else {
+                    configuration = null;
                     if (errorListener != null)
                         errorListener.onError(throwable);
                 }
