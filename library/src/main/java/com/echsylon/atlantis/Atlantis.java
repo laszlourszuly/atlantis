@@ -544,6 +544,36 @@ public class Atlantis {
     }
 
     /**
+     * Returns a boolean flag telling whether Atlantis is in an active state or
+     * not.
+     *
+     * @return Boolean true if Atlantis is running, false otherwise.
+     */
+    public boolean isRunning() {
+        return nanoHTTPD.isAlive();
+    }
+
+    /**
+     * Returns a boolean flag telling whether Atlantis is recording missing mock
+     * requests and responses or not.
+     *
+     * @return Boolean true if Atlantis is in a recording mode, false otherwise.
+     */
+    public boolean isRecordingMissingMockData() {
+        return isRecording;
+    }
+
+    /**
+     * Returns a boolean flag telling whether Atlantis is capturing a copy of
+     * any served requests or not.
+     *
+     * @return Boolean true if Atlantis is in a capturing mode, false otherwise.
+     */
+    public boolean isCapturingServedRequests() {
+        return isCapturing;
+    }
+
+    /**
      * Stops the local web server.
      */
     public void stop() {
