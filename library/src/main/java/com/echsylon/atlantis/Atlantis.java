@@ -108,7 +108,12 @@ public class Atlantis {
                     byte[] bytes = response.hasAsset() ?
                             response.asset(context) :
                             response.content().getBytes();
-                    return newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
+
+                    Response result = newFixedLengthResponse(status, mime, new ByteArrayInputStream(bytes), bytes.length);
+                    for (Map.Entry<String, String> header : response.headers().entrySet())
+                        result.addHeader(header.getKey(), header.getValue());
+
+                    return result;
                 } catch (Exception e) {
                     return newFixedLengthResponse(
                             Response.Status.INTERNAL_ERROR,

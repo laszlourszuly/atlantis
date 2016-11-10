@@ -351,6 +351,23 @@ public class AtlantisTest {
     }
 
     @Test
+    public void response_returnsCorrectMockedResponseHeaders() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one?q=1', method:'get', " +
+                "responses:[{responseCode:{code: 2, name: 'CUSTOM_OK'}, mime:'application/json', " +
+                "headers: { key1: 'value1', key2: 'value2' }, text:'{}'}]}]}");
+        Atlantis target = Atlantis.start(null, null);
+
+        try {
+            target.setConfiguration(context, "config.json", null, null);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one?q=1").openConnection();
+            assertThat(connection.getHeaderField("key1"), is("value1"));
+            assertThat(connection.getHeaderField("key2"), is("value2"));
+        } finally {
+            target.stop();
+        }
+    }
+
+    @Test
     public void capture_requestsCapturedWhenInCapturingMode() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
         Atlantis target = null;
