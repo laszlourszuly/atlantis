@@ -91,7 +91,7 @@ private def getVersionFromLatestTag() {
     def filter = 's/v\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\)/\\1/p'
     def versions = "echo '${tag}' | sed -n '${filter}'".bash().trim()
     if (versions.isEmpty())
-        throw new IllegalStateException("Couldn't extract version from tag: '${tag}'")
+        return '0.0.0'
 
     return versions
 }
