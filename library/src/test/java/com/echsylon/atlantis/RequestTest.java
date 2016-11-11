@@ -1,88 +1,118 @@
 package com.echsylon.atlantis;
 
-import com.google.gson.Gson;
+import com.echsylon.atlantis.internal.json.JsonParser;
 
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Verifies expected behavior on the {@link Response} class.
  */
 public class RequestTest {
 
-    @Test
-    public void create_canBuildEmptyRequest() throws Exception {
-        Request request = new Request.Builder();
-        assertThat(request, is(notNullValue()));
-        assertThat(request, is(instanceOf(Request.class)));
-        assertThat(request.url(), is(nullValue()));
-        assertThat(request.method(), is(nullValue()));
-        assertThat(request.headers(), is(notNullValue()));
-        assertThat(request.headers(), is(Collections.EMPTY_MAP));
-        assertThat(request.response(), is(nullValue()));
+    // This is a test implementation of the Response#Filter interface. It's used
+    // for verifying that a response filter can be instantiated by parsing JSON.
+    @SuppressWarnings("unused")
+    public static final class TestFilter implements Response.Filter {
+        @Override
+        public Response getResponse(Request request, List<Response> responses) {
+            return null;
+        }
     }
 
     @Test
-    public void create_canBuildFullRequest() throws Exception {
-        Request request = new Request.Builder()
-                .withHeader("h1", "v1")
-                .withUrl("/test")
-                .withMethod("get")
-                .withResponse(Response.EMPTY);
-        assertThat(request.headers().get("h1"), is("v1"));
-        assertThat(request.headers().get("invalid"), is(nullValue()));
-        assertThat(request.url(), is("/test"));
-        assertThat(request.method(), is("get"));
-        assertThat(request.response(), is(Response.EMPTY));
-    }
+    public void create_canBuildFullRequest() {
+        Response response = mock(Response.class);
+        Response.Filter filter = mock(Response.Filter.class);
 
-    @Test
-    public void create_canBuildRequestWithHeadersMap() throws Exception {
         HashMap<String, String> headers = new HashMap<>();
         headers.put("h1", "v1");
         headers.put("h2", "v2");
 
         Request request = new Request.Builder()
-                .withHeaders(headers);
-        assertThat(request.headers().size(), is(2));
+                .withHeader("h0", "v0")
+                .withHeaders(headers)
+                .withHeader("h3", "v3")
+                .withUrl("url")
+                .withMethod("method")
+                .withResponse(response)
+                .withResponseFilter(filter)
+                .build();
+
+        assertThat(request.headers().get("h0"), is("v0"));
         assertThat(request.headers().get("h1"), is("v1"));
         assertThat(request.headers().get("h2"), is("v2"));
+        assertThat(request.headers().get("h3"), is("v3"));
         assertThat(request.headers().get("invalid"), is(nullValue()));
+        assertThat(request.url(), is("url"));
+        assertThat(request.method(), is("method"));
+        assertThat(request.responseFilter(), is(filter));
+        assertThat(request.responses, is(notNullValue()));
+        assertThat(request.responses.size(), is(1));
+        assertThat(request.responses.get(0), is(response));
     }
 
     @Test
-    public void get_returnsExpectedMethodOrNull() throws Exception {
-        Request requestOne = new Gson().fromJson("{method:'get'}", Request.class);
-        assertThat(requestOne.method(), is("get"));
+    public void create_canParseFullRequest() {
+        String json = "{ method: 'method', url: 'url', headers: { h0: 'v0' }, " +
+                "responseFilter: 'com.echsylon.atlantis.RequestTest$TestFilter', " +
+                "responses: [{ responseCode: { code: 2, name: 'name' } }]}";
 
-        Request requestTwo = new Gson().fromJson("{}", Request.class);
-        assertThat(requestTwo.method(), nullValue());
+        Request request = new JsonParser().fromJson(json, Request.class);
+
+        assertThat(request.headers().get("h0"), is("v0"));
+        assertThat(request.headers().get("invalid"), is(nullValue()));
+        assertThat(request.url(), is("url"));
+        assertThat(request.method(), is("method"));
+        assertThat(request.responseFilter(), isA(Response.Filter.class));
+        assertThat(request.responses, is(notNullValue()));
+        assertThat(request.responses.size(), is(1));
+        assertThat(request.responses.get(0), isA(Response.class));
     }
 
     @Test
-    public void get_returnsExpectedUrlOrNull() throws Exception {
-        Request requestOne = new Gson().fromJson("{url:'/one'}", Request.class);
-        assertThat(requestOne.url(), is("/one"));
+    public void response_fallsBackToDefaultResponseFilterWhenNonGiven() {
+        Response response = mock(Response.class);
+        Request request = new Request.Builder()
+                .withResponse(response)
+                .withResponse(mock(Response.class))
+                .build();
 
-        Request requestTwo = new Gson().fromJson("{}", Request.class);
-        assertThat(requestTwo.url(), nullValue());
+        // The default response filter will always return the first response in
+        // the list of available responses.
+        assertThat(request.response(), is(response));
     }
 
     @Test
-    public void get_returnsExpectedResponseOrNull() throws Exception {
-        Request requestOne = new Gson().fromJson("{url:'/one', responses:[{text:'{}'}]}", Request.class);
-        assertThat(requestOne.response(), is(notNullValue()));
+    public void response_returnsResponseAccordingToCurrentResponseFilter() {
+        // The mock response filter will always return this mark response.
+        Response response = mock(Response.class);
 
-        Request requestTwo = new Gson().fromJson("{url:'/two'}", Request.class);
-        assertThat(requestTwo.response(), is(nullValue()));
+        // Our custom response filter implementation.
+        Response.Filter filter = mock(Response.Filter.class);
+        doReturn(response).when(filter).getResponse(any(), anyList());
+
+        Request request = new Request.Builder()
+                .withResponseFilter(filter)
+                .withResponse(mock(Response.class))
+                .withResponse(response)
+                .build();
+
+        // Our custom response filter will always return a specific response in
+        // the list of available responses.
+        assertThat(request.response(), is(response));
     }
 
 }

@@ -22,7 +22,8 @@ public class Request extends HttpEntity implements Serializable {
     protected String method = null;
     protected String url = null;
     protected List<Response> responses = null;
-    protected Response.Filter responseFilter = new DefaultResponseFilter();
+    protected Response.Filter responseFilter = null;
+
     // Intentionally hidden constructor.
     protected Request() {
     }
@@ -61,9 +62,9 @@ public class Request extends HttpEntity implements Serializable {
      * @return The mocked response.
      */
     public Response response() {
-        return responseFilter != null ?
-                responseFilter.getResponse(this, responses) :
-                null;
+        return responseFilter == null ?
+                new DefaultResponseFilter().getResponse(this, responses) :
+                responseFilter.getResponse(this, responses);
     }
 
     /**
@@ -104,10 +105,10 @@ public class Request extends HttpEntity implements Serializable {
          */
         public Builder withHeader(String key, String value) {
             if (notAnyEmpty(key, value)) {
-                if (this.headers == null)
-                    this.headers = new HashMap<>();
+                if (headers == null)
+                    headers = new HashMap<>();
 
-                this.headers.put(key, value);
+                headers.put(key, value);
             }
 
             return this;
@@ -143,10 +144,10 @@ public class Request extends HttpEntity implements Serializable {
          */
         public Builder withResponse(Response response) {
             if (response != null) {
-                if (this.responses == null)
-                    this.responses = new ArrayList<>();
+                if (responses == null)
+                    responses = new ArrayList<>();
 
-                this.responses.add(response);
+                responses.add(response);
             }
 
             return this;
@@ -182,14 +183,12 @@ public class Request extends HttpEntity implements Serializable {
          * Sets the response filter logic to use when deciding which response to
          * serve.
          *
-         * @param responseFilter The response filter implementation. May be null
-         *                       in which case a default response filter will be
-         *                       used.
+         * @param responseFilter The response filter implementation. May be null.
          * @return This buildable request instance, allowing chaining of method
          * calls.
          */
         public Builder withResponseFilter(Response.Filter responseFilter) {
-            this.responseFilter = responseFilter != null ? responseFilter : new DefaultResponseFilter();
+            this.responseFilter = responseFilter;
             return this;
         }
 
