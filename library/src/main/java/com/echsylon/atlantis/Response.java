@@ -20,7 +20,6 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
  */
 @SuppressWarnings("WeakerAccess")
 public class Response extends HttpEntity implements Serializable {
-    public static final Response EMPTY = new Response();
     private static final String ASSET_SCHEME = "asset://";
     private static final String FILE_SCHEME = "file://";
 

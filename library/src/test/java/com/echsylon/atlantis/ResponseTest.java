@@ -3,8 +3,8 @@ package com.echsylon.atlantis;
 import android.content.Context;
 import android.content.res.AssetManager;
 
+import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,20 +12,19 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.both;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -38,50 +37,39 @@ import static org.mockito.Mockito.mock;
 public class ResponseTest {
 
     @Test
-    public void create_canBuildEmptyResponse() throws Exception {
-        Context context = mock(Context.class);
-        Response response = new Response.Builder();
-        assertThat(response, is(notNullValue()));
-        assertThat(response, is(instanceOf(Response.class)));
-        assertThat(response.statusCode(), is(0));
-        assertThat(response.statusName(), is(nullValue()));
-        assertThat(response.mimeType(), is(nullValue()));
-        assertThat(response.hasContent(), is(false));
-        assertThat(response.content(), is(nullValue()));
-        assertThat(response.hasAsset(), is(false));
-
-        byte[] asset = response.asset(context);
-        assertThat(asset, is(notNullValue()));
-        assertThat(asset.length, is(0));
-
-        assertThat(response.delay(), is(0L));
-        assertThat(response.headers(), is(notNullValue()));
-        assertThat(response.headers(), is(Collections.EMPTY_MAP));
-    }
-
-    @Test
     public void create_canBuildFullResponse() throws Exception {
         AssetManager assetManager = mock(AssetManager.class);
-        doReturn(new ByteArrayInputStream(new byte[]{0, 1, 2})).when(assetManager).open("asset://hejhopp.bin");
+        doReturn(new ByteArrayInputStream(new byte[]{0, 1, 2})).when(assetManager).open("asset://asset");
 
         Context context = mock(Context.class);
         doReturn(assetManager).when(context).getAssets();
 
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("h1", "v1");
+        headers.put("h2", "v2");
+
         Response response = new Response.Builder()
-                .withHeader("h1", "v1")
-                .withStatus(200, "OK")
-                .withMimeType("application/json")
-                .withContent("{}")
-                .withAsset("asset://hejhopp.bin")
+                .withHeader("h0", "v0")
+                .withHeaders(headers)
+                .withHeader("h3", "v3")
+                .withStatus(2, "CUSTOM_OK")
+                .withMimeType("mime")
+                .withContent("text")
+                .withAsset("asset://asset")
                 .withDelay(12);
 
+        assertThat(response.headers().get("h0"), is("v0"));
         assertThat(response.headers().get("h1"), is("v1"));
+        assertThat(response.headers().get("h2"), is("v2"));
+        assertThat(response.headers().get("h3"), is("v3"));
         assertThat(response.headers().get("invalid"), is(nullValue()));
-        assertThat(response.statusCode(), is(200));
-        assertThat(response.statusName(), is("OK"));
-        assertThat(response.mimeType(), is("application/json"));
+
+        assertThat(response.statusCode(), is(2));
+        assertThat(response.statusName(), is("CUSTOM_OK"));
+
+        assertThat(response.mimeType(), is("mime"));
         assertThat(response.hasContent(), is(true));
-        assertThat(response.content(), is("{}"));
+        assertThat(response.content(), is("text"));
 
         byte[] asset = response.asset(context);
         assertThat(response.hasAsset(), is(true));
@@ -91,89 +79,39 @@ public class ResponseTest {
         assertThat(asset[1], is((byte) 1));
         assertThat(asset[2], is((byte) 2));
 
-        assertThat(response.delay(), is(12L));
+        assertThat(response.delay(), is(12));
     }
 
     @Test
-    public void create_canBuildResponseWithHeadersMap() throws Exception {
-        HashMap<String, String> headers = new HashMap<>();
-        headers.put("h1", "v1");
-        headers.put("h2", "v2");
+    public void create_canParseFullResponse() throws Exception {
+        String json = "{ responseCode: { code: 2, name: 'CUSTOM_OK' }, " +
+                "headers: { h0: 'v0' }, mime: 'mime', text: 'text', " +
+                "asset: 'asset', delay: 1, maxDelay: 1 }";
 
-        Response response = new Response.Builder()
-                .withHeaders(headers);
-        assertThat(response.headers().size(), is(2));
-        assertThat(response.headers().get("h1"), is("v1"));
-        assertThat(response.headers().get("h2"), is("v2"));
+        Response response = new Gson().fromJson(json, Response.class);
+        assertThat(response.statusCode(), is(2));
+        assertThat(response.headers().get("h0"), is("v0"));
         assertThat(response.headers().get("invalid"), is(nullValue()));
-    }
-
-    @Test
-    public void status_responseCode() throws Exception {
-        JsonObject responseCode = new JsonObject();
-        responseCode.addProperty("code", 200);
-        responseCode.addProperty("name", "OK");
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.add("responseCode", responseCode);
-
-        Response responseWithContent = new Gson().fromJson(jsonObject, Response.class);
-        assertThat(responseWithContent.statusCode(), is(200));
-        assertThat(responseWithContent.statusName(), is("OK"));
-
-        Response emptyResponse = new Gson().fromJson(new JsonObject(), Response.class);
-        assertThat(emptyResponse.statusCode(), is(0));
-        assertThat(emptyResponse.statusName(), is(nullValue()));
-    }
-
-    @Test
-    public void mime_correctMimeTypeIsReturned() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("mime", "application/json");
-        Response responseWithContent = new Gson().fromJson(jsonObject, Response.class);
-        assertThat(responseWithContent.mimeType(), is("application/json"));
-
-        Response emptyResponse = new Gson().fromJson(new JsonObject(), Response.class);
-        assertThat(emptyResponse.mimeType(), is(nullValue()));
-    }
-
-    @Test
-    public void content_correctContentTextIsReturned() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("text", "\"{}\"");
-        Response responseWithContent = new Gson().fromJson(jsonObject, Response.class);
-        assertThat(responseWithContent.hasContent(), is(true));
-        assertThat(responseWithContent.content(), is("\"{}\""));
-
-        Response emptyResponse = new Gson().fromJson(new JsonObject(), Response.class);
-        assertThat(emptyResponse.hasContent(), is(false));
-        assertThat(emptyResponse.content(), is(nullValue()));
-    }
-
-    @Test
-    public void asset_assetIsReadCorrectly() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("asset", "asset://fake.asset");
-        Response response = new Gson().fromJson(jsonObject, Response.class);
-
-        AssetManager mockedAssetManager = mock(AssetManager.class);
-        doReturn(new ByteArrayInputStream("{}".getBytes())).when(mockedAssetManager).open(anyString());
-        Context mockedContext = mock(Context.class);
-        doReturn(mockedAssetManager).when(mockedContext).getAssets();
-
-        assertThat(response.hasAsset(), is(true));
-        byte[] goodAsset = response.asset(mockedContext);
-        assertThat(goodAsset, is(notNullValue()));
-        assertThat(goodAsset.length, is(2));
+        assertThat(response.statusName(), is("CUSTOM_OK"));
+        assertThat(response.mimeType(), is("mime"));
+        assertThat(response.content(), is("text"));
+        assertThat(response.asset(null), isA(byte[].class));
+        assertThat(response.asset(null).length, is(0));
+        assertThat(response.delay(), is(1));
+        assertThat(response.asset, is("asset"));
+        assertThat(response.delay, is(1));
+        assertThat(response.maxDelay, is(1));
     }
 
     @Test
     public void asset_readingAssetsDoesNotConsumeErrors() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("asset", "asset://fake.asset");
-        Response response = new Gson().fromJson(jsonObject, Response.class);
+        Response response = new Response.Builder()
+                .withAsset("asset://asset")
+                .build();
 
         AssetManager mockedAssetManager = mock(AssetManager.class);
-        doThrow(IOException.class).when(mockedAssetManager).open("asset://fake.asset");
+        doThrow(IOException.class).when(mockedAssetManager).open("asset://asset");
+
         Context mockedContext = mock(Context.class);
         doReturn(mockedAssetManager).when(mockedContext).getAssets();
 
@@ -183,30 +121,105 @@ public class ResponseTest {
     }
 
     @Test
-    public void delay_randomDelayBetweenDefaultAndMaxIsReturned() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("delay", 110L);
-        jsonObject.addProperty("maxDelay", 130L);
-        Response response = new Gson().fromJson(jsonObject, Response.class);
-        assertThat(response.delay(), is(both(greaterThanOrEqualTo(100L)).and(lessThanOrEqualTo(130L))));
+    public void asset_requestingAssetIsValidatedInCorrectOrder() throws Exception {
+        AssetManager assetManager = mock(AssetManager.class);
+        doReturn(new ByteArrayInputStream(new byte[]{2})).when(assetManager).open("asset://asset");
+
+        Context context = mock(Context.class);
+        doReturn(assetManager).when(context).getAssets();
+
+        File file = new File("asset");
+        Files.write(new byte[]{3}, file);
+
+        try {
+            // Byte array is prioritized.
+            byte[] asset1 = new Response.Builder()
+                    .withAsset("asset://asset")
+                    .withAsset(new byte[]{1})
+                    .build()
+                    .asset(context);
+            assertThat(asset1.length, is(1));
+            assertThat(asset1[0], is((byte) 1));
+
+            // If no in-memory byte array is found, then a "asset://" asset is
+            // returned.
+            byte[] asset2 = new Response.Builder()
+                    .withAsset("asset://asset")
+                    .build()
+                    .asset(context);
+            assertThat(asset2.length, is(1));
+            assertThat(asset2[0], is((byte) 2));
+
+            // If no in-memory byte array and no "asset://" asset is found, then
+            // a "file://" asset is returned.
+            byte[] asset3 = new Response.Builder()
+                    .withAsset("file://asset")
+                    .build()
+                    .asset(context);
+            assertThat(asset3.length, is(1));
+            assertThat(asset3[0], is((byte) 3));
+
+            // If there is no asset, then an empty byte array asset is returned.
+            byte[] asset4 = new Response.Builder()
+                    .build()
+                    .asset(context);
+            assertThat(asset4, is(notNullValue()));
+            assertThat(asset4.length, is(0));
+
+            // If asset is a null pointer, then an empty byte array asset is
+            // returned.
+            byte[] asset5 = new Response.Builder()
+                    .withAsset((byte[]) null)
+                    .withAsset((String) null)
+                    .build()
+                    .asset(context);
+            assertThat(asset5, is(notNullValue()));
+            assertThat(asset5.length, is(0));
+        } finally {
+            file.delete();
+        }
     }
 
     @Test
     public void delay_exactDelayIsReturnedIfOnlyDefaultGiven() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("delay", 113L);
-        Response response = new Gson().fromJson(jsonObject, Response.class);
-        assertThat(response.delay(), is(113L));
+        Response response = new Response.Builder()
+                .withDelay(113)
+                .build();
+
+        assertThat(response.delay(), is(113));
+    }
+
+    @Test
+    public void delay_exactZeroIsReturnedIfNoDelayGiven() throws Exception {
+        Response response = new Response.Builder().build();
+        assertThat(response.delay(), is(0));
+    }
+
+    @Test
+    public void delay_randomDelayBetweenDefaultAndMaxIsReturned() throws Exception {
+        Response response = new Response.Builder()
+                .withDelay(110, 130)
+                .build();
+
+        assertThat(response.delay(), is(both(greaterThanOrEqualTo(110)).and(lessThanOrEqualTo(130))));
+    }
+
+    @Test
+    public void delay_randomDelayBetweenZeroAndMaxIsReturned() throws Exception {
+        Response response = new Response.Builder()
+                .withDelay(-1, 130)
+                .build();
+
+        assertThat(response.delay(), is(both(greaterThanOrEqualTo(0)).and(lessThanOrEqualTo(130))));
     }
 
     @Test
     public void delay_defaultDelayReturnedIfMaxDelayLessThanDefaultDelay() throws Exception {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("delay", 110L);
-        jsonObject.addProperty("maxDelay", 90L);
-        Response response = new Gson().fromJson(jsonObject, Response.class);
+        Response response = new Response.Builder()
+                .withDelay(110, 90)
+                .build();
 
-        assertThat(response.delay(), is(110L));
+        assertThat(response.delay(), is(110));
     }
 
 }
