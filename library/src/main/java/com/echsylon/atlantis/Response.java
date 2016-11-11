@@ -23,6 +23,7 @@ public class Response extends HttpEntity implements Serializable {
     public static final Response EMPTY = new Response();
     private static final String ASSET_SCHEME = "asset://";
     private static final String FILE_SCHEME = "file://";
+
     // JSON API
     protected Code responseCode = null;
     protected String mime = null;
@@ -30,9 +31,11 @@ public class Response extends HttpEntity implements Serializable {
     protected String asset = null;
     protected Integer delay = null;
     protected Integer maxDelay = null;
+
     // Part of extra feature offered by the Builder.
     // This field should be ignored during serialization, hence transient.
     protected transient byte[] assetBytes = null;
+
     // Intentionally hidden constructor.
     protected Response() {
     }
@@ -124,7 +127,7 @@ public class Response extends HttpEntity implements Serializable {
      * @return Number of milliseconds. Never less than zero (0). Zero means no
      * delay.
      */
-    public long delay() {
+    public int delay() {
         if (maxDelay == null || maxDelay.equals(delay))
             return Math.max(0, Utils.getNative(delay, 0));
 
@@ -295,30 +298,23 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
-         * Sets the default delay for this response, disabling the max delay. If
-         * the new default delay is less than or equal to zero, then the delay
-         * feature is reset.
+         * Sets the default delay for this response, disabling the max delay.
          *
          * @param milliseconds The new amount of milliseconds to delay this
          *                     response.
          * @return This buildable response instance, allowing chaining of method
          * calls.
+         * @see Response#delay() for details on how delay boundaries are
+         * interpreted.
          */
         public Builder withDelay(int milliseconds) {
-            this.delay = null;
+            this.delay = milliseconds;
             this.maxDelay = null;
-
-            if (milliseconds > 0) {
-                this.delay = milliseconds;
-            }
-
             return this;
         }
 
         /**
-         * Sets the random delay metrics for this response. If the new min delay
-         * is less than or equal to zero, or the max delay is less than the min
-         * delay, then the delay feature is reset.
+         * Sets the random delay metrics for this response.
          *
          * @param milliseconds    The minimum amount of random milliseconds to
          *                        delay this response.
@@ -326,18 +322,12 @@ public class Response extends HttpEntity implements Serializable {
          *                        delay this response.
          * @return This buildable response instance, allowing chaining of method
          * calls.
+         * @see Response#delay() for details on how delay boundaries are
+         * interpreted.
          */
         public Builder withDelay(int milliseconds, int maxMilliseconds) {
-            this.delay = null;
-            this.maxDelay = null;
-
-            if (milliseconds > 0 && maxMilliseconds >= milliseconds) {
-                this.delay = milliseconds;
-                this.maxDelay = maxMilliseconds > milliseconds ?
-                        maxMilliseconds :
-                        null;
-            }
-
+            this.delay = milliseconds;
+            this.maxDelay = maxMilliseconds;
             return this;
         }
 
