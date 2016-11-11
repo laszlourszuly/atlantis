@@ -9,9 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class contains all request templates the {@link
- * com.echsylon.atlantis.Atlantis Atlantis} local web server will ever serve.
- * This is the "mocked Internet".
+ * This class contains all request templates the {@link Atlantis} local web
+ * server will ever serve. This is the "mocked Internet".
  */
 @SuppressWarnings("WeakerAccess")
 public class Configuration implements Serializable {
@@ -19,6 +18,7 @@ public class Configuration implements Serializable {
     protected String fallbackBaseUrl = null;
     protected List<Request> requests = null;
     protected Request.Filter requestFilter = null;
+
     // Intentionally hidden constructor
     protected Configuration() {
     }
@@ -123,14 +123,12 @@ public class Configuration implements Serializable {
          * Sets the request filter logic to use when matching a request to
          * serve.
          *
-         * @param requestFilter The request filter implementation. May be null
-         *                      in which case a default request filter will be
-         *                      used.
+         * @param requestFilter The request filter implementation. May be null.
          * @return This buildable configuration object, allowing chaining of
          * method calls.
          */
         public Builder withRequestFilter(Request.Filter requestFilter) {
-            this.requestFilter = requestFilter != null ? requestFilter : new DefaultRequestFilter();
+            this.requestFilter = requestFilter;
             return this;
         }
 
