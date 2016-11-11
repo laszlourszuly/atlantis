@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.res.AssetManager;
 
 import com.echsylon.atlantis.internal.json.JsonParser;
+import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +14,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -41,6 +44,14 @@ public class AtlantisTest {
         AssetManager assetManager = mock(AssetManager.class);
         doReturn(assetManager).when(context).getAssets();
         doReturn(new ByteArrayInputStream(configJson.getBytes())).when(assetManager).open("config.json");
+        return context;
+    }
+
+    // Returns a default mocked context and writes the given JSON to the given file. The context
+    // and the file are not tied to each other by any means.
+    private Context getMockedContext(String configJson, File file) throws Exception {
+        Context context = mock(Context.class);
+        Files.write(configJson, file, Charsets.UTF_8);
         return context;
     }
 
@@ -122,6 +133,24 @@ public class AtlantisTest {
     }
 
     @Test
+    public void configuration_canSetFileConfiguration() throws Exception {
+        File file = new File("test.json");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "text:'{}'}]}]}", file);
+        Atlantis target = Atlantis.start(null, null);
+
+        try {
+            target.setConfiguration(context, file, null, null);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+            assertThat(connection.getResponseCode(), is(200));
+        } finally {
+            target.stop();
+            file.delete();
+        }
+    }
+
+    @Test
     public void configuration_canStartWithAssetConfiguration() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
@@ -160,7 +189,27 @@ public class AtlantisTest {
         try {
             target = Atlantis.start(context, configuration, successCallback, errorCallback);
             HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
+            verifyZeroInteractions(errorCallback);
+            verify(successCallback).onSuccess();
+            assertThat(connection.getResponseCode(), is(200));
+        } finally {
+            target.stop();
+        }
+    }
 
+    @Test
+    public void configuration_canStartWithFileConfiguration() throws Exception {
+        File file = new File("test.json");
+        Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
+                "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
+                "text:'{}'}]}]}", file);
+
+        Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
+        Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
+        Atlantis target = Atlantis.start(context, file, successCallback, errorCallback);
+
+        try {
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one").openConnection();
             verifyZeroInteractions(errorCallback);
             verify(successCallback).onSuccess();
             assertThat(connection.getResponseCode(), is(200));
