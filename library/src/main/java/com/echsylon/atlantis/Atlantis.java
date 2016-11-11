@@ -60,9 +60,14 @@ public class Atlantis {
                 if (configuration == null)
                     return super.serve(session);
 
-                String url = session.getUri();
-                String method = session.getMethod().name();
+                // Collect the HTTP elements used for filtering out the mock
+                // request and thereby a corresponding response to serve.
                 Map<String, String> headers = session.getHeaders();
+                String method = session.getMethod().name();
+                String query = session.getQueryParameterString();
+                String url = Utils.isEmpty(query) ?
+                        session.getUri() :
+                        String.format("%s?%s", session.getUri(), query);
 
                 // Try to find a mock request and response configuration for
                 // the target HTTP params.

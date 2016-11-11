@@ -351,6 +351,23 @@ public class AtlantisTest {
     }
 
     @Test
+    public void response_returnsCorrectMockResponseForUrlWithQuery() throws Exception {
+        Context context = getMockedContext("{requests:[{url:'/one?q=1', method:'get', " +
+                "responses:[{responseCode:{code: 2, name: 'CUSTOM_OK'}, mime:'application/json', " +
+                "text:'{}'}]}]}");
+        Atlantis target = Atlantis.start(null, null);
+
+        try {
+            target.setConfiguration(context, "config.json", null, null);
+            HttpURLConnection connection = (HttpURLConnection) new URL(AUTHORITY + "/one?q=1").openConnection();
+            assertThat(connection.getResponseCode(), is(2));
+            assertThat(connection.getResponseMessage(), is("CUSTOM_OK"));
+        } finally {
+            target.stop();
+        }
+    }
+
+    @Test
     public void response_returnsCorrectMockedResponseHeaders() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one?q=1', method:'get', " +
                 "responses:[{responseCode:{code: 2, name: 'CUSTOM_OK'}, mime:'application/json', " +
