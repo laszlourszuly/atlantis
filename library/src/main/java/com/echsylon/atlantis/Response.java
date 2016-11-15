@@ -99,7 +99,7 @@ public class Response extends HttpEntity implements Serializable {
             return new byte[0];
 
         if (asset.startsWith(ASSET_SCHEME))
-            return Utils.readAsset(context, asset);
+            return Utils.readAsset(context, asset.substring(ASSET_SCHEME.length()));
 
         if (asset.startsWith(FILE_SCHEME))
             return Utils.readFile(new File(asset.substring(FILE_SCHEME.length())));
