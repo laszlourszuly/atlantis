@@ -63,7 +63,7 @@ public class AtlantisTest {
         AssetManager assetManager = mock(AssetManager.class);
         doReturn(assetManager).when(context).getAssets();
         doReturn(new ByteArrayInputStream(configJson.getBytes())).when(assetManager).open("config.json");
-        doReturn(new ByteArrayInputStream(externalAsset)).when(assetManager).open("asset://asset.bin");
+        doReturn(new ByteArrayInputStream(externalAsset)).when(assetManager).open("asset.bin");
         return context;
     }
 

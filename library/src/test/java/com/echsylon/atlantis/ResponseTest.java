@@ -39,7 +39,7 @@ public class ResponseTest {
     @Test
     public void create_canBuildFullResponse() throws Exception {
         AssetManager assetManager = mock(AssetManager.class);
-        doReturn(new ByteArrayInputStream(new byte[]{0, 1, 2})).when(assetManager).open("asset://asset");
+        doReturn(new ByteArrayInputStream(new byte[]{0, 1, 2})).when(assetManager).open("asset");
 
         Context context = mock(Context.class);
         doReturn(assetManager).when(context).getAssets();
@@ -86,7 +86,7 @@ public class ResponseTest {
     public void create_canParseFullResponse() throws Exception {
         String json = "{ responseCode: { code: 2, name: 'CUSTOM_OK' }, " +
                 "headers: { h0: 'v0' }, mime: 'mime', text: 'text', " +
-                "asset: 'asset', delay: 1, maxDelay: 1 }";
+                "asset: 'asset://asset', delay: 1, maxDelay: 1 }";
 
         Response response = new Gson().fromJson(json, Response.class);
         assertThat(response.statusCode(), is(2));
@@ -98,7 +98,7 @@ public class ResponseTest {
         assertThat(response.asset(null), isA(byte[].class));
         assertThat(response.asset(null).length, is(0));
         assertThat(response.delay(), is(1));
-        assertThat(response.asset, is("asset"));
+        assertThat(response.asset, is("asset://asset"));
         assertThat(response.delay, is(1));
         assertThat(response.maxDelay, is(1));
     }
@@ -110,7 +110,7 @@ public class ResponseTest {
                 .build();
 
         AssetManager mockedAssetManager = mock(AssetManager.class);
-        doThrow(IOException.class).when(mockedAssetManager).open("asset://asset");
+        doThrow(IOException.class).when(mockedAssetManager).open("asset");
 
         Context mockedContext = mock(Context.class);
         doReturn(mockedAssetManager).when(mockedContext).getAssets();
@@ -123,7 +123,7 @@ public class ResponseTest {
     @Test
     public void asset_requestingAssetIsValidatedInCorrectOrder() throws Exception {
         AssetManager assetManager = mock(AssetManager.class);
-        doReturn(new ByteArrayInputStream(new byte[]{2})).when(assetManager).open("asset://asset");
+        doReturn(new ByteArrayInputStream(new byte[]{2})).when(assetManager).open("asset");
 
         Context context = mock(Context.class);
         doReturn(assetManager).when(context).getAssets();
