@@ -6,7 +6,7 @@ task javadoc(type: Javadoc) {
         links 'http://docs.oracle.com/javase/8/docs/api/'
         linksOffline 'http://d.android.com/reference', "${android.sdkDirectory}/docs/reference"
     }
-    destinationDir = file("${docsDir}")
+    destinationDir = file("${rootProject.rootDir}/docs")
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {

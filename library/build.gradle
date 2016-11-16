@@ -66,5 +66,5 @@ apply from: "${scriptDir}/bintray.gradle"
 apply from: "${scriptDir}/coveralls.gradle"
 
 clean {
-    delete "${docsDir}"
+    delete "${rootProject.rootDir}/docs"
 }
