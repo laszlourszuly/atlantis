@@ -31,10 +31,12 @@ deployment:
     tag: /v[0-9]+\.[0-9]+\.[0-9]+/
     owner: echsylon
     commands:
-      - ./gradlew :library:clean :library:assembleRelease :library:bintrayUpload
-      - git add docs && git commit -m "javadoc"
+      - ./gradlew :library:clean :library:javadoc
+      - git add docs
+      - git commit -m "javadoc"
       - git subtree split --prefix docs -b gh-pages
       - git push -f origin gh-pages:gh-pages
       - git branch -D gh-pages
       - git reset HEAD~1 --hard
+      - ./gradlew :library:clean :library:assembleRelease :library:bintrayUpload
 
