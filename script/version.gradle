@@ -59,6 +59,26 @@ task preparePatchRelease << {
 }
 
 /**
+ * This task will generate new JavaDoc and push it to the remote 'gh-pages' branch.
+ * 
+ * The flow for triggering the JavaDoc release is as follows:
+ *
+ * 1. Temporarily add and commit the generated JavaDoc.
+ * 2. Split out the JavaDoc directory to the root of the local gh-pages branch.
+ * 3. Force push to the remote repositoy.
+ * 4. Delete the local gh-pages branch.
+ * 5. Delete the temporary commit.
+ */
+task updateRemoteJavaDoc(dependsOn: ':library:javadoc') << {
+    "git add docs".bash()
+    "git commit --message 'javadoc'".bash()
+    "git subtree split --prefix docs -b gh-pages".bash()
+    "git push -f origin gh-pages:gh-pages".bash()
+    "git branch -D gh-pages".bash()
+    "git reset HEAD~1 --hard".bash()
+}
+
+/**
  * Prepares the current version name to use for the project. The version name will follow the SEMVER
  * pattern of ${major}.${minor}.${patch}. If this method is called from a non-production environment
  * then "-SNAPSHOT" will be appended to the version name. The parts of the version name will be
@@ -68,12 +88,7 @@ task preparePatchRelease << {
  */
 ext.prepareVersionName = {
     def versionName = getVersionFromLatestTag()
-
-    if (!versionName.isEmpty()) {
-        versionName = System.getenv('CIRCLECI') ? versionName : "${versionName}-SNAPSHOT"
-        println(versionName)
-    }
-
+    println(versionName)
     return versionName
 }
 

@@ -31,14 +31,5 @@ deployment:
     tag: /v[0-9]+\.[0-9]+\.[0-9]+/
     owner: echsylon
     commands:
-      - ./gradlew :library:clean :library:javadoc
-      - git config --global user.email "echsylon@gmail.com"
-      - git config --global user.name "echsylon"
-      - git add docs
-      - git commit --message "javadoc"
-      - git subtree split --prefix docs -b gh-pages
-      - git push -f origin gh-pages:gh-pages
-      - git branch -D gh-pages
-      - git reset HEAD~1 --hard
       - ./gradlew :library:clean :library:assembleRelease :library:bintrayUpload
 
