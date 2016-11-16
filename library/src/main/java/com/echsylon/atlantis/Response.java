@@ -110,6 +110,8 @@ public class Response extends HttpEntity implements Serializable {
          *
          * @param mimeType The new MIME type.
          * @return This builder instance, allowing chaining of method calls.
+         * @deprecated The mime type should be defined with a Content-Type
+         * header instead.
          */
         public Builder withMimeType(String mimeType) {
             response.mime = mimeType;
@@ -267,6 +269,8 @@ public class Response extends HttpEntity implements Serializable {
      * Returns the MIME type of the response.
      *
      * @return The MIME type. May be null.
+     * @deprecated The mime type should be defined with a Content-Type header
+     * instead.
      */
     public String mimeType() {
         return mime;
