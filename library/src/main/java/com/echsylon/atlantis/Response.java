@@ -129,13 +129,30 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
+         * Sets the asset file path of this response.
+         *
+         * @param assetFile The new asset File pointer.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withAsset(File assetFile) {
+            response.asset = assetFile != null ?
+                    FILE_SCHEME + assetFile.getAbsolutePath() :
+                    null;
+            return this;
+        }
+
+        /**
          * Sets the asset resource path of this response.
          *
          * @param assetPath The new asset path.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder withAsset(String assetPath) {
-            response.asset = assetPath;
+            response.asset = notEmpty(assetPath) ?
+                    !assetPath.startsWith(ASSET_SCHEME) && !assetPath.startsWith(FILE_SCHEME) ?
+                            ASSET_SCHEME + assetPath :
+                            assetPath :
+                    null;
             return this;
         }
 
