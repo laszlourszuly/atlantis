@@ -2,10 +2,4 @@
 
 The Atlantis library will aid you in "mocking the Internet" for your Android app. It offers means of delivering custom tailored responses to network requests made by your app, without forcing you to do massive changes to your code.
 
-You add it to your Android app by defining a new dependency in your gradle script:
-
-```groovy
-compile 'com.echsylon.atlantis:atlantis:{latest_version}'
-```
-
 You can get a quick-n-dirty introduction [here](https://github.com/echsylon/atlantis/wiki). For more technically detailed information have a look at the [JSON configuration reference](https://github.com/echsylon/atlantis/wiki/JSON-Configuration-File) and the [JavaDoc](http://echsylon.github.io/atlantis/javadoc/index.html) for the Java API.
