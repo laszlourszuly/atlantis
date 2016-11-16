@@ -3,22 +3,15 @@ package com.echsylon.atlantis;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.echsylon.atlantis.internal.Utils.notEmpty;
+
 /**
  * This class is responsible for holding any common type of data for HTTP
  * entities like requests and responses. An example of such type of data could
  * be headers.
  */
 class HttpEntity {
-
-    /**
-     * The raw map of headers.
-     */
     protected Map<String, String> headers = null;
-
-
-    // Intentionally hidden constructor.
-    protected HttpEntity() {
-    }
 
     /**
      * Returns a map of all currently held headers. The returned map is a copy
@@ -27,7 +20,6 @@ class HttpEntity {
      *
      * @return The map of request header.
      */
-    @SuppressWarnings("ConstantConditions")
     public Map<String, String> headers() {
         HashMap<String, String> result = new HashMap<>();
         if (headers != null)
@@ -35,6 +27,18 @@ class HttpEntity {
                 result.put(entry.getKey(), entry.getValue());
 
         return result;
+    }
+
+    /**
+     * Returns a header value associated with a key or null if no value matches.
+     *
+     * @param key The key to look for.
+     * @return A corresponding string value or null.
+     */
+    public String header(String key) {
+        return headers != null && notEmpty(key) ?
+                headers.get(key) :
+                null;
     }
 
 }
