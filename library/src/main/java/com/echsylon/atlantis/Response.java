@@ -23,6 +23,190 @@ public class Response extends HttpEntity implements Serializable {
     private static final String ASSET_SCHEME = "asset://";
     private static final String FILE_SCHEME = "file://";
 
+    /**
+     * This class offers means of building a mocked response configuration
+     * directly from code (as opposed to configure one in a JSON asset or file).
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final class Builder {
+        private final Response response;
+
+        /**
+         * Creates a new builder based on an uninitialized response object.
+         */
+        public Builder() {
+            response = new Response();
+        }
+
+        /**
+         * Creates a new builder based on the given response object.
+         *
+         * @param response The response object to build on. Must not be null.
+         */
+        public Builder(Response response) {
+            this.response = response;
+        }
+
+        /**
+         * Adds a header to the response being built. Doesn't add anything if
+         * either {@code key} or {@code value} is empty (null pointers are
+         * considered empty).
+         *
+         * @param key   The header key.
+         * @param value The header value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withHeader(String key, String value) {
+            if (notAnyEmpty(key, value)) {
+                if (response.headers == null)
+                    response.headers = new HashMap<>();
+
+                response.headers.put(key, value);
+            }
+
+            return this;
+        }
+
+        /**
+         * Adds all non-empty key/value pairs from the given headers.
+         *
+         * @param headers The headers to copy keys and values from.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withHeaders(Map<String, String> headers) {
+            if (headers != null) {
+                if (response.headers == null)
+                    response.headers = new HashMap<>();
+
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
+                        response.headers.put(entry.getKey(), entry.getValue());
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the response code of this response. Doesn't validate neither the
+         * given status code nor the name. It's up to the caller to ensure they
+         * make sense in the given context.
+         *
+         * @param code The new HTTP status code.
+         * @param name The corresponding human readable status text (e.g. "OK",
+         *             "Not found", etc).
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withStatus(int code, String name) {
+            if (response.responseCode == null)
+                response.responseCode = new Code();
+
+            response.responseCode.code = code;
+            response.responseCode.name = name;
+            return this;
+        }
+
+        /**
+         * Sets the MIME type of this response. This method doesn't validate the
+         * input.
+         *
+         * @param mimeType The new MIME type.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withMimeType(String mimeType) {
+            response.mime = mimeType;
+            return this;
+        }
+
+        /**
+         * Sets the plain text content of this response. This method doesn't
+         * validate the input or that it matches any set MIME type.
+         *
+         * @param content The new plain text content.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withContent(String content) {
+            response.text = content;
+            return this;
+        }
+
+        /**
+         * Sets the asset resource path of this response.
+         *
+         * @param assetPath The new asset path.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withAsset(String assetPath) {
+            response.asset = assetPath;
+            return this;
+        }
+
+        /**
+         * Sets the asset resource bytes of this response.
+         *
+         * @param assetBytes The new asset as a byte array.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withAsset(byte[] assetBytes) {
+            response.assetBytes = assetBytes;
+            return this;
+        }
+
+        /**
+         * Sets the default delay for this response, disabling the max delay.
+         *
+         * @param milliseconds The new amount of milliseconds to delay this
+         *                     response.
+         * @return This builder instance, allowing chaining of method calls.
+         * @see Response#delay() for details on how delay boundaries are
+         * interpreted.
+         */
+        public Builder withDelay(int milliseconds) {
+            response.delay = milliseconds;
+            response.maxDelay = null;
+            return this;
+        }
+
+        /**
+         * Sets the random delay metrics for this response.
+         *
+         * @param milliseconds    The minimum amount of random milliseconds to
+         *                        delay this response.
+         * @param maxMilliseconds The maximum amount of random milliseconds to
+         *                        delay this response.
+         * @return This builder instance, allowing chaining of method calls.
+         * @see Response#delay() for details on how delay boundaries are
+         * interpreted.
+         */
+        public Builder withDelay(int milliseconds, int maxMilliseconds) {
+            response.delay = milliseconds;
+            response.maxDelay = maxMilliseconds;
+            return this;
+        }
+
+        /**
+         * Returns a sealed response object which can not be further built on.
+         *
+         * @return The final response object.
+         */
+        public Response build() {
+            return response;
+        }
+
+    }
+
+    /**
+     * This class represents a status code on a response.
+     */
+    private static final class Code {
+        private Integer code = null;
+        private String name = null;
+
+        // Intentionally hidden constructor.
+        private Code() {
+        }
+    }
+
+
     // JSON API
     protected Code responseCode = null;
     protected String mime = null;
@@ -176,181 +360,6 @@ public class Response extends HttpEntity implements Serializable {
          */
         Response getResponse(Request request, List<Response> responses);
 
-    }
-
-    /**
-     * This class offers means of building a mocked response configuration
-     * directly from code (as opposed to configure one in a JSON asset).
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final class Builder extends Response {
-
-        /**
-         * Adds a header to the response being built. Doesn't add anything if
-         * either {@code key} or {@code value} is empty (null pointers are
-         * considered empty).
-         *
-         * @param key   The header key.
-         * @param value The header value.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withHeader(String key, String value) {
-            if (notAnyEmpty(key, value)) {
-                if (this.headers == null)
-                    this.headers = new HashMap<>();
-
-                this.headers.put(key, value);
-            }
-
-            return this;
-        }
-
-        /**
-         * Adds all non-empty key/value pairs from the given headers.
-         *
-         * @param headers The headers to copy keys and values from.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withHeaders(Map<String, String> headers) {
-            if (headers != null) {
-                if (this.headers == null)
-                    this.headers = new HashMap<>();
-
-                for (Map.Entry<String, String> entry : headers.entrySet())
-                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
-                        this.headers.put(entry.getKey(), entry.getValue());
-            }
-
-            return this;
-        }
-
-        /**
-         * Sets the response code of this response. Doesn't validate neither the
-         * given status code nor the name. It's up to the caller to ensure they
-         * make sense in the given context.
-         *
-         * @param code The new HTTP status code.
-         * @param name The corresponding human readable status text (e.g. "OK",
-         *             "Not found", etc).
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withStatus(int code, String name) {
-            if (this.responseCode == null)
-                this.responseCode = new Code();
-
-            this.responseCode.code = code;
-            this.responseCode.name = name;
-            return this;
-        }
-
-        /**
-         * Sets the MIME type of this response. This method doesn't validate the
-         * input.
-         *
-         * @param mimeType The new MIME type.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withMimeType(String mimeType) {
-            this.mime = mimeType;
-            return this;
-        }
-
-        /**
-         * Sets the plain text content of this response. This method doesn't
-         * validate the input or that it matches any set MIME type.
-         *
-         * @param content The new plain text content.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withContent(String content) {
-            this.text = content;
-            return this;
-        }
-
-        /**
-         * Sets the asset resource path of this response.
-         *
-         * @param assetPath The new asset path.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withAsset(String assetPath) {
-            this.asset = assetPath;
-            return this;
-        }
-
-        /**
-         * Sets the asset resource bytes of this response.
-         *
-         * @param assetBytes The new asset as a byte array.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withAsset(byte[] assetBytes) {
-            this.assetBytes = assetBytes;
-            return this;
-        }
-
-        /**
-         * Sets the default delay for this response, disabling the max delay.
-         *
-         * @param milliseconds The new amount of milliseconds to delay this
-         *                     response.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         * @see Response#delay() for details on how delay boundaries are
-         * interpreted.
-         */
-        public Builder withDelay(int milliseconds) {
-            this.delay = milliseconds;
-            this.maxDelay = null;
-            return this;
-        }
-
-        /**
-         * Sets the random delay metrics for this response.
-         *
-         * @param milliseconds    The minimum amount of random milliseconds to
-         *                        delay this response.
-         * @param maxMilliseconds The maximum amount of random milliseconds to
-         *                        delay this response.
-         * @return This buildable response instance, allowing chaining of method
-         * calls.
-         * @see Response#delay() for details on how delay boundaries are
-         * interpreted.
-         */
-        public Builder withDelay(int milliseconds, int maxMilliseconds) {
-            this.delay = milliseconds;
-            this.maxDelay = maxMilliseconds;
-            return this;
-        }
-
-        /**
-         * Returns a sealed response object which can not be further built on.
-         *
-         * @return The final response object.
-         */
-        public Response build() {
-            return this;
-        }
-
-    }
-
-    /**
-     * This class represents a status code on a response.
-     */
-    private static final class Code {
-        private Integer code = null;
-        private String name = null;
-
-        // Intentionally hidden constructor.
-        private Code() {
-        }
     }
 
 }

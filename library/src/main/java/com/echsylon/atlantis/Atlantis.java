@@ -289,7 +289,8 @@ public class Atlantis {
                                 new Request.Builder()
                                         .withUrl(url)
                                         .withMethod(method)
-                                        .withHeaders(headers));
+                                        .withHeaders(headers)
+                                        .build());
                     }
 
                 com.echsylon.atlantis.Response response = request != null ?
@@ -311,7 +312,8 @@ public class Atlantis {
                                     .withUrl(url)
                                     .withMethod(method)
                                     .withHeaders(headers)
-                                    .withResponse(response));
+                                    .withResponse(response)
+                                    .build());
 
                 // Deliver the response, maybe delay before actually delivering
                 // it. Relax, this is a worker thread.

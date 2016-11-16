@@ -15,9 +15,88 @@ import java.util.Map;
 @SuppressWarnings("WeakerAccess")
 public class Configuration implements Serializable {
 
+    /**
+     * This class offers means of building a configuration object directly from
+     * code (as opposed to configure one in a JSON asset or file).
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final class Builder {
+        private final Configuration configuration;
+
+        /**
+         * Creates a new builder based on an uninitialized configuration object.
+         */
+        public Builder() {
+            configuration = new Configuration();
+        }
+
+        /**
+         * Creates a new builder based on the given configuration object.
+         *
+         * @param configuration The configuration object to build on. Must not
+         *                      be null.
+         */
+        public Builder(Configuration configuration) {
+            this.configuration = configuration;
+        }
+
+        /**
+         * Adds a request to the configuration being built. This method doesn't
+         * add null pointers.
+         *
+         * @param request The request to add.
+         * @return This builder object, allowing chaining of method calls.
+         */
+        public Builder withRequest(Request request) {
+            if (request != null) {
+                if (configuration.requests == null)
+                    configuration.requests = new ArrayList<>();
+
+                configuration.requests.add(request);
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the request filter logic to use when matching a request to
+         * serve.
+         *
+         * @param requestFilter The request filter implementation. May be null.
+         * @return This builder object, allowing chaining of method calls.
+         */
+        public Builder withRequestFilter(Request.Filter requestFilter) {
+            configuration.requestFilter = requestFilter;
+            return this;
+        }
+
+        /**
+         * Sets the fallback base url to hit when no mocked request was found.
+         *
+         * @param realBaseUrl The real-world base URL, including scheme.
+         * @return This builder object, allowing chaining of method calls.
+         */
+        public Builder withFallbackBaseUrl(String realBaseUrl) {
+            configuration.fallbackBaseUrl = realBaseUrl;
+            return this;
+        }
+
+        /**
+         * Returns a sealed configuration object which can not be further built
+         * on.
+         *
+         * @return The final configuration object.
+         */
+        public Configuration build() {
+            return configuration;
+        }
+
+    }
+
+
     protected String fallbackBaseUrl = null;
     protected List<Request> requests = null;
-    protected Request.Filter requestFilter = null;
+    protected transient Request.Filter requestFilter = null;
 
     // Intentionally hidden constructor
     protected Configuration() {
@@ -91,69 +170,6 @@ public class Configuration implements Serializable {
             if (!requests.contains(request))
                 requests.add(request);
         }
-    }
-
-    /**
-     * This class offers means of building a configuration object directly from
-     * code (as opposed to configure one in a JSON asset).
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final class Builder extends Configuration {
-
-        /**
-         * Adds a request to the configuration being built. This method doesn't
-         * add null pointers.
-         *
-         * @param request The request to add.
-         * @return This buildable configuration object, allowing chaining of
-         * method calls.
-         */
-        public Builder withRequest(Request request) {
-            if (request != null) {
-                if (requests == null)
-                    requests = new ArrayList<>();
-
-                requests.add(request);
-            }
-
-            return this;
-        }
-
-        /**
-         * Sets the request filter logic to use when matching a request to
-         * serve.
-         *
-         * @param requestFilter The request filter implementation. May be null.
-         * @return This buildable configuration object, allowing chaining of
-         * method calls.
-         */
-        public Builder withRequestFilter(Request.Filter requestFilter) {
-            this.requestFilter = requestFilter;
-            return this;
-        }
-
-        /**
-         * Sets the fallback base url to hit when no mocked request was found.
-         *
-         * @param realBaseUrl The real-world base URL, including scheme.
-         * @return This buildable configuration object, allowing chaining of
-         * method calls.
-         */
-        public Builder withFallbackBaseUrl(String realBaseUrl) {
-            this.fallbackBaseUrl = realBaseUrl;
-            return this;
-        }
-
-        /**
-         * Returns a sealed configuration object which can not be further built
-         * on.
-         *
-         * @return The final configuration object.
-         */
-        public Configuration build() {
-            return this;
-        }
-
     }
 
 }

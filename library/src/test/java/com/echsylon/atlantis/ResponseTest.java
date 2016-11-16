@@ -56,7 +56,8 @@ public class ResponseTest {
                 .withMimeType("mime")
                 .withContent("text")
                 .withAsset("asset://asset")
-                .withDelay(12);
+                .withDelay(12)
+                .build();
 
         assertThat(response.headers().get("h0"), is("v0"));
         assertThat(response.headers().get("h1"), is("v1"));

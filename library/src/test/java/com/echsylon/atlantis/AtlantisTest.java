@@ -94,7 +94,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime: 'application/octet-stream', " +
                 "asset:'asset://asset.bin'}]}]}", new byte[]{1, 2, 3});
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
         InputStream inputStream = null;
 
         try {
@@ -118,7 +118,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime: 'application/octet-stream', " +
                 "asset:'asset://asset.bin'}]}]}", IOException.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -135,7 +135,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
@@ -151,7 +151,7 @@ public class AtlantisTest {
         Context context = getMockedContext(IOException.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
@@ -165,7 +165,7 @@ public class AtlantisTest {
     @Test
     public void capture_requestsCapturedWhenInCapturingMode() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -185,7 +185,7 @@ public class AtlantisTest {
     @Test
     public void capture_requestsCapturedInCorrectOrder() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'},{url:'/two', method:'get'}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -208,7 +208,7 @@ public class AtlantisTest {
     @Test
     public void capture_alsoCapturesUnmappedRequests() throws Exception {
         Context context = getMockedContext("{requests:[]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -230,7 +230,7 @@ public class AtlantisTest {
     @Test
     public void capture_captureHistoryStackResetOnStartCapture() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'},{url:'/two', method:'get'}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -252,7 +252,7 @@ public class AtlantisTest {
     @Test
     public void capture_clearCapturedHistoryStackWorks() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -275,7 +275,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
                 "text:'{}'}]}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -295,8 +295,11 @@ public class AtlantisTest {
                         .withMethod("get")
                         .withResponse(new Response.Builder()
                                 .withStatus(200, "OK")
-                                .withContent("{}")));
-        Atlantis target = Atlantis.start(null, null);
+                                .withContent("{}")
+                                .build())
+                        .build())
+                .build();
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, configuration);
@@ -313,7 +316,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
                 "text:'{}'}]}]}", file);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, file, null, null);
@@ -353,7 +356,10 @@ public class AtlantisTest {
                         .withMethod("get")
                         .withResponse(new Response.Builder()
                                 .withStatus(200, "OK")
-                                .withContent("{}")));
+                                .withContent("{}")
+                                .build())
+                        .build())
+                .build();
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
         Atlantis target = Atlantis.start(context, configuration, successCallback, errorCallback);
@@ -402,7 +408,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
                 "text:'{}', delay: 20}]}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -423,7 +429,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get', " +
                 "responses:[{responseCode:{code: 200, name: 'OK'}, mime:'application/json', " +
                 "text:'{}', delay: 20, maxDelay: 40}]}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -443,7 +449,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requestFilter:'com.echsylon.atlantis.filter.DefaultRequestFilter', requests:[]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
@@ -461,7 +467,7 @@ public class AtlantisTest {
                 "  responses:[]}]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
@@ -477,7 +483,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requestFilter:'unknownRequestFilterName', requests:[]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
@@ -495,7 +501,7 @@ public class AtlantisTest {
                 "  responseFilter: 'unknownResponseFilter', responses:[]}]}");
         Atlantis.OnErrorListener errorCallback = mock(Atlantis.OnErrorListener.class);
         Atlantis.OnSuccessListener successCallback = mock(Atlantis.OnSuccessListener.class);
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", successCallback, errorCallback);
@@ -509,7 +515,7 @@ public class AtlantisTest {
     @Test
     public void response_returnsNotFoundResponseWhenNoMatchingConfigurationFound() throws Exception {
         Context context = getMockedContext("{requests:[{url:'/one', method:'get'}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -525,7 +531,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one?q=1', method:'get', " +
                 "responses:[{responseCode:{code: 2, name: 'CUSTOM_OK'}, mime:'application/json', " +
                 "text:'{}'}]}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);
@@ -542,7 +548,7 @@ public class AtlantisTest {
         Context context = getMockedContext("{requests:[{url:'/one?q=1', method:'get', " +
                 "responses:[{responseCode:{code: 2, name: 'CUSTOM_OK'}, mime:'application/json', " +
                 "headers: { key1: 'value1', key2: 'value2' }, text:'{}'}]}]}");
-        Atlantis target = Atlantis.start(null, null);
+        Atlantis target = Atlantis.start();
 
         try {
             target.setConfiguration(context, "config.json", null, null);

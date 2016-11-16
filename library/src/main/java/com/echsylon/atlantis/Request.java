@@ -19,10 +19,138 @@ import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
 @SuppressWarnings("WeakerAccess")
 public class Request extends HttpEntity implements Serializable {
 
+    /**
+     * This class offers means of building a request configuration directly from
+     * code (as opposed to configure one in a JSON asset or file).
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final class Builder {
+        private final Request request;
+
+        /**
+         * Creates a new builder based on an uninitialized request object.
+         */
+        public Builder() {
+            request = new Request();
+        }
+
+        /**
+         * Creates a new builder based on the given request object.
+         *
+         * @param request The request object to build on. Must not be null.
+         */
+        public Builder(Request request) {
+            this.request = request;
+        }
+
+        /**
+         * Adds a header to the request being built. This method doesn't add
+         * anything if either {@code key} or {@code value} is empty (null
+         * pointers are considered empty).
+         *
+         * @param key   The header key.
+         * @param value The header value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withHeader(String key, String value) {
+            if (notAnyEmpty(key, value)) {
+                if (request.headers == null)
+                    request.headers = new HashMap<>();
+
+                request.headers.put(key, value);
+            }
+
+            return this;
+        }
+
+        /**
+         * Adds all non-empty key/value pairs from the given headers.
+         *
+         * @param headers The headers to copy keys and values from.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withHeaders(Map<String, String> headers) {
+            if (headers != null) {
+                if (request.headers == null)
+                    request.headers = new HashMap<>();
+
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
+                        request.headers.put(entry.getKey(), entry.getValue());
+            }
+
+            return this;
+        }
+
+        /**
+         * Adds a response to the request being built. This method doesn't add
+         * null pointers.
+         *
+         * @param response The response to add.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withResponse(Response response) {
+            if (response != null) {
+                if (request.responses == null)
+                    request.responses = new ArrayList<>();
+
+                request.responses.add(response);
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the method of the request. Allows null pointers and empty
+         * strings even though in practice such values doesn't make any sense.
+         *
+         * @param method The new HTTP request method.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withMethod(String method) {
+            request.method = method;
+            return this;
+        }
+
+        /**
+         * Sets the url of the request. Allows null pointers and empty strings
+         * even though in practice such values doesn't make any sense.
+         *
+         * @param url The new url.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withUrl(String url) {
+            request.url = url;
+            return this;
+        }
+
+        /**
+         * Sets the response filter logic to use when deciding which response to
+         * serve.
+         *
+         * @param responseFilter The response filter implementation. May be null.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder withResponseFilter(Response.Filter responseFilter) {
+            request.responseFilter = responseFilter;
+            return this;
+        }
+
+        /**
+         * Returns a sealed request object which can not be further built on.
+         *
+         * @return The final request object.
+         */
+        public Request build() {
+            return request;
+        }
+
+    }
+
     protected String method = null;
     protected String url = null;
     protected List<Response> responses = null;
-    protected Response.Filter responseFilter = null;
+    protected transient Response.Filter responseFilter = null;
 
     // Intentionally hidden constructor.
     protected Request() {
@@ -83,123 +211,6 @@ public class Request extends HttpEntity implements Serializable {
          * @return The filtered request, or null if no match found.
          */
         Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers);
-
-    }
-
-    /**
-     * This class offers means of building a request configuration directly from
-     * code (as opposed to configure one in a JSON asset).
-     */
-    @SuppressWarnings("WeakerAccess")
-    public static final class Builder extends Request {
-
-        /**
-         * Adds a header to the request being built. This method doesn't add
-         * anything if either {@code key} or {@code value} is empty (null
-         * pointers are considered empty).
-         *
-         * @param key   The header key.
-         * @param value The header value.
-         * @return This buildable request instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withHeader(String key, String value) {
-            if (notAnyEmpty(key, value)) {
-                if (headers == null)
-                    headers = new HashMap<>();
-
-                headers.put(key, value);
-            }
-
-            return this;
-        }
-
-        /**
-         * Adds all non-empty key/value pairs from the given headers.
-         *
-         * @param headers The headers to copy keys and values from.
-         * @return This buildable request instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withHeaders(Map<String, String> headers) {
-            if (headers != null) {
-                if (this.headers == null)
-                    this.headers = new HashMap<>();
-
-                for (Map.Entry<String, String> entry : headers.entrySet())
-                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
-                        this.headers.put(entry.getKey(), entry.getValue());
-            }
-
-            return this;
-        }
-
-        /**
-         * Adds a response to the request being built. This method doesn't add
-         * null pointers.
-         *
-         * @param response The response to add.
-         * @return This buildable request instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withResponse(Response response) {
-            if (response != null) {
-                if (responses == null)
-                    responses = new ArrayList<>();
-
-                responses.add(response);
-            }
-
-            return this;
-        }
-
-        /**
-         * Sets the method of the request. Allows null pointers and empty
-         * strings even though in practice such values doesn't make any sense.
-         *
-         * @param method The new HTTP request method.
-         * @return This buildable request instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withMethod(String method) {
-            this.method = method;
-            return this;
-        }
-
-        /**
-         * Sets the url of the request. Allows null pointers and empty strings
-         * even though in practice such values doesn't make any sense.
-         *
-         * @param url The new url.
-         * @return This buildable request instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withUrl(String url) {
-            this.url = url;
-            return this;
-        }
-
-        /**
-         * Sets the response filter logic to use when deciding which response to
-         * serve.
-         *
-         * @param responseFilter The response filter implementation. May be null.
-         * @return This buildable request instance, allowing chaining of method
-         * calls.
-         */
-        public Builder withResponseFilter(Response.Filter responseFilter) {
-            this.responseFilter = responseFilter;
-            return this;
-        }
-
-        /**
-         * Returns a sealed request object which can not be further built on.
-         *
-         * @return The final request object.
-         */
-        public Request build() {
-            return this;
-        }
 
     }
 
