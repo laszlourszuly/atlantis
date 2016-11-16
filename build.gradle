@@ -12,6 +12,9 @@ buildscript {
     }
 }
 
+ext.scriptDir = "${rootProject.rootDir}/script"
+ext.docsDir = "${rootProject.rootDir}/docs"
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

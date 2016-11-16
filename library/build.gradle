@@ -6,7 +6,7 @@ plugins {
 }
 
 apply plugin: 'com.android.library'
-apply from: 'version.gradle'
+apply from: "${scriptDir}/version.gradle"
 
 retrolambda {
     bytecodeVersion 51
@@ -58,9 +58,9 @@ dependencies {
 }
 
 // Custom archive build configurations
-apply from: 'aar.gradle'
-apply from: 'jar.gradle'
-apply from: 'jacoco.gradle'
-apply from: 'publish.gradle'
-apply from: 'bintray.gradle'
-apply from: 'coveralls.gradle'
+apply from: "${scriptDir}/aar.gradle"
+apply from: "${scriptDir}/jar.gradle"
+apply from: "${scriptDir}/jacoco.gradle"
+apply from: "${scriptDir}/publish.gradle"
+apply from: "${scriptDir}/bintray.gradle"
+apply from: "${scriptDir}/coveralls.gradle"

@@ -11,7 +11,7 @@
  * 3. Increase the ${major} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task prepareMajorRelease << {
+task prepareMajorRelease {
     def oldVersionName = getVersionFromLatestTag()
     def segments = oldVersionName.tokenize('.')
     def newVersionName = [segments[0].toInteger() + 1, 0, 0].join('.')
@@ -31,7 +31,7 @@ task prepareMajorRelease << {
  * 3. Increase the ${minor} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task prepareMinorRelease << {
+task prepareMinorRelease {
     def oldVersionName = getVersionFromLatestTag()
     def (major, minor) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor.toInteger() + 1, 0].join('.')
@@ -51,7 +51,7 @@ task prepareMinorRelease << {
  * 3. Increase the ${patch} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task preparePatchRelease << {
+task preparePatchRelease {
     def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
     def newVersionName = [major, minor, patch.toInteger() + 1].join('.')
@@ -71,7 +71,7 @@ ext.prepareVersionName = {
 
     if (!versionName.isEmpty()) {
         versionName = System.getenv('CIRCLECI') ? versionName : "${versionName}-SNAPSHOT"
-        println("Prepared version: ${versionName}")
+        println(versionName)
     }
 
     return versionName
