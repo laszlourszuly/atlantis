@@ -31,6 +31,7 @@ deployment:
     tag: /v[0-9]+\.[0-9]+\.[0-9]+/
     owner: echsylon
     commands:
+      - ./gradlew :library:clean :library:javadoc
       - git add docs
       - git commit --author="echsylon <echsylon@gmail.com>" --message "javadoc"
       - git subtree split --prefix docs -b gh-pages
