@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
+import static com.echsylon.atlantis.internal.Utils.notEmpty;
 
 /**
  * This class represents a request template as the {@link
@@ -45,15 +45,15 @@ public class Request extends HttpEntity implements Serializable {
 
         /**
          * Adds a header to the request being built. This method doesn't add
-         * anything if either {@code key} or {@code value} is empty (null
-         * pointers are considered empty).
+         * anything if the {@code key} is empty (null pointers are considered
+         * empty).
          *
          * @param key   The header key.
          * @param value The header value.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder withHeader(String key, String value) {
-            if (notAnyEmpty(key, value)) {
+            if (notEmpty(key)) {
                 if (request.headers == null)
                     request.headers = new HashMap<>();
 
@@ -64,7 +64,7 @@ public class Request extends HttpEntity implements Serializable {
         }
 
         /**
-         * Adds all non-empty key/value pairs from the given headers.
+         * Adds all key/value paris with a non-empty key from the given map.
          *
          * @param headers The headers to copy keys and values from.
          * @return This builder instance, allowing chaining of method calls.
@@ -75,7 +75,7 @@ public class Request extends HttpEntity implements Serializable {
                     request.headers = new HashMap<>();
 
                 for (Map.Entry<String, String> entry : headers.entrySet())
-                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
+                    if (notEmpty(entry.getKey()))
                         request.headers.put(entry.getKey(), entry.getValue());
             }
 

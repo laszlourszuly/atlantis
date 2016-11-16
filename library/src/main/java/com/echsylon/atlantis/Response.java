@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static com.echsylon.atlantis.internal.Utils.notAnyEmpty;
+import static com.echsylon.atlantis.internal.Utils.notEmpty;
 
 /**
  * This class contains all the data required by {@link com.echsylon.atlantis.Atlantis
@@ -49,15 +49,14 @@ public class Response extends HttpEntity implements Serializable {
 
         /**
          * Adds a header to the response being built. Doesn't add anything if
-         * either {@code key} or {@code value} is empty (null pointers are
-         * considered empty).
+         * the {@code key} is empty (null pointers are considered empty).
          *
          * @param key   The header key.
          * @param value The header value.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder withHeader(String key, String value) {
-            if (notAnyEmpty(key, value)) {
+            if (notEmpty(key)) {
                 if (response.headers == null)
                     response.headers = new HashMap<>();
 
@@ -68,7 +67,7 @@ public class Response extends HttpEntity implements Serializable {
         }
 
         /**
-         * Adds all non-empty key/value pairs from the given headers.
+         * Adds all key/value pairs with a non-empty key from the given map.
          *
          * @param headers The headers to copy keys and values from.
          * @return This builder instance, allowing chaining of method calls.
@@ -79,7 +78,7 @@ public class Response extends HttpEntity implements Serializable {
                     response.headers = new HashMap<>();
 
                 for (Map.Entry<String, String> entry : headers.entrySet())
-                    if (notAnyEmpty(entry.getKey(), entry.getValue()))
+                    if (notEmpty(entry.getKey()))
                         response.headers.put(entry.getKey(), entry.getValue());
             }
 
@@ -329,7 +328,7 @@ public class Response extends HttpEntity implements Serializable {
      * empty string, otherwise false.
      */
     public boolean hasContent() {
-        return Utils.notEmpty(text);
+        return notEmpty(text);
     }
 
     /**
@@ -342,7 +341,7 @@ public class Response extends HttpEntity implements Serializable {
      */
     @SuppressWarnings("ConstantConditions")
     public boolean hasAsset() {
-        return Utils.notEmpty(assetBytes) || (Utils.notEmpty(asset) && (asset.startsWith(ASSET_SCHEME) || asset.startsWith(FILE_SCHEME)));
+        return notEmpty(assetBytes) || (notEmpty(asset) && (asset.startsWith(ASSET_SCHEME) || asset.startsWith(FILE_SCHEME)));
     }
 
     /**
