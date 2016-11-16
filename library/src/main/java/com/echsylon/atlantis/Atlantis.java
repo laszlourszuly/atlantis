@@ -37,6 +37,216 @@ import fi.iki.elonen.NanoHTTPD;
 public class Atlantis {
     private static final String HOSTNAME = "localhost";
     private static final int PORT = 8080;
+
+    /**
+     * This is a callback interface through which any asynchronous success
+     * states are notified.
+     */
+    public interface OnSuccessListener {
+
+        /**
+         * Delivers a success notification.
+         */
+        void onSuccess();
+    }
+
+    /**
+     * This is a callback interface through which any asynchronous exceptions
+     * are notified.
+     */
+    public interface OnErrorListener {
+
+        /**
+         * Delivers an error result.
+         *
+         * @param cause The cause of the error.
+         */
+        void onError(Throwable cause);
+    }
+
+    /**
+     * This is a converter class, representing an HTTP status as the NanoHTTPD
+     * class knows it. Atlantis only works with integers and strings when it
+     * comes to HTTP status code, hence the need for this class.
+     */
+    private static final class NanoStatus implements NanoHTTPD.Response.IStatus {
+        private final int code;
+        private final String name;
+
+        private NanoStatus(int code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+
+        @Override
+        public String getDescription() {
+            return String.format(Locale.ENGLISH, "%d %s", code, name);
+        }
+
+        @Override
+        public int getRequestStatus() {
+            return code;
+        }
+    }
+
+    /**
+     * Starts the local Atlantis server. The caller must manually set a
+     * configuration (either by pointing to a JSON asset or by injecting
+     * programmatically defined request templates). The success callback is
+     * called once the server is fully operational.
+     *
+     * @param successListener The success callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     * @deprecated Use {@link #start()} instead.
+     */
+    public static Atlantis start(OnSuccessListener successListener, OnErrorListener errorListener) {
+        return start();
+    }
+
+    /**
+     * Starts the local Atlantis server. The caller must manually set a
+     * configuration (either by pointing to a JSON asset or by injecting a
+     * programmatically defined request templates).
+     *
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start() {
+        Atlantis atlantis = new Atlantis();
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may
+            // cause a grumpy mode in Android (especially with Strict Mode
+            // enabled), while nanoHTTPD internally will force the calling
+            // thread to sleep. The sleep is for a very short amount of time,
+            // but nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return atlantis;
+    }
+
+    /**
+     * Starts the local Atlantis server and automatically loads a configuration
+     * from a JSON asset. The asset is loaded from disk on a worker thread and
+     * any provided listeners are called once the asset is fully loaded.
+     *
+     * @param context         The context to use while loading any assets.
+     * @param configAssetName The name of the configuration asset file to load.
+     * @param successListener The success callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start(Context context, String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configAssetName, successListener, errorListener);
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
+        return atlantis;
+    }
+
+    /**
+     * Starts the local Atlantis server and automatically loads a configuration
+     * from a JSON file. The file is loaded from disk on a worker thread and any
+     * provided listeners are called once the file is fully loaded.
+     *
+     * @param context         The context to use while loading any assets.
+     * @param configFile      The file to load the configuration from.
+     * @param successListener The success callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start(Context context, File configFile, OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configFile, successListener, errorListener);
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
+        return atlantis;
+    }
+
+    /**
+     * Starts the local Atlantis server and automatically sets the built
+     * configuration object.
+     *
+     * @param context         The context to use while loading any response
+     *                        assets.
+     * @param configuration   The built configuration object.
+     * @param successListener The success callback implementation.
+     * @param errorListener   The error callback implementation.
+     * @return An Atlantis object instance.
+     * @deprecated Use {@link #start(Context, Configuration)} instead.
+     */
+    public static Atlantis start(Context context, Configuration configuration, OnSuccessListener successListener, OnErrorListener errorListener) {
+        Atlantis atlantis = new Atlantis();
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
+            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
+            // the calling thread to sleep. The sleep is for a very short amount of time, but
+            // nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configuration);
+
+            if (successListener != null)
+                successListener.onSuccess();
+        } catch (IOException e) {
+            if (errorListener != null)
+                errorListener.onError(e);
+        }
+
+        return atlantis;
+    }
+
+    /**
+     * Starts the local Atlantis server and automatically sets the built
+     * configuration object.
+     *
+     * @param context       The context to use while loading any response
+     *                      assets.
+     * @param configuration The new configuration object.
+     * @return An Atlantis object instance.
+     */
+    public static Atlantis start(Context context, Configuration configuration) {
+        Atlantis atlantis = new Atlantis();
+
+        try {
+            // Starting the nanoHTTPD server on the calling thread. This may
+            // cause a grumpy mode in Android (especially with Strict Mode
+            // enabled), while nanoHTTPD internally will force the calling
+            // thread to sleep. The sleep is for a very short amount of time,
+            // but nonetheless forceful. We need to keep an eye on this.
+            atlantis.nanoHTTPD.start();
+            atlantis.setConfiguration(context, configuration);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return atlantis;
+    }
+
+
     private final Object captureLock;
     private boolean isCapturing;
     private boolean isRecording;
@@ -127,136 +337,6 @@ public class Atlantis {
                 }
             }
         };
-    }
-
-    /**
-     * Starts the local Atlantis server. The caller must manually set a
-     * configuration (either by pointing to a JSON asset or by injecting
-     * programmatically defined request templates). The success callback is
-     * called once the server is fully operational.
-     *
-     * @param successListener The success callback implementation.
-     * @param errorListener   The error callback implementation.
-     * @return An Atlantis object instance.
-     */
-    public static Atlantis start(OnSuccessListener successListener, OnErrorListener errorListener) {
-        Atlantis atlantis = new Atlantis();
-
-        try {
-            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
-            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
-            // the calling thread to sleep. The sleep is for a very short amount of time, but
-            // nonetheless forceful. We need to keep an eye on this.
-            atlantis.nanoHTTPD.start();
-            if (successListener != null)
-                successListener.onSuccess();
-        } catch (IOException e) {
-            if (errorListener != null)
-                errorListener.onError(e);
-        }
-
-        return atlantis;
-    }
-
-    /**
-     * Starts the local Atlantis server and automatically loads a configuration
-     * from a JSON asset.
-     *
-     * @param context         The context to use while loading any assets.
-     * @param configAssetName The name of the configuration asset file to load.
-     * @param successListener The success callback implementation.
-     * @param errorListener   The error callback implementation.
-     * @return An Atlantis object instance.
-     */
-    public static Atlantis start(Context context, String configAssetName, OnSuccessListener successListener, OnErrorListener errorListener) {
-        Atlantis atlantis = new Atlantis();
-
-        try {
-            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
-            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
-            // the calling thread to sleep. The sleep is for a very short amount of time, but
-            // nonetheless forceful. We need to keep an eye on this.
-            atlantis.nanoHTTPD.start();
-            atlantis.setConfiguration(context, configAssetName, successListener, errorListener);
-        } catch (IOException e) {
-            if (errorListener != null)
-                errorListener.onError(e);
-        }
-
-        return atlantis;
-    }
-
-    /**
-     * Starts the local Atlantis server and automatically loads a configuration
-     * from a JSON file.
-     *
-     * @param context         The context to use while loading any assets.
-     * @param configFile      The file to load the configuration from.
-     * @param successListener The success callback implementation.
-     * @param errorListener   The error callback implementation.
-     * @return An Atlantis object instance.
-     */
-    public static Atlantis start(Context context, File configFile, OnSuccessListener successListener, OnErrorListener errorListener) {
-        Atlantis atlantis = new Atlantis();
-
-        try {
-            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
-            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
-            // the calling thread to sleep. The sleep is for a very short amount of time, but
-            // nonetheless forceful. We need to keep an eye on this.
-            atlantis.nanoHTTPD.start();
-            atlantis.setConfiguration(context, configFile, successListener, errorListener);
-        } catch (IOException e) {
-            if (errorListener != null)
-                errorListener.onError(e);
-        }
-
-        return atlantis;
-    }
-
-    /**
-     * Starts the local Atlantis server and automatically sets a built
-     * configuration.
-     *
-     * @param context         The context to use while loading any response
-     *                        assets.
-     * @param configuration   The built configuration object.
-     * @param successListener The success callback implementation.
-     * @param errorListener   The error callback implementation.
-     * @return An Atlantis object instance.
-     */
-    public static Atlantis start(Context context, Configuration configuration, OnSuccessListener successListener, OnErrorListener errorListener) {
-        Atlantis atlantis = new Atlantis();
-
-        try {
-            // Starting the nanoHTTPD server on the calling thread. This may cause a grumpy mode in
-            // Android (especially with Strict Mode enabled), while nanoHTTPD internally will force
-            // the calling thread to sleep. The sleep is for a very short amount of time, but
-            // nonetheless forceful. We need to keep an eye on this.
-            atlantis.nanoHTTPD.start();
-            atlantis.setConfiguration(context, configuration);
-
-            if (successListener != null)
-                successListener.onSuccess();
-        } catch (IOException e) {
-            if (errorListener != null)
-                errorListener.onError(e);
-        }
-
-        return atlantis;
-    }
-
-    /**
-     * Stops the local web server.
-     */
-    public void stop() {
-        configuration = null;
-        nanoHTTPD.closeAllConnections();
-        nanoHTTPD.stop();
-        nanoHTTPD = null;
-        isCapturing = false;
-        cookieManager.getCookieStore().removeAll();
-        cookieManager = null;
     }
 
     /**
@@ -463,6 +543,19 @@ public class Atlantis {
         }
     }
 
+    /**
+     * Stops the local web server.
+     */
+    public void stop() {
+        configuration = null;
+        nanoHTTPD.closeAllConnections();
+        nanoHTTPD.stop();
+        nanoHTTPD = null;
+        isCapturing = false;
+        cookieManager.getCookieStore().removeAll();
+        cookieManager = null;
+    }
+
     // Synchronously makes a real network request and returns the response as
     // an Atlantis response or null, would anything go wrong. If Atlantis is in
     // a recording mode then the real response content is written to the file
@@ -589,57 +682,6 @@ public class Atlantis {
                     cookieStore.add(null, cookie);
                 }
             }
-        }
-    }
-
-    /**
-     * This is a callback interface through which any asynchronous success
-     * states are notified.
-     */
-    public interface OnSuccessListener {
-
-        /**
-         * Delivers a success notification.
-         */
-        void onSuccess();
-    }
-
-    /**
-     * THis is a callback interface through which any asynchronous exceptions
-     * are notified.
-     */
-    public interface OnErrorListener {
-
-        /**
-         * Delivers an error result.
-         *
-         * @param cause The cause of the error.
-         */
-        void onError(Throwable cause);
-    }
-
-    /**
-     * This is a converter class, representing an HTTP status as the NanoHTTPD
-     * class knows it. Atlantis only works with integers and strings when it
-     * comes to HTTP status code, hence the need for this class.
-     */
-    private static final class NanoStatus implements NanoHTTPD.Response.IStatus {
-        private final int code;
-        private final String name;
-
-        private NanoStatus(int code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        @Override
-        public String getDescription() {
-            return String.format(Locale.ENGLISH, "%d %s", code, name);
-        }
-
-        @Override
-        public int getRequestStatus() {
-            return code;
         }
     }
 
