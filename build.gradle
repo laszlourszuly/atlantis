@@ -1,5 +1,28 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+/**
+ * Adds the "bash()" method to all strings. The method will allow for evaluating the string in the
+ * bash shell and returns any produced output. If the process doesn't terminate in 10 seconds, then
+ * the evaluation is aborted and an empty string is returned.
+ *
+ * @return The output of the evaluation or an empty string.
+ */
+String.metaClass.bash = { ->
+    ProcessBuilder processBuilder = new ProcessBuilder('bash', '-c', delegate)
+    processBuilder.redirectErrorStream(true)
+
+    Process process = processBuilder.start()
+    process.getOutputStream().close()
+
+    try {
+        process.waitForOrKill(10_000)
+        def output = process.text
+        return output ? output : ''
+    } catch (IOException | InterruptedException ignore) {
+        return ''
+    }
+}
+
 buildscript {
     repositories {
         jcenter()

@@ -85,10 +85,10 @@ ext.prepareVersionName = {
  * @return The version notation as a string: "${major}.${minor}.${path} ${versionCode}
  */
 private def getVersionFromLatestTag() {
-    'git fetch origin \'refs/tags/*:refs/tags/*\''.bash()
+    "git fetch origin 'refs/tags/*:refs/tags/*'".bash()
 
-    def tag = 'git for-each-ref --count=1 --sort=-taggerdate --format=\'%(tag)\' \'refs/tags/v[0-9]*.[0-9]*.[0-9]*\''.bash()
-    def filter = 's/v\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\)/\\1/p'
+    def tag = "git for-each-ref --count=1 --sort=-taggerdate --format='%(tag)' 'refs/tags/v[0-9]*.[0-9]*.[0-9]*'".bash()
+    def filter = "s/v\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\)/\\1/p"
     def versions = "echo '${tag}' | sed -n '${filter}'".bash().trim()
     if (versions.isEmpty())
         return '0.0.0'
@@ -114,25 +114,3 @@ private def createNewTag(String oldVersionName, String newVersionName) {
     println('  4. Push the tag to remote:   git push --tags')
 }
 
-/**
- * Adds the "bash()" method to all strings. The method will allow for evaluating the string in the
- * bash shell and returns any produced output. If the process doesn't terminate in 10 seconds, then
- * the evaluation is aborted and an empty string is returned.
- *
- * @return The output of the evaluation or an empty string.
- */
-String.metaClass.bash = { ->
-    ProcessBuilder processBuilder = new ProcessBuilder('bash', '-c', delegate)
-    processBuilder.redirectErrorStream(true)
-
-    Process process = processBuilder.start()
-    process.getOutputStream().close()
-
-    try {
-        process.waitForOrKill(10_000)
-        def output = process.text
-        return output ? output : ''
-    } catch (IOException | InterruptedException ignore) {
-        return ''
-    }
-}
