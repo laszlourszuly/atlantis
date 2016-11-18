@@ -476,8 +476,25 @@ public class Atlantis {
      * later can use to verify that certain requests have been made.
      * <p>
      * This method will clear any existing capture history stack.
+     *
+     * @see #stopCapturing()
+     * @deprecated This method has a unsuitable name. Use {@link
+     * #startCapturingServedRequests()} instead.
      */
     public void startCapturing() {
+        startCapturingServedRequests();
+    }
+
+    /**
+     * Tells the local web server to start capturing a copy of any served
+     * requests. This will start tracking a "request history" which the caller
+     * later can use to verify that certain requests have been made.
+     * <p>
+     * This method will clear any existing capture history stack.
+     *
+     * @see #stopCapturingServedRequests()
+     */
+    public void startCapturingServedRequests() {
         clearCapturedRequests();
         isCapturing = true;
     }
@@ -487,8 +504,20 @@ public class Atlantis {
      * method leaves the capture history stack intact.
      *
      * @see #startCapturing()
+     * @deprecated This method has a unsuitable name. Use {@link
+     * #stopCapturingServedRequests()} instead.
      */
     public void stopCapturing() {
+        stopCapturingServedRequests();
+    }
+
+    /**
+     * Tells the local web server to stop capturing any served requests. This
+     * method leaves the capture history stack intact.
+     *
+     * @see #startCapturingServedRequests()
+     */
+    public void stopCapturingServedRequests() {
         isCapturing = false;
     }
 
@@ -565,8 +594,20 @@ public class Atlantis {
      * requests and responses or not.
      *
      * @return Boolean true if Atlantis is in a recording mode, false otherwise.
+     * @deprecated This method has a unsuitable name. Use {@link
+     * #isRecordingFallbackRequests()} instead.
      */
     public boolean isRecordingMissingMockData() {
+        return isRecordingFallbackRequests();
+    }
+
+    /**
+     * Returns a boolean flag telling whether Atlantis is recording missing mock
+     * requests and responses or not.
+     *
+     * @return Boolean true if Atlantis is in a recording mode, false otherwise.
+     */
+    public boolean isRecordingFallbackRequests() {
         return isRecording;
     }
 
