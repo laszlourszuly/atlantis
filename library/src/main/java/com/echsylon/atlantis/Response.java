@@ -24,6 +24,23 @@ public class Response extends HttpEntity implements Serializable {
     private static final String FILE_SCHEME = "file://";
 
     /**
+     * This interface describes the features for filtering out a particular
+     * response based on the implemented logic.
+     */
+    public interface Filter {
+
+        /**
+         * Returns the next response based on internal state and logic.
+         *
+         * @param request   The request to find a response for.
+         * @param responses All available responses.
+         * @return The filtered response or null.
+         */
+        Response getResponse(Request request, List<Response> responses);
+
+    }
+
+    /**
      * This class offers means of building a mocked response configuration
      * directly from code (as opposed to configure one in a JSON asset or file).
      */
@@ -363,23 +380,6 @@ public class Response extends HttpEntity implements Serializable {
     @SuppressWarnings("ConstantConditions")
     public boolean hasAsset() {
         return notEmpty(assetBytes) || (notEmpty(asset) && (asset.startsWith(ASSET_SCHEME) || asset.startsWith(FILE_SCHEME)));
-    }
-
-    /**
-     * This interface describes the features for filtering out a particular
-     * response based on the implemented logic.
-     */
-    public interface Filter {
-
-        /**
-         * Returns the next response based on internal state and logic.
-         *
-         * @param request   The request to find a response for.
-         * @param responses All available responses.
-         * @return The filtered response or null.
-         */
-        Response getResponse(Request request, List<Response> responses);
-
     }
 
 }

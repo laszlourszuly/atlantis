@@ -20,6 +20,25 @@ import static com.echsylon.atlantis.internal.Utils.notEmpty;
 public class Request extends HttpEntity implements Serializable {
 
     /**
+     * This interface describes the features for filtering out a particular
+     * request template based on a set of hints describing the desired result.
+     */
+    public interface Filter {
+
+        /**
+         * Returns a request template based on the implemented filtering logic.
+         *
+         * @param requests All available request templates.
+         * @param url      The url giving a hint of which template to find.
+         * @param method   The corresponding request method to filter on.
+         * @param headers  The headers hint.
+         * @return The filtered request, or null if no match found.
+         */
+        Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers);
+
+    }
+
+    /**
      * This class offers means of building a request configuration directly from
      * code (as opposed to configure one in a JSON asset or file).
      */
@@ -193,25 +212,6 @@ public class Request extends HttpEntity implements Serializable {
         return responseFilter == null ?
                 new DefaultResponseFilter().getResponse(this, responses) :
                 responseFilter.getResponse(this, responses);
-    }
-
-    /**
-     * This interface describes the features for filtering out a particular
-     * request template based on a set of hints describing the desired result.
-     */
-    public interface Filter {
-
-        /**
-         * Returns a request template based on the implemented filtering logic.
-         *
-         * @param requests All available request templates.
-         * @param url      The url giving a hint of which template to find.
-         * @param method   The corresponding request method to filter on.
-         * @param headers  The headers hint.
-         * @return The filtered request, or null if no match found.
-         */
-        Request getRequest(List<Request> requests, String url, String method, Map<String, String> headers);
-
     }
 
 }
