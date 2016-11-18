@@ -114,8 +114,7 @@ public class Response extends HttpEntity implements Serializable {
          * header instead.
          */
         public Builder withMimeType(String mimeType) {
-            response.mime = mimeType;
-            return this;
+            return withHeader(CONTENT_TYPE, mimeType);
         }
 
         /**
@@ -227,7 +226,6 @@ public class Response extends HttpEntity implements Serializable {
 
     // JSON API
     protected Code responseCode = null;
-    protected String mime = null;
     protected String text = null;
     protected String asset = null;
     protected Integer delay = null;
@@ -273,7 +271,9 @@ public class Response extends HttpEntity implements Serializable {
      * instead.
      */
     public String mimeType() {
-        return mime;
+        return headers != null ?
+                headers.get(CONTENT_TYPE) :
+                null;
     }
 
     /**

@@ -10,7 +10,9 @@ import static com.echsylon.atlantis.internal.Utils.notEmpty;
  * entities like requests and responses. An example of such type of data could
  * be headers.
  */
+@SuppressWarnings("WeakerAccess")
 class HttpEntity {
+    public static final String CONTENT_TYPE = "Content-Type";
     protected Map<String, String> headers = null;
 
     /**

@@ -321,7 +321,7 @@ public class Atlantis {
                     long delay = response.delay();
                     Thread.sleep(delay);
                     NanoStatus status = new NanoStatus(response.statusCode(), response.statusName());
-                    String mime = response.mimeType();
+                    String mime = response.header(HttpEntity.CONTENT_TYPE);
                     byte[] bytes = response.hasAsset() ?
                             response.asset(context) :
                             response.content().getBytes();
@@ -675,7 +675,6 @@ public class Atlantis {
             // Build an Atlantis response from the real world response.
             com.echsylon.atlantis.Response.Builder builder = new com.echsylon.atlantis.Response.Builder()
                     .withStatus(UrlUtils.getResponseCode(connection), UrlUtils.getResponseMessage(connection))
-                    .withMimeType(UrlUtils.getResponseMimeType(connection))
                     .withHeaders(UrlUtils.getResponseHeaders(connection));
 
             getCookiesFromRealResponse(connection);
