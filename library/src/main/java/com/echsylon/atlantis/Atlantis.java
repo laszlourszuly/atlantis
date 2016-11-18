@@ -501,8 +501,13 @@ public class Atlantis {
      *                       assets.
      */
     public void startRecordingFallbackRequests(File assetDirectory) {
-        recordedAssetsDirectory = assetDirectory;
-        isRecording = true;
+        if (configuration != null && configuration.hasAlternativeRoute()) {
+            recordedAssetsDirectory = assetDirectory;
+            isRecording = true;
+        } else {
+            recordedAssetsDirectory = null;
+            isRecording = false;
+        }
     }
 
     /**
