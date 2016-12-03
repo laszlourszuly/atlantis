@@ -86,15 +86,14 @@ public class ResponseTest {
     @Test
     public void create_canParseFullResponse() throws Exception {
         String json = "{ responseCode: { code: 2, name: 'CUSTOM_OK' }, " +
-                "headers: { h0: 'v0' }, mime: 'mime', text: 'text', " +
-                "asset: 'asset://asset', delay: 1, maxDelay: 1 }";
+                "headers: { h0: 'v0' }, text: 'text', asset: 'asset://asset', " +
+                "delay: 1, maxDelay: 1 }";
 
         Response response = new Gson().fromJson(json, Response.class);
         assertThat(response.statusCode(), is(2));
         assertThat(response.headers().get("h0"), is("v0"));
         assertThat(response.headers().get("invalid"), is(nullValue()));
         assertThat(response.statusName(), is("CUSTOM_OK"));
-        assertThat(response.mimeType(), is("mime"));
         assertThat(response.content(), is("text"));
         assertThat(response.asset(null), isA(byte[].class));
         assertThat(response.asset(null).length, is(0));

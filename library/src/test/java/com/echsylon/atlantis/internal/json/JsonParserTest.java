@@ -182,7 +182,6 @@ public class JsonParserTest {
 
         assertThat(jsonObject.has("assetBytes"), is(false));
         assertThat(jsonObject.get("asset").getAsString(), is("file://asset"));
-        assertThat(jsonObject.get("mime").getAsString(), is("mime"));
         assertThat(jsonObject.get("text").getAsString(), is("text"));
         assertThat(jsonObject.get("delay").getAsInt(), is(1));
         assertThat(jsonObject.get("maxDelay").getAsInt(), is(2));
@@ -192,9 +191,10 @@ public class JsonParserTest {
         assertThat(responseCode.get("name").getAsString(), is("CUSTOM_OK"));
 
         JsonObject serializedHeaders = jsonObject.get("headers").getAsJsonObject();
-        assertThat(serializedHeaders.size(), is(2));
+        assertThat(serializedHeaders.size(), is(3));
         assertThat(serializedHeaders.get("h0").getAsString(), is("v0"));
         assertThat(serializedHeaders.get("h1").getAsString(), is("v1"));
+        assertThat(serializedHeaders.get("Content-Type").getAsString(), is("mime"));
     }
 
     @Test
