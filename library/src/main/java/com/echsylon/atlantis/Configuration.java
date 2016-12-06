@@ -1,59 +1,44 @@
 package com.echsylon.atlantis;
 
 import com.echsylon.atlantis.filter.DefaultRequestFilter;
-import com.echsylon.atlantis.internal.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
- * This class contains all request templates the {@link Atlantis} local web
+ * This class contains all request mockRequests the {@link Atlantis} local web
  * server will ever serve. This is the "mocked Internet".
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class Configuration implements Serializable {
 
     /**
      * This class offers means of building a configuration object directly from
      * code (as opposed to configure one in a JSON asset or file).
      */
-    @SuppressWarnings("WeakerAccess")
     public static final class Builder {
         private final Configuration configuration;
 
         /**
-         * Creates a new builder based on an uninitialized configuration object.
+         * Creates a new builder based on an uninitialized configuration
+         * object.
          */
         public Builder() {
             configuration = new Configuration();
         }
 
         /**
-         * Creates a new builder based on the given configuration object.
+         * Adds a mockRequest to the configuration being built. This method
+         * doesn't add null pointers.
          *
-         * @param configuration The configuration object to build on. Must not
-         *                      be null.
-         */
-        public Builder(Configuration configuration) {
-            this.configuration = configuration;
-        }
-
-        /**
-         * Adds a request to the configuration being built. This method doesn't
-         * add null pointers.
-         *
-         * @param request The request to add.
+         * @param mockRequest The mockRequest to add.
          * @return This builder object, allowing chaining of method calls.
          */
-        public Builder withRequest(Request request) {
-            if (request != null) {
-                if (configuration.requests == null)
-                    configuration.requests = new ArrayList<>();
-
-                configuration.requests.add(request);
-            }
+        public Builder addRequest(final MockRequest mockRequest) {
+            if (!configuration.mockRequests.contains(mockRequest))
+                configuration.mockRequests.add(mockRequest);
 
             return this;
         }
@@ -62,11 +47,11 @@ public class Configuration implements Serializable {
          * Sets the request filter logic to use when matching a request to
          * serve.
          *
-         * @param requestFilter The request filter implementation. May be null.
+         * @param filter The request filter implementation. May be null.
          * @return This builder object, allowing chaining of method calls.
          */
-        public Builder withRequestFilter(Request.Filter requestFilter) {
-            configuration.requestFilter = requestFilter;
+        public Builder setRequestFilter(final MockRequest.Filter filter) {
+            configuration.requestFilter = filter;
             return this;
         }
 
@@ -76,7 +61,7 @@ public class Configuration implements Serializable {
          * @param realBaseUrl The real-world base URL, including scheme.
          * @return This builder object, allowing chaining of method calls.
          */
-        public Builder withFallbackBaseUrl(String realBaseUrl) {
+        public Builder setFallbackBaseUrl(final String realBaseUrl) {
             configuration.fallbackBaseUrl = realBaseUrl;
             return this;
         }
@@ -90,22 +75,22 @@ public class Configuration implements Serializable {
         public Configuration build() {
             return configuration;
         }
-
     }
 
 
-    protected String fallbackBaseUrl = null;
-    protected List<Request> requests = null;
-    protected transient Request.Filter requestFilter = null;
+    private String fallbackBaseUrl = null;
+    private volatile List<MockRequest> mockRequests = null;
+    private transient MockRequest.Filter requestFilter = null;
 
-    // Intentionally hidden constructor
-    protected Configuration() {
+
+    Configuration() {
+        mockRequests = new ArrayList<>();
     }
 
     /**
      * Returns the fallback base url for this configuration. If given, this is
-     * the suggested real world base URL to target (replacing "localhost:8080")
-     * if no configuration was found for a request.
+     * the suggested real world base URL to target (replacing "localhost") if no
+     * configuration was found for a request.
      *
      * @return The fallback base url or null.
      */
@@ -114,62 +99,58 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Returns a flag telling whether this configuration can present an
-     * alternative route to a supposedly "real" response if no configuration is
-     * found for a request.
+     * Returns an unmodifiable list of the currently tracked request
+     * mockRequests in this configuration.
      *
-     * @return Boolean true if the configuration has a fallback base url, false
-     * otherwise.
+     * @return A list of known request mockRequests. The list is unmodifiable as
+     * per definition in {@link Collections#unmodifiableList(List)}.
      */
-    public boolean hasAlternativeRoute() {
-        return Utils.notEmpty(fallbackBaseUrl);
+    public List<MockRequest> requests() {
+        return Collections.unmodifiableList(mockRequests);
     }
 
     /**
-     * Returns the filter that matches any requests in this configuration
-     * against the HTTP parameters the client is trying to target.
-     * <p>
-     * NOTE! This method should only be used internally.
+     * Returns the request filter of this configuration.
      *
-     * @return The request filter. May be null.
+     * @return The request filter or null.
      */
-    public Request.Filter requestFilter() {
+    public MockRequest.Filter requestFilter() {
         return requestFilter;
     }
 
     /**
-     * Tries to find a request configuration. The actual logic behind the
-     * matching is delegated to the current {@link com.echsylon.atlantis.Request.Filter
-     * Request#Filter} implementation. If no particular request filter has been
-     * given a default implementation will be used instead.
+     * Returns a suitable request template for the provided parameters.
      *
-     * @param url     The url.
-     * @param method  The request method.
-     * @param headers The request headers.
-     * @return The first request configuration that matches the given criteria
-     * or null.
+     * @return The request filter. May be null.
      */
-    public Request findRequest(String url, String method, Map<String, String> headers) {
-        return requestFilter == null ?
-                new DefaultRequestFilter().getRequest(requests, url, method, headers) :
-                requestFilter.getRequest(requests, url, method, headers);
+    MockRequest request(final Meta meta) {
+        MockRequest.Filter filter = requestFilter == null ?
+                new DefaultRequestFilter() :
+                requestFilter;
+
+        return filter.findRequest(meta.method(), meta.url(), meta.headers(), mockRequests);
     }
 
     /**
-     * Adds a request to a collection of requests managed by this configuration
-     * object. This method ensures that null pointers are not added.
+     * Overrides forcefully the request filter of this configuration.
      *
-     * @param request The new request being eligible to serve mock responses
-     *                when this method returns. Null pointers are ignored.
+     * @param requestFilter The new request filter.
      */
-    protected void addRequest(Request request) {
-        if (request != null) {
-            if (requests == null)
-                requests = new ArrayList<>();
-
-            if (!requests.contains(request))
-                requests.add(request);
-        }
+    void setRequestFilter(MockRequest.Filter requestFilter) {
+        this.requestFilter = requestFilter;
     }
 
+    /**
+     * Adds a mockRequest to the list of available mockRequests that have a
+     * mocked response to serve. This method ensures that null pointers are not
+     * added.
+     *
+     * @param mockRequest The new mockRequest being eligible to serve mock
+     *                    responses when this method returns. Null pointers are
+     *                    ignored.
+     */
+    void addRequest(final MockRequest mockRequest) {
+        if (!mockRequests.contains(mockRequest))
+            mockRequests.add(mockRequest);
+    }
 }

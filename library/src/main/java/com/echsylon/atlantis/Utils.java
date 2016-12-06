@@ -9,7 +9,7 @@ import java.util.List;
 import okio.Sink;
 import okio.Source;
 
-import static com.echsylon.atlantis2.LogUtils.info;
+import static com.echsylon.atlantis.LogUtils.info;
 
 /**
  * This is a convenience class, holding helper methods for "every day tasks".
