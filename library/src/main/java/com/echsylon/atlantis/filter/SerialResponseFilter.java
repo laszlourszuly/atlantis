@@ -1,42 +1,32 @@
 package com.echsylon.atlantis.filter;
 
-import com.echsylon.atlantis.Request;
-import com.echsylon.atlantis.Response;
-import com.echsylon.atlantis.internal.Utils;
+import com.echsylon.atlantis.MockResponse;
 
-import java.util.HashMap;
 import java.util.List;
 
 /**
- * This class implements serial filter behaviour of a {@link Response.Filter}.
+ * This class enables serial filter behaviour of a {@link MockResponse.Filter}.
  * It returns the next response from the available ones relative to the
  * previously returned response for a given request, or null if there are no
  * responses to pick from.
  */
-public class SerialResponseFilter implements Response.Filter {
-    private final HashMap<Request, Integer> indexMap = new HashMap<>();
+public class SerialResponseFilter implements MockResponse.Filter {
+    private int index = 0;
 
     /**
      * Returns the next response for a given request.
      *
-     * @param request   The request to find a response for.
      * @param responses All available responses.
      * @return The next response.
      */
     @Override
-    public Response getResponse(Request request, List<Response> responses) {
-        if (Utils.isEmpty(responses))
+    public MockResponse findResponse(final List<MockResponse> responses) {
+        if (responses == null || responses.isEmpty())
             return null;
 
-        if (!indexMap.containsKey(request))
-            indexMap.put(request, 0);
-
-        int index = indexMap.get(request);
         if (++index >= responses.size())
             index = 0;
 
-        indexMap.put(request, index);
         return responses.get(index);
     }
-
 }

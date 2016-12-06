@@ -1,30 +1,13 @@
 package com.echsylon.atlantis.filter;
 
-import com.echsylon.atlantis.Request;
-import com.echsylon.atlantis.Response;
-import com.echsylon.atlantis.internal.Utils;
+import com.echsylon.atlantis.MockResponse;
 
 import java.util.List;
 
-/**
- * This class implements the default behaviour of a {@link Response.Filter}. It
- * returns the first response available or null if there are no responses to
- * pick from.
- */
-public class DefaultResponseFilter implements Response.Filter {
+public class DefaultResponseFilter implements MockResponse.Filter {
 
-    /**
-     * Returns the first available response.
-     *
-     * @param request   The request to find a response for.
-     * @param responses All available responses.
-     * @return The current response.
-     */
     @Override
-    public Response getResponse(Request request, List<Response> responses) {
-        return Utils.notEmpty(responses) ?
-                responses.get(0) :
-                null;
+    public MockResponse findResponse(List<MockResponse> mockResponses) {
+        return null;
     }
-
 }
