@@ -15,12 +15,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
-import okio.BufferedSource;
 import okio.Okio;
 import okio.Source;
 
 import static com.echsylon.atlantis.LogUtils.info;
 import static com.echsylon.atlantis.Utils.closeSilently;
+import static com.echsylon.atlantis.Utils.isEmpty;
 
 class RealWebServer {
 
@@ -79,10 +79,18 @@ class RealWebServer {
             for (String key : headers.names())
                 mockResponse.addHeader(key, headers.get(key));
 
-            File file;
-            if (directory != null)
-                if ((file = writeResponseToFile(response, directory)) != null)
-                    mockResponse.setBody(file);
+            ResponseBody responseBody = response.body();
+            if (responseBody.contentLength() > 0L) {
+                byte[] bytes = responseBody.bytes();
+
+                if (directory == null) {
+                    mockResponse.setBody(bytes);
+                } else {
+                    File file;
+                    if ((file = writeResponseToFile(bytes, directory, response.request())) != null)
+                        mockResponse.setBody(file);
+                }
+            }
 
             return new MockRequest.Builder()
                     .setMethod(meta.method())
@@ -125,30 +133,26 @@ class RealWebServer {
     /**
      * Persists a real response to a file on the file system.
      *
-     * @param response  The real response to persist.
+     * @param body      The real response body to persist.
      * @param directory The directory to persist in.
-     * @return The persisted file handle.
+     * @param request   The request to build subdirectories and file name from.
+     * @return The persisted file handle or null.
      */
-    private File writeResponseToFile(final Response response, final File directory) {
-        BufferedSource source = null;
+    private File writeResponseToFile(final byte[] body, final File directory, final Request request) {
+        if (isEmpty(body))
+            return null;
+
         BufferedSink target = null;
 
         try {
-            ResponseBody responseBody = response.body();
-            source = responseBody.source();
-            if (responseBody.contentLength() <= 0L)
-                return null;
-
-            File file = getTargetFile(response.request(), directory);
+            File file = getTargetFile(request, directory);
             target = Okio.buffer(Okio.sink(file));
-            target.writeAll(source);
-
+            target.write(body);
             return file;
         } catch (Exception e) {
-            info(e, "Couldn't save mock response: %s", response.request().url().toString());
+            info(e, "Couldn't save mock response: %s", request.url().toString());
             return null;
         } finally {
-            closeSilently(source);
             closeSilently(target);
         }
     }
