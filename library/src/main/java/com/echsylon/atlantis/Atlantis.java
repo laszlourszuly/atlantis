@@ -37,7 +37,8 @@ public class Atlantis {
     private static final int PORT = 8080;
     private static final String HOSTNAME = "localhost";
     private static final MockResponse NOT_FOUND = new MockResponse.Builder()
-            .setStatus(404, "Not found")
+            .setStatus(404, "Not Found")
+            .addHeader("Content-Length", "0")
             .build();
 
 
