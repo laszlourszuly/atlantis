@@ -27,19 +27,16 @@ public class MockRequest {
          * parameters. May be null, in which case the calling logic is
          * responsible for deciding which mockRequest to use.
          *
-         * @param method       The mockRequest method ("GET", "POST", etc) from
-         *                     the HTTP client.
-         * @param url          The mockRequest url (e.g. "/path/to/resource")
-         *                     from the HTTP client.
-         * @param headers      The header key/value pairs from the HTTP client.
-         * @param mockRequests The complete list of all available mockRequest
-         *                     mockRequests to pick from.
+         * @param method   The request method ("GET", "POST", etc).
+         * @param url      The request url (e.g. "/path/to/resource").
+         * @param headers  The request headers (key/value pairs).
+         * @param requests All request templates available.
          * @return The mockRequest mockRequest candidate.
          */
         MockRequest findRequest(final String method,
                                 final String url,
                                 final Map<String, String> headers,
-                                final List<MockRequest> mockRequests);
+                                final List<MockRequest> requests);
     }
 
 
