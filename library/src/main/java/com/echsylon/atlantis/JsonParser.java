@@ -9,16 +9,6 @@ import com.google.gson.JsonSyntaxException;
 class JsonParser {
 
     /**
-     * This instance of a runtime exception represents an error caused while
-     * parsing JSON data.
-     */
-    private static final class JsonException extends RuntimeException {
-        private JsonException(Throwable cause) {
-            super(cause);
-        }
-    }
-
-    /**
      * Tries to parse a JSON string into a Java object.
      *
      * @param json               The JSON string to parse.
