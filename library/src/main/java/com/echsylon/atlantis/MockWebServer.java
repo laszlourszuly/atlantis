@@ -34,6 +34,11 @@ import static com.echsylon.atlantis.Utils.sleepSilently;
  * means. It's a streamlined implementation to meet the Atlantis needs.
  */
 class MockWebServer {
+    private static final Settings.Throttle FAST_FORWARD = new Settings.Throttle(Long.MAX_VALUE, 0L);
+    private static final MockResponse CONTINUE = new MockResponse.Builder()
+            .setStatus(100, "Continue")
+            .addHeader("Content-Length", "0")
+            .build();
 
     /**
      * This interface describes the mandatory features required to provide a
@@ -208,19 +213,13 @@ class MockWebServer {
                 Meta meta = null;
 
                 while ((meta = readRequestMeta(source)) != null) {
-                    MockResponse response;
                     if (meta.isExpectedToContinue()) {
-                        response = new MockResponse.Builder()
-                                .setStatus(100, "Continue")
-                                .addHeader("Content-Length", "0")
-                                .build();
+                        writeResponse(CONTINUE, target);
                     } else {
-                        // TODO: Guard for OutOfMemoryError
                         Buffer body = readRequestBody(meta, source);
-                        response = responseHandler.getMockResponse(meta, body);
+                        MockResponse response = responseHandler.getMockResponse(meta, body);
+                        writeResponse(response, target);
                     }
-
-                    writeResponse(response, target);
                 }
             } catch (IOException e) {
                 info(e, "Couldn't parse request: %s", socket.getInetAddress());
@@ -322,17 +321,37 @@ class MockWebServer {
     /**
      * Writes the mocked mockResponse back to the waiting http client.
      *
-     * @param mockResponse The mocked mockResponse to serve.
-     * @param target       The target destination to write to.
+     * @param response The mocked response to serve.
+     * @param target   The target destination to write to.
      * @throws IOException If the write operation would fail for some reason.
      */
-    private void writeResponse(final MockResponse mockResponse,
+    private void writeResponse(final MockResponse response,
                                final BufferedSink target) throws IOException {
 
+        Source source = response.content();
+        Buffer buffer = null;
+
+        // Maybe buffer response body.
+        if (source != null) {
+            buffer = new Buffer();
+            transfer(FAST_FORWARD.throttleByteCount, source, buffer, FAST_FORWARD);
+        }
+
+        // Send the response meta
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("HTTP/1.1 %s %s\r\n", mockResponse.code(), mockResponse.phrase()));
-        for (Map.Entry<String, String> entry : mockResponse.headers().entrySet())
+        builder.append(String.format("HTTP/1.1 %s %s\r\n", response.code(), response.phrase()));
+        Map<String, String> headers = response.headers();
+        for (Map.Entry<String, String> entry : headers.entrySet())
             builder.append(String.format("%s: %s\r\n", entry.getKey(), entry.getValue()));
+
+        // Maybe set Content-Length header
+        if (!headers.containsKey("Content-Length")) {
+            if (response.isExpectedToContinue())
+                builder.append("Content-Length: 0\r\n");
+            if (!response.isExpectedToBeChunked())
+                if (buffer != null)
+                    builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
+        }
 
         builder.append("\r\n");
         String string = builder.toString();
@@ -340,14 +359,10 @@ class MockWebServer {
         target.flush();
         info("Response: %s", string);
 
-        Source source = mockResponse.content();
-        if (source != null) {
-            BufferedSource content = Okio.buffer(source);
-            long delay = mockResponse.delay();
-            if (delay > 0)
-                sleepSilently(delay);
-
-            transfer(Long.MAX_VALUE, content, target, mockResponse.settings().throttle());
+        // Maybe send response body
+        if (buffer != null) {
+            Settings.Throttle throttle = response.settings().throttle();
+            transfer(buffer.size(), buffer, target, throttle);
         }
     }
 
