@@ -258,10 +258,11 @@ public class Atlantis {
         MockRequest mockRequest = configuration.request(meta);
         if (mockRequest == null)
             if (notEmpty(configuration.fallbackBaseUrl()))
-                mockRequest = new RealWebServer().getRealTemplate(meta, source,
-                        recordMissingRequests ?
-                                atlantisDir :
-                                null);
+                mockRequest = new RealWebServer(configuration.fallbackBaseUrl())
+                        .getRealTemplate(meta, source,
+                                recordMissingRequests ?
+                                        atlantisDir :
+                                        null);
 
         if (mockRequest == null)
             mockRequest = getFallbackTemplate(meta);

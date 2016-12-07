@@ -49,6 +49,13 @@ class RealWebServer {
     }
 
 
+    private final String baseUrl;
+
+    RealWebServer(final String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+
     /**
      * Performs a request to a real server and returns a mock request with the
      * corresponding real response (now expressed as a mock response).
@@ -101,7 +108,7 @@ class RealWebServer {
         RequestBody body = new SourceRequestBody(contentType, source);
 
         Request.Builder request = new Request.Builder();
-        request.url(meta.url());
+        request.url(baseUrl + meta.url());
         request.method(meta.method(), body);
         for (Map.Entry<String, String> entry : meta.headers().entrySet())
             request.addHeader(entry.getKey(), entry.getValue());
