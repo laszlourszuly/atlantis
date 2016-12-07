@@ -80,20 +80,18 @@ public class Atlantis {
      * Creates an {@code Atlantis} instance and initializes it with a
      * configuration read from an application asset (in the "assets" folder).
      *
-     * @param context            The context used when reading mock response
-     *                           resources.
-     * @param configurationAsset The asset to read the {@code Atlantis}
-     *                           configuration from.
+     * @param context           The context used when reading mock response
+     *                          resources.
+     * @param configurationJson The {@code Atlantis} configuration object,
+     *                          expressed as a JSON string.
      */
-    public Atlantis(final Context context, final String configurationAsset) {
+    public Atlantis(final Context context, final String configurationJson) {
         try {
-            InputStream inputStream = context.getAssets().open(configurationAsset);
-            BufferedSource bufferedSource = Okio.buffer(Okio.source(inputStream));
-            String json = bufferedSource.readString(Charset.forName("UTF-8"));
-            Configuration configuration = new JsonParser().fromJson(json, Configuration.class);
+            Configuration configuration = new JsonParser()
+                    .fromJson(configurationJson, Configuration.class);
             init(context, configuration);
-        } catch (IOException e) {
-            info(e, "Couldn't read configuration asset: %s", configurationAsset);
+        } catch (JsonException e) {
+            info(e, "Couldn't parse configuration json: %s", configurationJson);
             throw new RuntimeException(e);
         }
     }
