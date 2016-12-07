@@ -335,8 +335,9 @@ public class MockResponse {
      *
      * @param sourceHelper The source open helper.
      */
-    void setSourceHelper(final SourceHelper sourceHelper) {
-        this.sourceHelper = sourceHelper;
+    void setSourceHelperIfAbsent(final SourceHelper sourceHelper) {
+        if (this.sourceHelper == null)
+            this.sourceHelper = sourceHelper;
     }
 
     /**

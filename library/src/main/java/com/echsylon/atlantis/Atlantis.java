@@ -279,7 +279,7 @@ public class Atlantis {
         if (mockResponse == null)
             return NOT_FOUND;
 
-        mockResponse.setSourceHelper(this::open);
+        mockResponse.setSourceHelperIfAbsent(this::open);
         return mockResponse;
     }
 
