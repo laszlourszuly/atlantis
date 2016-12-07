@@ -260,14 +260,14 @@ class MockWebServer {
         meta.setProtocol(line.substring(++mark));
 
         // Parse the request headers
-        while ((line = source.readUtf8LineStrict()).length() != -1) {
+        while (!(line = source.readUtf8LineStrict()).isEmpty()) {
             builder.append(line).append("\n");
             meta.addHeader(
                     line.substring(0, (mark = line.indexOf(':'))).trim(),
                     line.substring(++mark).trim());
         }
 
-        info("MockRequest: %s", builder.toString());
+        info("Request: %s", builder.toString());
         return meta;
     }
 
@@ -338,7 +338,7 @@ class MockWebServer {
         String string = builder.toString();
         target.writeUtf8(string);
         target.flush();
-        info("MockResponse: %s", string);
+        info("Response: %s", string);
 
         Source source = mockResponse.content();
         if (source != null) {
