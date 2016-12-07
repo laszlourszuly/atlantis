@@ -206,13 +206,19 @@ class MockWebServer {
                 Meta meta = null;
 
                 while ((meta = readRequestMeta(source)) != null) {
-                    MockResponse mockResponse = responseHandler.getMockResponse(meta, source);
+                    MockResponse response;
+                    if (meta.isExpectedToContinue()) {
+                        response = new MockResponse.Builder()
+                                .setStatus(100, "Continue")
+                                .addHeader("Content-Length", "0")
+                                .build();
+                    } else {
+                        // TODO: Guard for OutOfMemoryError
+                        Buffer body = readRequestBody(meta, source);
+                        response = responseHandler.getMockResponse(meta, body);
+                    }
 
-                    // Discard unconsumed payload.
-                    Buffer buffer = new Buffer();
-                    buffer.skip(source.readAll(buffer));
-
-                    writeResponse(mockResponse, target);
+                    writeResponse(response, target);
                 }
             } catch (IOException e) {
                 info(e, "Couldn't parse request: %s", socket.getInetAddress());
@@ -240,6 +246,7 @@ class MockWebServer {
         if (isEmpty(line))
             return null;
 
+        // Used for building our log message.
         StringBuilder builder = new StringBuilder(line).append("\n");
         int mark;
 
@@ -250,6 +257,7 @@ class MockWebServer {
         meta.setUrl(line.substring(++mark, (mark = line.indexOf(' ', mark))));
         meta.setProtocol(line.substring(++mark));
 
+        // Parse the request headers
         while ((line = source.readUtf8LineStrict()).length() != -1) {
             builder.append(line).append("\n");
             meta.addHeader(
@@ -259,6 +267,54 @@ class MockWebServer {
 
         info("MockRequest: %s", builder.toString());
         return meta;
+    }
+
+    /**
+     * Reads the entire request body as defined by header fields (either by
+     * "Content-Length: {nbr}" or "Transfer-Encoding: chunked") and temporarily
+     * buffers it internally. The buffer can then be passed to the mock response
+     * provider, allowing it to pass it further to a real server if needed.
+     * <p>
+     * This method won't check the validity of request method vs. body content.
+     *
+     * @param meta   The meta data describing the client HTTP request.
+     * @param source The data source to read the body from.
+     * @return A buffer containing the fully read body or null if there is no
+     * body to read.
+     * @throws IOException If the body couldn't be read.
+     */
+    private Buffer readRequestBody(final Meta meta, final BufferedSource source) throws IOException {
+        Buffer buffer = new Buffer();
+
+        // Regular request body.
+        if (meta.isExpectedToHaveBody()) {
+            String headerValue = meta.headers().get("Content-Type");
+            long count = Long.valueOf(headerValue, 10);
+            transfer(count, source, buffer, new Settings.Throttle(count, 0L));
+
+            info("Read default request body: %s bytes", buffer.size());
+            return buffer;
+        }
+
+        // Chunked request body
+        if (meta.isExpectedToBeChunked()) {
+            String chunkSizeLine;
+            int chunkSize;
+            do {
+                chunkSizeLine = source.readUtf8LineStrict();
+                chunkSize = Integer.valueOf(chunkSizeLine, 16);
+                buffer.writeUtf8(chunkSizeLine);
+                buffer.writeUtf8("\r\n");
+                transfer(chunkSize, source, buffer, new Settings.Throttle(chunkSize, 0L));
+                buffer.writeUtf8("\r\n");
+            } while (chunkSize != 0);
+
+            info("Read chunked request body: %s bytes", buffer.size());
+            return buffer;
+        }
+
+        info("No request body to read");
+        return null;
     }
 
     /**
