@@ -89,8 +89,8 @@ public class MockRequest {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addResponse(final MockResponse mockResponse) {
-            if (!mockRequest.mockResponses.contains(mockResponse))
-                mockRequest.mockResponses.add(mockResponse);
+            if (!mockRequest.responses.contains(mockResponse))
+                mockRequest.responses.add(mockResponse);
             return this;
         }
 
@@ -142,14 +142,14 @@ public class MockRequest {
 
     private String url = null;
     private String method = null;
-    private List<MockResponse> mockResponses = null;
     private HeaderManager headers = null;
+    private List<MockResponse> responses = null;
     private transient MockResponse.Filter responseFilter = null;
 
 
     MockRequest() {
         headers = new HeaderManager();
-        mockResponses = new ArrayList<>();
+        responses = new ArrayList<>();
     }
 
     /**
@@ -189,7 +189,7 @@ public class MockRequest {
      * definition in {@link Collections#unmodifiableList(List)}.
      */
     public List<MockResponse> responses() {
-        return Collections.unmodifiableList(mockResponses);
+        return Collections.unmodifiableList(responses);
     }
 
     /**
@@ -208,8 +208,8 @@ public class MockRequest {
      */
     MockResponse response() {
         return responseFilter == null ?
-                new DefaultResponseFilter().findResponse(mockResponses) :
-                responseFilter.findResponse(mockResponses);
+                new DefaultResponseFilter().findResponse(responses) :
+                responseFilter.findResponse(responses);
     }
 
     /**

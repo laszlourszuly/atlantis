@@ -37,8 +37,7 @@ public class MockResponse {
          * serve.
          *
          * @param mockResponses All available mockResponse to pick a candidate
-         *                      from. The list may be empty but will never be
-         *                      null.
+         *                      from. Null and empty lists are acceptable.
          * @return The mockResponse candidate.
          */
         MockResponse findResponse(final List<MockResponse> mockResponses);
@@ -110,8 +109,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setStatus(final int code, final String phrase) {
-            mockResponse.status = code;
-            mockResponse.phrase = phrase;
+            mockResponse.responseCode = new ResponseCode(code, phrase);
             return this;
         }
 
@@ -216,13 +214,26 @@ public class MockResponse {
         }
     }
 
+    /**
+     * This is an internal helper class, representing the response status in
+     * terms of an HTTP response code and a corresponding response phrase.
+     */
+    private static final class ResponseCode {
+        private Integer code = null;
+        private String name = null;
 
-    private Integer status = null;
-    private String phrase = null;
+        private ResponseCode(final int code, final String name) {
+            this.code = code;
+            this.name = name;
+        }
+    }
+
+
     private String text = null;
     private Long delay = null;
     private Long maxDelay = null;
     private Settings settings = null;
+    private ResponseCode responseCode = null;
     private HeaderManager headers = null;
     private transient SourceHelper sourceHelper = null;
 
@@ -237,7 +248,9 @@ public class MockResponse {
      * @return The mocked HTTP mockResponse code.
      */
     public int code() {
-        return getNative(status, 0);
+        return responseCode != null ?
+                getNative(responseCode.code, 0) :
+                0;
     }
 
     /**
@@ -246,7 +259,9 @@ public class MockResponse {
      * @return The mocked HTTP mockResponse phrase.
      */
     public String phrase() {
-        return getNonNull(phrase, "");
+        return responseCode != null ?
+                getNonNull(responseCode.name, "") :
+                "";
     }
 
     /**
@@ -308,10 +323,10 @@ public class MockResponse {
      */
     long delay() {
         if (maxDelay == null || maxDelay.equals(delay))
-            return Math.max(0L, Utils.getNative(delay, 0L));
+            return Math.max(0L, getNative(delay, 0L));
 
-        long min = Math.max(0L, Utils.getNative(delay, 0L));
-        long max = Math.max(0L, Utils.getNative(maxDelay, 0L));
+        long min = Math.max(0L, getNative(delay, 0L));
+        long max = Math.max(0L, getNative(maxDelay, 0L));
 
         return max > min ?
                 new Random().nextInt((int) (max - min)) + min :

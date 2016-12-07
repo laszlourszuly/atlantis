@@ -37,8 +37,8 @@ public class Configuration implements Serializable {
          * @return This builder object, allowing chaining of method calls.
          */
         public Builder addRequest(final MockRequest mockRequest) {
-            if (!configuration.mockRequests.contains(mockRequest))
-                configuration.mockRequests.add(mockRequest);
+            if (!configuration.requests.contains(mockRequest))
+                configuration.requests.add(mockRequest);
 
             return this;
         }
@@ -79,12 +79,12 @@ public class Configuration implements Serializable {
 
 
     private String fallbackBaseUrl = null;
-    private volatile List<MockRequest> mockRequests = null;
+    private List<MockRequest> requests = null;
     private transient MockRequest.Filter requestFilter = null;
 
 
     Configuration() {
-        mockRequests = new ArrayList<>();
+        requests = new ArrayList<>();
     }
 
     /**
@@ -106,7 +106,7 @@ public class Configuration implements Serializable {
      * per definition in {@link Collections#unmodifiableList(List)}.
      */
     public List<MockRequest> requests() {
-        return Collections.unmodifiableList(mockRequests);
+        return Collections.unmodifiableList(requests);
     }
 
     /**
@@ -128,7 +128,7 @@ public class Configuration implements Serializable {
                 new DefaultRequestFilter() :
                 requestFilter;
 
-        return filter.findRequest(meta.method(), meta.url(), meta.headers(), mockRequests);
+        return filter.findRequest(meta.method(), meta.url(), meta.headers(), requests);
     }
 
     /**
@@ -150,7 +150,7 @@ public class Configuration implements Serializable {
      *                    ignored.
      */
     void addRequest(final MockRequest mockRequest) {
-        if (!mockRequests.contains(mockRequest))
-            mockRequests.add(mockRequest);
+        if (!requests.contains(mockRequest))
+            requests.add(mockRequest);
     }
 }
