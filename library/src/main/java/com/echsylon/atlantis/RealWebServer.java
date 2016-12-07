@@ -104,12 +104,15 @@ class RealWebServer {
      * @throws IOException if anything would go wrong during the request.
      */
     private Response getRealResponse(final Meta meta, final Source source) throws IOException {
-        String contentType = meta.headers().get("Content-Type");
-        RequestBody body = new SourceRequestBody(contentType, source);
-
         Request.Builder request = new Request.Builder();
         request.url(baseUrl + meta.url());
-        request.method(meta.method(), body);
+
+        if (source != null) {
+            String contentType = meta.headers().get("Content-Type");
+            RequestBody body = new SourceRequestBody(contentType, source);
+            request.method(meta.method(), body);
+        }
+
         for (Map.Entry<String, String> entry : meta.headers().entrySet())
             request.addHeader(entry.getKey(), entry.getValue());
 
