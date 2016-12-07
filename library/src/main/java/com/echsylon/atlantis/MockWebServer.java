@@ -34,7 +34,6 @@ import static com.echsylon.atlantis.Utils.sleepSilently;
  * means. It's a streamlined implementation to meet the Atlantis needs.
  */
 class MockWebServer {
-    private static final Settings.Throttle FAST_FORWARD = new Settings.Throttle(Long.MAX_VALUE, 0L);
     private static final MockResponse CONTINUE = new MockResponse.Builder()
             .setStatus(100, "Continue")
             .addHeader("Content-Length", "0")
@@ -291,7 +290,7 @@ class MockWebServer {
         if (meta.isExpectedToHaveBody()) {
             String headerValue = meta.headers().get("Content-Type");
             long count = Long.valueOf(headerValue, 10);
-            transfer(count, source, buffer, new Settings.Throttle(count, 0L));
+            transfer(count, source, buffer, null);
 
             info("Read default request body: %s bytes", buffer.size());
             return buffer;
@@ -306,7 +305,7 @@ class MockWebServer {
                 chunkSize = Integer.valueOf(chunkSizeLine, 16);
                 buffer.writeUtf8(chunkSizeLine);
                 buffer.writeUtf8("\r\n");
-                transfer(chunkSize, source, buffer, new Settings.Throttle(chunkSize, 0L));
+                transfer(chunkSize, source, buffer, null);
                 buffer.writeUtf8("\r\n");
             } while (chunkSize != 0);
 
@@ -332,9 +331,9 @@ class MockWebServer {
         Buffer buffer = null;
 
         // Maybe buffer response body.
-        if (source != null) {
+        if (source != null && !response.isExpectedToContinue()) {
             buffer = new Buffer();
-            transfer(FAST_FORWARD.throttleByteCount, source, buffer, FAST_FORWARD);
+            transfer(-1, source, buffer, null);
         }
 
         // Send the response meta
@@ -348,7 +347,7 @@ class MockWebServer {
         if (!headers.containsKey("Content-Length")) {
             if (response.isExpectedToContinue())
                 builder.append("Content-Length: 0\r\n");
-            if (!response.isExpectedToBeChunked())
+            else if (!response.isExpectedToBeChunked())
                 if (buffer != null)
                     builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
         }
@@ -361,14 +360,15 @@ class MockWebServer {
 
         // Maybe send response body
         if (buffer != null) {
-            Settings.Throttle throttle = response.settings().throttle();
+            SettingsManager throttle = response.settings();
             transfer(buffer.size(), buffer, target, throttle);
         }
     }
 
     /**
      * Transfers content from a source to a target. The transfer is performed
-     * chunk-wise as defined by the given throttle settings.
+     * chunk-wise as defined by the given thrott            // Honor any
+     * response delays le settings.
      *
      * @param byteCount The desired number of bytes to transfer. This method
      *                  will not wait for any more bytes if the source is
@@ -376,26 +376,32 @@ class MockWebServer {
      * @param source    The byte stream source.
      * @param target    The transfer target destination.
      * @param settings  The throttle settings that describe the chunk size and
-     *                  pause period.
+     *                  pause period. Null triggers default throttling.
      * @throws IOException If the read or write operation would fail for some
      *                     reason.
      */
     private void transfer(final long byteCount,
                           final Source source,
                           final Sink target,
-                          final Settings.Throttle settings) throws IOException {
+                          final SettingsManager settings) throws IOException {
+
+        SettingsManager throttle = settings == null ?
+                new SettingsManager() :
+                settings;
+
+        long chunk = throttle.throttleByteCount();
+        long delay = throttle.throttleDelayMillis();
+        long remaining = byteCount != -1 ?
+                byteCount :
+                chunk;
 
         Buffer buffer = new Buffer();
-        long remaining = byteCount;
-
-        // Set the "chunk" size and pause metrics.
-        long chunk = settings.throttleByteCount;
-        long delay = settings.throttleDelayMillis;
-
-        while (true) {
+        while (remaining > 0) {
             long progress = 0;
 
-            // Transfer a chunk at a time
+            if (delay > 0L)
+                sleepSilently(delay);
+
             while (progress < chunk) {
                 long read = source.read(buffer, Math.min(remaining, chunk));
                 if (read == -1)
@@ -405,14 +411,7 @@ class MockWebServer {
                 target.flush();
                 progress += read;
                 remaining -= read;
-
-                if (remaining == 0)
-                    return;
             }
-
-            // And then maybe try to have a rest.
-            if (delay > 0L)
-                sleepSilently(delay);
         }
     }
 }

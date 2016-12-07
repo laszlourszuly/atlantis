@@ -72,8 +72,9 @@ class RealWebServer {
             Headers headers = response.headers();
             MockResponse.Builder mockResponse = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
-                    .setDelay(0, response.receivedResponseAtMillis() -
-                            response.sentRequestAtMillis());
+                    .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS,
+                            Long.toString(response.receivedResponseAtMillis() -
+                                    response.sentRequestAtMillis()));
 
             for (String key : headers.names())
                 mockResponse.addHeader(key, headers.get(key));

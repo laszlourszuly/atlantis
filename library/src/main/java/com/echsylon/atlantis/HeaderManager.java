@@ -1,6 +1,5 @@
 package com.echsylon.atlantis;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -49,9 +48,9 @@ class HeaderManager extends LinkedHashMap<String, String> {
 
     @Override
     public String putIfAbsent(String key, String value) {
-        return containsKey(key) ?
-                get(key) :
-                put(key, value);
+        return !containsKey(key) ?
+                put(key, value) :
+                get(key);
     }
 
     @Override

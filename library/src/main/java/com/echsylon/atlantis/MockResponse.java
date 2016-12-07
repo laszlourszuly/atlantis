@@ -17,27 +17,26 @@ import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.getNonNull;
 
 /**
- * This class contains the full description of a mock mockResponse.
+ * This class contains the full description of a mock response.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class MockResponse {
 
     /**
      * This interface describes the mandatory feature set to provide a mocked
-     * mockResponse. Implementing classes are responsible for picking a
-     * mockResponse from a given list of available responses. Any state machine
-     * etc is also in the scope of the implementing class.
+     * response. Implementing classes are responsible for picking a response
+     * from a given list of available responses. Any state machine etc is also
+     * in the scope of the implementing class.
      */
     public interface Filter {
 
         /**
-         * Returns a mocked mockResponse of choice. May be null, in which case
-         * the calling logic is responsible for deciding what mockResponse to
-         * serve.
+         * Returns a mocked response of choice. May be null, in which case the
+         * calling logic is responsible for deciding what response to serve.
          *
-         * @param mockResponses All available mockResponse to pick a candidate
-         *                      from. Null and empty lists are acceptable.
-         * @return The mockResponse candidate.
+         * @param mockResponses All available response to pick a candidate from.
+         *                      Null and empty lists are acceptable.
+         * @return The response candidate.
          */
         MockResponse findResponse(final List<MockResponse> mockResponses);
     }
@@ -49,8 +48,7 @@ public class MockResponse {
     public interface SourceHelper {
 
         /**
-         * Returns a stream from which the mockResponse body content can be
-         * read.
+         * Returns a stream from which the response body content can be read.
          *
          * @param text The description of the content to stream.
          * @return A data stream or null.
@@ -60,21 +58,22 @@ public class MockResponse {
 
 
     /**
-     * This class offers means of building a mocked mockResponse configuration
+     * This class offers means of building a mocked response configuration
      * directly from code (as opposed to configure one in a JSON file).
      */
     public static final class Builder {
         private final MockResponse mockResponse;
 
         /**
-         * Creates a new builder based on an uninitialized mockResponse object.
+         * Creates a new builder based on an uninitialized response object.
          */
         public Builder() {
             mockResponse = new MockResponse();
         }
 
         /**
-         * Adds a header to the mockResponse being built.
+         * Adds a header to the response being built. Any existing keys will be
+         * overwritten.
          *
          * @param key   The header key.
          * @param value The header value.
@@ -86,8 +85,9 @@ public class MockResponse {
         }
 
         /**
-         * Adds all headers to the mockResponse being built where neither the
-         * key nor the value is empty or null.
+         * Adds all headers to the response being built where neither the key
+         * nor the value is empty or null. Any existing keys will be
+         * overwritten.
          *
          * @param headers The headers to add.
          * @return This builder instance, allowing chaining of method calls.
@@ -98,9 +98,35 @@ public class MockResponse {
         }
 
         /**
-         * Sets the status of the mockResponse being built. Doesn't validate
-         * neither the given status code nor the phrase. It's up to the caller
-         * to ensure they match and make sense in the given context.
+         * Adds a setting to the response being built. Any existing keys will be
+         * overwritten.
+         *
+         * @param key   The setting key.
+         * @param value The setting value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addSetting(final String key, final String value) {
+            mockResponse.settings.put(key, value);
+            return this;
+        }
+
+        /**
+         * Adds all settings to the response being built where neither the key
+         * nor the value is empty or null. Any existing keys will be
+         * overwritten.
+         *
+         * @param settings The settings to add.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addSettings(final Map<String, String> settings) {
+            mockResponse.settings.putAll(settings);
+            return this;
+        }
+
+        /**
+         * Sets the status of the response being built. Doesn't validate neither
+         * the given status code nor the phrase. It's up to the caller to ensure
+         * they match and make sense in the given context.
          *
          * @param code   The new HTTP status code.
          * @param phrase The corresponding human readable status text (e.g.
@@ -113,10 +139,9 @@ public class MockResponse {
         }
 
         /**
-         * Sets a byte array as the body content of the mockResponse being
-         * built.
+         * Sets a byte array as the body content of the response being built.
          *
-         * @param bytes The new mockResponse body content.
+         * @param bytes The new response body content.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final byte[] bytes) {
@@ -125,9 +150,9 @@ public class MockResponse {
         }
 
         /**
-         * Sets a string as the body content of the mockResponse being built.
+         * Sets a string as the body content of the response being built.
          *
-         * @param string The new mockResponse body content.
+         * @param string The new response body content.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final String string) {
@@ -144,9 +169,9 @@ public class MockResponse {
 
         /**
          * Sets a file (the content of the file to be more specific) as the body
-         * content of the mockResponse being built.
+         * content of the response being built.
          *
-         * @param file The new mockResponse body content.
+         * @param file The new response body content.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final File file) {
@@ -163,9 +188,9 @@ public class MockResponse {
 
         /**
          * Sets an InputStream (the data provided by the input stream to be more
-         * specific) as the body content of the mockResponse being built.
+         * specific) as the body content of the response being built.
          *
-         * @param inputStream The new mockResponse body content.
+         * @param inputStream The new response body content.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final InputStream inputStream) {
@@ -174,10 +199,9 @@ public class MockResponse {
         }
 
         /**
-         * Returns a sealed mockResponse object which can not be further built
-         * on.
+         * Returns a sealed response object which can not be further built on.
          *
-         * @return The final mockResponse object.
+         * @return The final response object.
          */
         public MockResponse build() {
             return mockResponse;
@@ -200,20 +224,21 @@ public class MockResponse {
 
 
     private String text = null;
-    private Settings settings = null;
     private ResponseCode responseCode = null;
     private HeaderManager headers = null;
+    private SettingsManager settings = null;
     private transient SourceHelper sourceHelper = null;
 
 
     MockResponse() {
         headers = new HeaderManager();
+        settings = new SettingsManager();
     }
 
     /**
-     * Returns the mocked mockResponse code.
+     * Returns the mocked response code.
      *
-     * @return The mocked HTTP mockResponse code.
+     * @return The mocked HTTP response code.
      */
     public int code() {
         return responseCode != null ?
@@ -222,9 +247,9 @@ public class MockResponse {
     }
 
     /**
-     * Returns the mocked mockResponse phrase.
+     * Returns the mocked response phrase.
      *
-     * @return The mocked HTTP mockResponse phrase.
+     * @return The mocked HTTP response phrase.
      */
     public String phrase() {
         return responseCode != null ?
@@ -233,34 +258,34 @@ public class MockResponse {
     }
 
     /**
-     * Returns an unmodifiable map of the mocked mockResponse headers. NOTE!
-     * that {@code Atlantis} may internally decide to add, remove or overwrite
-     * some headers, depending on the characteristics of the mockResponse
-     * itself. "Content-Length" would be an example of this.
+     * Returns an unmodifiable map of the mocked response headers. NOTE! that
+     * {@code Atlantis} may internally decide to add, remove or overwrite some
+     * headers, depending on the characteristics of the response itself.
+     * "Content-Length" would be an example of this.
      *
-     * @return The unmodifiable mockResponse headers map as per definition in
-     * {@link Collections#unmodifiableMap(Map)}.
+     * @return The unmodifiable response headers map as per definition in {@link
+     * Collections#unmodifiableMap(Map)}.
      */
     public Map<String, String> headers() {
         return Collections.unmodifiableMap(headers);
     }
 
     /**
-     * Returns the body content description of this mock mockResponse. NOTE!
-     * that this isn't necessarily the actual data, but rather a description of
-     * how to get hold of the data, e.g. "file://path/to/file.json" is a
-     * perfectly valid body content descriptor.
+     * Returns the body content description of this mock response. NOTE! that
+     * this isn't necessarily the actual data, but rather a description of how
+     * to get hold of the data, e.g. "file://path/to/file.json" is a perfectly
+     * valid body content descriptor.
      *
-     * @return A string that describes the mock mockResponse body content.
+     * @return A string that describes the mock response body content.
      */
     public String body() {
         return text;
     }
 
     /**
-     * Returns the mocked mockResponse body stream.
+     * Returns the mocked response body stream.
      *
-     * @return The mockResponse body.
+     * @return The response body.
      */
     Source content() {
         return sourceHelper != null ?
@@ -269,19 +294,17 @@ public class MockResponse {
     }
 
     /**
-     * Returns the mockResponse behavior settings.
+     * Returns the response behavior settings.
      *
-     * @return The mockResponse settings.
+     * @return The response settings.
      */
-    Settings settings() {
-        return settings == null ?
-                new Settings() :
-                settings;
+    SettingsManager settings() {
+        return settings;
     }
 
     /**
      * Sets the source helper implementation that will help open a data stream
-     * for any mockResponse body content.
+     * for any response body content.
      *
      * @param sourceHelper The source open helper.
      */
