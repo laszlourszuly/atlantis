@@ -147,7 +147,7 @@ public class Atlantis {
      * request templates or not.
      *
      * @return Boolean true if missing requests are recorded, false otherwise.
-     * @see #setRecordMissingRequestsState(boolean)
+     * @see #setRecordMissingRequestsEnabled(boolean)
      */
     public boolean isRecordingMissingRequests() {
         return recordMissingRequests;
@@ -158,7 +158,7 @@ public class Atlantis {
      * request templates or not.
      *
      * @return Boolean true if served requests are recorded, false otherwise.
-     * @see #setRecordServedRequestsState(boolean)
+     * @see #setRecordServedRequestsEnabled(boolean)
      */
     public boolean isRecordingServedRequests() {
         return recordServedRequests;
@@ -182,10 +182,11 @@ public class Atlantis {
      * The recorded requests will be written to the "atlantis" directory in the
      * client apps external files directory
      *
-     * @param state Boolean true to enable the feature, false to disable it.
+     * @param enabled Boolean true to enable the feature, false to disable it.
      */
-    public void setRecordMissingRequestsState(boolean state) {
-        recordMissingRequests = state && notEmpty(configuration.fallbackBaseUrl());
+    public void setRecordMissingRequestsEnabled(boolean enabled) {
+        recordMissingRequests = enabled && notEmpty(configuration.fallbackBaseUrl());
+        info("Record missing requests: %s", enabled ? "enabled" : "disabled");
     }
 
     /**
@@ -202,11 +203,12 @@ public class Atlantis {
      * actually served mocked response. It all depends on the response filter
      * associated with the particular request template.
      *
-     * @param state Boolean true to enable the feature, false to disable it.
+     * @param enabled Boolean true to enable the feature, false to disable it.
      */
-    public void setRecordServedRequestsState(boolean state) {
-        recordServedRequests = state;
-        if (state)
+    public void setRecordServedRequestsEnabled(boolean enabled) {
+        recordServedRequests = enabled;
+        info("Record served requests: %s", enabled ? "enabled" : "disabled");
+        if (enabled)
             servedRequests.clear();
     }
 
