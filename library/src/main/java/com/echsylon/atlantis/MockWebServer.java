@@ -115,27 +115,29 @@ class MockWebServer {
      * Closes the server socket and awaits termination of all background
      * services.
      *
-     * @throws IOException If the server socket didn't close or any services
-     *                     didn't terminate.
+     * @throws IOException If the server socket didn't close properly.
      */
     private synchronized void shutdown() throws IOException {
         if (!started)
             return;
 
-        // Release any acceptConnections()
         serverSocket.close();
+        started = false;
 
-        try {
-            if (!executorService.awaitTermination(10, TimeUnit.SECONDS))
-                throw new IOException("Executor didn't shutdown in a timely manner");
-        } catch (InterruptedException e) {
-            info("Interrupted prematurely by system");
-        } finally {
-            executorService = null;
-            for (Iterator<Socket> iterator = openClientSockets.iterator(); iterator.hasNext(); iterator.remove())
-                closeSilently(iterator.next());
-            started = false;
-        }
+        // Don't let the shutdown process block the Android main thread.
+        new Thread(() -> {
+            try {
+                if (!executorService.awaitTermination(10, TimeUnit.SECONDS))
+                    throw new IOException();
+            } catch (InterruptedException e) {
+                info("Interrupted prematurely by system");
+            } catch (IOException e) {
+                info("Executor didn't shutdown in a timely manner");
+            } finally {
+                for (Iterator<Socket> iterator = openClientSockets.iterator(); iterator.hasNext(); iterator.remove())
+                    closeSilently(iterator.next());
+            }
+        }, "Atlantis Shutdown Task").start();
     }
 
     /**
