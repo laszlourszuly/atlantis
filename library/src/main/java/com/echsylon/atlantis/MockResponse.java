@@ -8,7 +8,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import okio.Okio;
 import okio.Source;
@@ -175,35 +174,6 @@ public class MockResponse {
         }
 
         /**
-         * Sets the default delay for the mockResponse being built, disabling
-         * the max delay.
-         *
-         * @param milliseconds The new amount of milliseconds to delay this
-         *                     mockResponse.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setDelay(long milliseconds) {
-            mockResponse.delay = milliseconds;
-            mockResponse.maxDelay = null;
-            return this;
-        }
-
-        /**
-         * Sets the random delay metrics for the mockResponse being built.
-         *
-         * @param milliseconds    The minimum amount of random milliseconds to
-         *                        delay this mockResponse.
-         * @param maxMilliseconds The maximum amount of random milliseconds to
-         *                        delay this mockResponse.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setDelay(long milliseconds, long maxMilliseconds) {
-            mockResponse.delay = milliseconds;
-            mockResponse.maxDelay = maxMilliseconds;
-            return this;
-        }
-
-        /**
          * Returns a sealed mockResponse object which can not be further built
          * on.
          *
@@ -230,8 +200,6 @@ public class MockResponse {
 
 
     private String text = null;
-    private Long delay = null;
-    private Long maxDelay = null;
     private Settings settings = null;
     private ResponseCode responseCode = null;
     private HeaderManager headers = null;
@@ -298,39 +266,6 @@ public class MockResponse {
         return sourceHelper != null ?
                 sourceHelper.open(text) :
                 null;
-    }
-
-    /**
-     * Returns the amount of milliseconds this mockResponse should be delayed
-     * before the mockResponse body is sent to the waiting HTTP client. The
-     * algorithm as of which the "delay" and "maxDelay" parameters are
-     * interpreted is:
-     * <p>
-     * If only the "delay" variable is set, then that value is returned.
-     * <p>
-     * If both "delay" and "maxDelay" is given, then a different random number
-     * between those values is returned every time this method is called.
-     * <p>
-     * If only "maxDelay" is given then a different random number between zero
-     * (0) and "maxDelay" is returned every time this method is called.
-     * <p>
-     * If neither "delay" nor "maxDelay" is given, then zero (0) is returned.
-     * <p>
-     * If "maxDelay" is less than "delay" then "delay" is returned.
-     *
-     * @return A number of milliseconds. Never less than zero (0). Zero means no
-     * delay.
-     */
-    long delay() {
-        if (maxDelay == null || maxDelay.equals(delay))
-            return Math.max(0L, getNative(delay, 0L));
-
-        long min = Math.max(0L, getNative(delay, 0L));
-        long max = Math.max(0L, getNative(maxDelay, 0L));
-
-        return max > min ?
-                new Random().nextInt((int) (max - min)) + min :
-                min;
     }
 
     /**
