@@ -86,9 +86,9 @@ class RealWebServer {
                 if (directory == null) {
                     mockResponse.setBody(bytes);
                 } else {
-                    File file;
-                    if ((file = writeResponseToFile(bytes, directory, response.request())) != null)
-                        mockResponse.setBody(file);
+                    File file = writeResponseToFile(bytes, directory, response.request());
+                    if (file != null)
+                        mockResponse.setBody("file://" + file.getAbsolutePath());
                 }
             }
 

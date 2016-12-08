@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +138,17 @@ public class MockResponse {
         }
 
         /**
+         * Sets a string as the body content of the response being built.
+         *
+         * @param string The new response body content.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setBody(final String string) {
+            mockResponse.text = string;
+            return this;
+        }
+
+        /**
          * Sets a byte array as the body content of the response being built.
          *
          * @param bytes The new response body content.
@@ -146,24 +156,6 @@ public class MockResponse {
          */
         public Builder setBody(final byte[] bytes) {
             mockResponse.sourceHelper = text -> Okio.source(new ByteArrayInputStream(bytes));
-            return this;
-        }
-
-        /**
-         * Sets a string as the body content of the response being built.
-         *
-         * @param string The new response body content.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setBody(final String string) {
-            mockResponse.sourceHelper = text -> {
-                try {
-                    return Okio.source(new ByteArrayInputStream(string.getBytes("UTF-8")));
-                } catch (UnsupportedEncodingException e) {
-                    info(e, "Couldn't open UTF-8 string source: %s", string);
-                    return null;
-                }
-            };
             return this;
         }
 
