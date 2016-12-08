@@ -1,5 +1,7 @@
 package com.echsylon.atlantis;
 
+import android.net.Uri;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -68,6 +70,11 @@ class RealWebServer {
      */
     MockRequest getRealTemplate(final Meta meta, final Source requestBody, final File directory) {
         try {
+            // We're leaving the Atlantis universe, let's reflect the new
+            // reality in the "Host" header as well.
+            meta.addHeader("Host", Uri.parse(baseUrl).getHost());
+
+            // Now get the real response.
             Response response = getRealResponse(meta, requestBody);
             MockResponse.Builder mockResponse = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
