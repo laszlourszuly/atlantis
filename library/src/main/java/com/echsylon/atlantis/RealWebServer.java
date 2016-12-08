@@ -60,22 +60,22 @@ class RealWebServer {
      * Performs a request to a real server and returns a mock request with the
      * corresponding real response (now expressed as a mock response).
      *
-     * @param meta      The meta data describing the request to make.
-     * @param source    The request body content stream.
-     * @param directory If given, the directory to persist the response to.
+     * @param meta        The meta data describing the request to make.
+     * @param requestBody The request body content stream.
+     * @param directory   If given, the directory to persist the response to.
      * @return The mock request describing the real request and wrapping the
      * real response.
      */
-    MockRequest getRealTemplate(final Meta meta, final Source source, final File directory) {
+    MockRequest getRealTemplate(final Meta meta, final Source requestBody, final File directory) {
         try {
-            Response response = getRealResponse(meta, source);
-            Headers headers = response.headers();
+            Response response = getRealResponse(meta, requestBody);
             MockResponse.Builder mockResponse = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
                     .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS,
                             Long.toString(response.receivedResponseAtMillis() -
                                     response.sentRequestAtMillis()));
 
+            Headers headers = response.headers();
             for (String key : headers.names())
                 mockResponse.addHeader(key, headers.get(key));
 
@@ -106,23 +106,23 @@ class RealWebServer {
     /**
      * Gets a real response from a real server.
      *
-     * @param meta   The meta data describing the request.
-     * @param source The request body content stream.
+     * @param meta        The meta data describing the request.
+     * @param requestBody The request body content stream.
      * @return The real response as delivered by the backing HTTP client.
      * @throws IOException if anything would go wrong during the request.
      */
-    private Response getRealResponse(final Meta meta, final Source source) throws IOException {
+    private Response getRealResponse(final Meta meta, final Source requestBody) throws IOException {
         Request.Builder request = new Request.Builder();
         request.url(baseUrl + meta.url());
 
-        if (source != null) {
-            String contentType = meta.headers().get("Content-Type");
-            RequestBody body = new SourceRequestBody(contentType, source);
-            request.method(meta.method(), body);
-        }
-
         for (Map.Entry<String, String> entry : meta.headers().entrySet())
             request.addHeader(entry.getKey(), entry.getValue());
+
+        if (requestBody != null) {
+            String contentType = meta.headers().get("Content-Type");
+            RequestBody body = new SourceRequestBody(contentType, requestBody);
+            request.method(meta.method(), body);
+        }
 
         return new OkHttpClient()
                 .newCall(request.build())
@@ -138,8 +138,10 @@ class RealWebServer {
      * @return The persisted file handle or null.
      */
     private File writeResponseToFile(final byte[] body, final File directory, final Request request) {
-        if (isEmpty(body))
+        if (isEmpty(body)) {
+            info("No response body to persist: %s", request.url());
             return null;
+        }
 
         BufferedSink target = null;
 
@@ -147,9 +149,10 @@ class RealWebServer {
             File file = getTargetFile(request, directory);
             target = Okio.buffer(Okio.sink(file));
             target.write(body);
+            info("Saved mock response to: %s", file.getAbsolutePath());
             return file;
         } catch (Exception e) {
-            info(e, "Couldn't save mock response: %s", request.url().toString());
+            info(e, "Couldn't save mock response: %s", request.url());
             return null;
         } finally {
             closeSilently(target);
