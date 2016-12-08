@@ -95,7 +95,6 @@ class RealWebServer {
             return new MockRequest.Builder()
                     .setMethod(meta.method())
                     .setUrl(meta.url())
-                    .addHeaders(meta.headers())
                     .addResponse(mockResponse.build())
                     .build();
         } catch (IOException e) {
