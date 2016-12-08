@@ -342,7 +342,7 @@ public class Atlantis {
             JsonParser jsonParser = new JsonParser();
             String json = jsonParser.toJson(configuration, Configuration.class);
             File file = new File(directory, "configuration.json");
-            file.mkdirs();
+            directory.mkdirs();
             target = Okio.buffer(Okio.sink(file));
             target.writeUtf8(json);
             return file;

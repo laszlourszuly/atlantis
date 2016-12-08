@@ -175,7 +175,7 @@ class RealWebServer {
         File methodDir = new File(directory, method);
         File pathDir = new File(methodDir, path);
         File file = new File(pathDir, name);
-        file.mkdirs();
+        pathDir.mkdirs();
 
         return file;
     }
