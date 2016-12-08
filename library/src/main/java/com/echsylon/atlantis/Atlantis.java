@@ -9,7 +9,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +34,6 @@ import static com.echsylon.atlantis.Utils.notEmpty;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class Atlantis {
     private static final int PORT = 8080;
-    private static final String HOSTNAME = "localhost";
     private static final MockResponse NOT_FOUND = new MockResponse.Builder()
             .setStatus(404, "Not Found")
             .addHeader("Content-Length", "0")
@@ -113,7 +111,11 @@ public class Atlantis {
      */
     public void start() {
         try {
-            mockServer.start(InetAddress.getByName(HOSTNAME), PORT);
+            // Null InetSocketAddress will force the internal ServerSocket to
+            // assume the "wildcard" address (ultimately "localhost") as host,
+            // with the given benefit of not attempting to resolve it on the
+            // network.
+            mockServer.start(null, PORT);
         } catch (IOException e) {
             info(e, "Couldn't start Atlantis");
         }
