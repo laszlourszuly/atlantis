@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.echsylon.sample">
 
-    <application
-        android:name=".AtlantisSampleApplication"
-        tools:replace="android:name"/>
+    <application>
+        <service
+            android:name=".MockedNetworkService"
+            android:exported="false"/>
+    </application>
 
 </manifest>

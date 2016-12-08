@@ -43,4 +43,5 @@ dependencies {
     debugCompile project(':library')
     compile 'com.android.support:appcompat-v7:25.0.1'
     compile 'com.android.support:design:25.0.1'
+    compile 'com.squareup.okio:okio:1.11.0'
 }

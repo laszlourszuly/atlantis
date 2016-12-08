@@ -1,25 +1,22 @@
 package com.echsylon.sample;
 
 import android.app.Application;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatDelegate;
-
-import java.io.File;
+import android.widget.Toast;
 
 public class SampleApplication extends Application {
+    private static final String ATLANTIS_START_ACTION =
+            "echsylon.atlantis.action.START";
 
-    public interface ResultListener {
-        void onResult(Throwable error);
-    }
+    private static final ComponentName ATLANTIS_COMPONENT = new ComponentName(
+            "com.echsylon.sample",
+            "com.echsylon.sample.MockedNetworkService");
 
-    public void saveConfiguration(final File file, final ResultListener listener) {
-    }
-
-    public void startRecording(File file, final ResultListener listener) {
-    }
-
-    public void stopRecording(final ResultListener listener) {
-    }
+    private static final String ATLANTIS_EXTRA_CONFIGURATION =
+            "echsylon.atlantis.extra.CONFIGURATION";
 
     @Override
     public void onCreate() {
@@ -27,8 +24,12 @@ public class SampleApplication extends Application {
         // https://medium.com/@chrisbanes/appcompat-v23-2-age-of-the-vectors-91cbafa87c88
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
-        // Enable some strict mode flags. The underlying, third party web server
-        // used by Atlantis may sometimes trigger these guards.
+        enableStrictMode();
+        maybeStartAtlantis();
+        super.onCreate();
+    }
+
+    private void enableStrictMode() {
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
                 .detectAll()
                 .penaltyLog()
@@ -39,7 +40,14 @@ public class SampleApplication extends Application {
                 .penaltyLog()
                 .penaltyDeath()
                 .build());
+    }
 
-        super.onCreate();
+    private void maybeStartAtlantis() {
+        Intent intent = new Intent(ATLANTIS_START_ACTION);
+        intent.setComponent(ATLANTIS_COMPONENT);
+        intent.putExtra(ATLANTIS_EXTRA_CONFIGURATION, "atlantis.json");
+
+        if (startService(intent) == null)
+            Toast.makeText(getApplicationContext(), R.string.atlantis_not_available, Toast.LENGTH_SHORT).show();
     }
 }

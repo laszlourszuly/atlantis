@@ -1,6 +1,7 @@
 package com.echsylon.sample;
 
 import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
@@ -10,6 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -19,7 +21,6 @@ import android.widget.TextView;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView output;
     private View anchor;
 
-    private Drawable iconSave;
     private Drawable iconEnableRecording;
     private Drawable iconDisableRecording;
 
@@ -48,11 +48,9 @@ public class MainActivity extends AppCompatActivity {
 
         output = (TextView) findViewById(R.id.output);
         anchor = findViewById(R.id.coordinator_layout);
-        iconSave = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_save_black_24px)).mutate();
         iconEnableRecording = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_radio_button_checked_black_24px)).mutate();
         iconDisableRecording = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_radio_button_unchecked_black_24px)).mutate();
 
-        DrawableCompat.setTint(iconSave, ContextCompat.getColor(this, R.color.icons));
         DrawableCompat.setTint(iconEnableRecording, ContextCompat.getColor(this, R.color.icons));
         DrawableCompat.setTint(iconDisableRecording, ContextCompat.getColor(this, R.color.icons));
 
@@ -72,10 +70,6 @@ public class MainActivity extends AppCompatActivity {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
 
-        MenuItem save = menu.findItem(R.id.save_configuration);
-        save.setIcon(iconSave);
-        save.setVisible(BuildConfig.DEBUG);
-
         // Initialize the "record" menu item with the correct icon.
         MenuItem record = menu.findItem(R.id.record);
         record.setIcon(record.isChecked() ? iconEnableRecording : iconDisableRecording);
@@ -94,10 +88,6 @@ public class MainActivity extends AppCompatActivity {
                 setRecordingState(isEnabled);
                 return true;
             }
-            case R.id.save_configuration: {
-                saveConfiguration();
-                return true;
-            }
             case R.id.help: {
                 Intent intent = new Intent(this, HelpActivity.class);
                 startActivity(intent);
@@ -109,34 +99,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setRecordingState(boolean isRecordingEnabled) {
-        if (isRecordingEnabled) {
-            File root = new File(getExternalFilesDir(null), "atlantis");
-            root.mkdirs();
-            ((SampleApplication) getApplication()).startRecording(root, error ->
-                    Snackbar.make(anchor, R.string.enabled_recording, Snackbar.LENGTH_LONG).show());
-        } else {
-            ((SampleApplication) getApplication()).stopRecording(error ->
-                    Snackbar.make(anchor, R.string.disabled_recording, Snackbar.LENGTH_SHORT).show());
-        }
-    }
-
-    private void saveConfiguration() {
-        File root = new File(getExternalFilesDir(null), "atlantis");
-        File configFile = new File(root, "configuration.json");
-        root.mkdirs();
-
-        ((SampleApplication) getApplication()).saveConfiguration(configFile,
-                error -> {
-                    String message = error == null ?
-                            getString(R.string.configuration_written_to_s, configFile.getAbsolutePath()) :
-                            getString(R.string.could_not_write_configuration_to_file);
-
-                    final Snackbar snackbar = Snackbar.make(anchor, message, Snackbar.LENGTH_INDEFINITE);
-                    snackbar.setAction(android.R.string.ok, view -> snackbar.dismiss());
-                    TextView textView = (TextView) snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
-                    textView.setMaxLines(5);
-                    snackbar.show();
-                });
+        Intent intent = new Intent("echsylon.atlantis.action.SET");
+        intent.setComponent(new ComponentName("com.echsylon.sample", "com.echsylon.sample.MockedNetworkService"));
+        intent.putExtra("echsylon.atlantis.extra.FEATURE", "RECORD_MISSING_REQUESTS");
+        intent.putExtra("echsylon.atlantis.extra.STATE", isRecordingEnabled);
+        if (startService(intent) == null)
+            Snackbar.make(anchor, R.string.atlantis_not_available, Snackbar.LENGTH_SHORT).show();
     }
 
     private void showProgress(String message) {
@@ -177,7 +145,6 @@ public class MainActivity extends AppCompatActivity {
                 InputStream inputStream = null;
                 long startTime = System.currentTimeMillis();
                 try {
-
                     URL url = new URL(urlString);
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");

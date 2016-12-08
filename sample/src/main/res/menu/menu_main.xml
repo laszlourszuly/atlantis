@@ -10,12 +10,6 @@
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/save_configuration"
-        android:icon="@drawable/ic_save_black_24px"
-        android:title="@string/save_configuration"
-        app:showAsAction="ifRoom"/>
-
-    <item
         android:id="@+id/help"
         android:title="@string/help"
         app:showAsAction="never"/>
