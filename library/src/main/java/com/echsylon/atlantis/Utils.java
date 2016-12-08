@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
+import okio.Buffer;
 import okio.Sink;
 import okio.Source;
 
@@ -99,6 +100,18 @@ class Utils {
         } catch (IOException e) {
             info(e, "Couldn't close sink");
         }
+    }
+
+    /**
+     * Tries to close a buffer.
+     *
+     * @param buffer The buffer to close.
+     */
+    static void closeSilently(Buffer buffer) {
+        if (buffer == null)
+            return;
+
+        buffer.close();
     }
 
     /**

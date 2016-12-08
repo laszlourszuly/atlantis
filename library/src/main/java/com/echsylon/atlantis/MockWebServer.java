@@ -284,37 +284,43 @@ class MockWebServer {
      * @throws IOException If the body couldn't be read.
      */
     private Buffer readRequestBody(final Meta meta, final BufferedSource source) throws IOException {
-        Buffer buffer = new Buffer();
+        Buffer buffer = null;
 
-        // Regular request body.
-        if (meta.isExpectedToHaveBody()) {
-            String headerValue = meta.headers().get("Content-Type");
-            long count = Long.valueOf(headerValue, 10);
-            transfer(count, source, buffer, null);
+        try {
+            // Regular request body.
+            if (meta.isExpectedToHaveBody()) {
+                String headerValue = meta.headers().get("Content-Type");
+                long count = Long.valueOf(headerValue, 10);
+                buffer = new Buffer();
+                transfer(count, source, buffer, null);
 
-            info("Read default request body: %s bytes", buffer.size());
-            return buffer;
+                info("Read default request body: %s bytes", buffer.size());
+                return buffer;
+            }
+
+            // Chunked request body
+            if (meta.isExpectedToBeChunked()) {
+                buffer = new Buffer();
+                String chunkSizeLine;
+                int chunkSize;
+                do {
+                    chunkSizeLine = source.readUtf8LineStrict();
+                    chunkSize = Integer.valueOf(chunkSizeLine, 16);
+                    buffer.writeUtf8(chunkSizeLine);
+                    buffer.writeUtf8("\r\n");
+                    transfer(chunkSize, source, buffer, null);
+                    buffer.writeUtf8("\r\n");
+                } while (chunkSize != 0);
+
+                info("Read chunked request body: %s bytes", buffer.size());
+                return buffer;
+            }
+
+            info("No request body to read");
+            return null;
+        } finally {
+            closeSilently(buffer);
         }
-
-        // Chunked request body
-        if (meta.isExpectedToBeChunked()) {
-            String chunkSizeLine;
-            int chunkSize;
-            do {
-                chunkSizeLine = source.readUtf8LineStrict();
-                chunkSize = Integer.valueOf(chunkSizeLine, 16);
-                buffer.writeUtf8(chunkSizeLine);
-                buffer.writeUtf8("\r\n");
-                transfer(chunkSize, source, buffer, null);
-                buffer.writeUtf8("\r\n");
-            } while (chunkSize != 0);
-
-            info("Read chunked request body: %s bytes", buffer.size());
-            return buffer;
-        }
-
-        info("No request body to read");
-        return null;
     }
 
     /**
@@ -327,41 +333,47 @@ class MockWebServer {
     private void writeResponse(final MockResponse response,
                                final BufferedSink target) throws IOException {
 
-        Source source = response.content();
+        Source source = null;
         Buffer buffer = null;
 
-        // Maybe buffer response body.
-        if (source != null && !response.isExpectedToContinue()) {
-            buffer = new Buffer();
-            transfer(-1, source, buffer, null);
-        }
+        try {
+            // Maybe buffer response body.
+            source = response.content();
+            if (source != null && !response.isExpectedToContinue()) {
+                buffer = new Buffer();
+                transfer(-1, source, buffer, null);
+            }
 
-        // Send the response meta
-        StringBuilder builder = new StringBuilder();
-        builder.append(String.format("HTTP/1.1 %s %s\r\n", response.code(), response.phrase()));
-        Map<String, String> headers = response.headers();
-        for (Map.Entry<String, String> entry : headers.entrySet())
-            builder.append(String.format("%s: %s\r\n", entry.getKey(), entry.getValue()));
+            // Send the response meta
+            StringBuilder builder = new StringBuilder();
+            builder.append(String.format("HTTP/1.1 %s %s\r\n", response.code(), response.phrase()));
+            Map<String, String> headers = response.headers();
+            for (Map.Entry<String, String> entry : headers.entrySet())
+                builder.append(String.format("%s: %s\r\n", entry.getKey(), entry.getValue()));
 
-        // Maybe set Content-Length header
-        if (!headers.containsKey("Content-Length")) {
-            if (response.isExpectedToContinue())
-                builder.append("Content-Length: 0\r\n");
-            else if (!response.isExpectedToBeChunked())
-                if (buffer != null)
-                    builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
-        }
+            // Maybe set Content-Length header
+            if (!headers.containsKey("Content-Length")) {
+                if (response.isExpectedToContinue())
+                    builder.append("Content-Length: 0\r\n");
+                else if (!response.isExpectedToBeChunked())
+                    if (buffer != null)
+                        builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
+            }
 
-        builder.append("\r\n");
-        String string = builder.toString();
-        target.writeUtf8(string);
-        target.flush();
-        info("Response: %s", string);
+            builder.append("\r\n");
+            String string = builder.toString();
+            target.writeUtf8(string);
+            target.flush();
+            info("Response: %s", string);
 
-        // Maybe send response body
-        if (buffer != null) {
-            SettingsManager throttle = response.settings();
-            transfer(buffer.size(), buffer, target, throttle);
+            // Maybe send response body
+            if (buffer != null) {
+                SettingsManager throttle = response.settings();
+                transfer(buffer.size(), buffer, target, throttle);
+            }
+        } finally {
+            closeSilently(source);
+            closeSilently(buffer);
         }
     }
 
