@@ -3,15 +3,11 @@ package com.echsylon.sample;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -35,9 +31,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView output;
     private View anchor;
 
-    private Drawable iconEnableRecording;
-    private Drawable iconDisableRecording;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,11 +41,6 @@ public class MainActivity extends AppCompatActivity {
 
         output = (TextView) findViewById(R.id.output);
         anchor = findViewById(R.id.coordinator_layout);
-        iconEnableRecording = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_radio_button_checked_black_24px)).mutate();
-        iconDisableRecording = DrawableCompat.wrap(ContextCompat.getDrawable(this, R.drawable.ic_radio_button_unchecked_black_24px)).mutate();
-
-        DrawableCompat.setTint(iconEnableRecording, ContextCompat.getColor(this, R.color.icons));
-        DrawableCompat.setTint(iconDisableRecording, ContextCompat.getColor(this, R.color.icons));
 
         findViewById(R.id.get_real).setOnClickListener(view -> {
             String url = String.format("%s/aye/a/bee/b/cee/c", BuildConfig.BASE_URL);
@@ -69,23 +57,13 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-
-        // Initialize the "record" menu item with the correct icon.
-        MenuItem record = menu.findItem(R.id.record);
-        record.setIcon(record.isChecked() ? iconEnableRecording : iconDisableRecording);
-        record.setVisible(BuildConfig.DEBUG);
-
+        menu.findItem(R.id.atlantis).setVisible(BuildConfig.DEBUG);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.record: {
-                boolean isEnabled = !item.isChecked();
-                item.setChecked(isEnabled);
-                item.setIcon(isEnabled ? iconEnableRecording : iconDisableRecording);
-                setRecordingState(isEnabled);
                 return true;
             }
             case R.id.help: {
@@ -96,15 +74,6 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    private void setRecordingState(boolean isRecordingEnabled) {
-        Intent intent = new Intent("echsylon.atlantis.action.SET");
-        intent.setComponent(new ComponentName("com.echsylon.sample", "com.echsylon.sample.MockedNetworkService"));
-        intent.putExtra("echsylon.atlantis.extra.FEATURE", "RECORD_MISSING_REQUESTS");
-        intent.putExtra("echsylon.atlantis.extra.STATE", isRecordingEnabled);
-        if (startService(intent) == null)
-            Snackbar.make(anchor, R.string.atlantis_not_available, Snackbar.LENGTH_SHORT).show();
     }
 
     private void showProgress(String message) {
