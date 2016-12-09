@@ -3,6 +3,11 @@
       xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/atlantis"
+        android:title="@string/atlantis"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/help"
         android:title="@string/help"
         app:showAsAction="never"/>

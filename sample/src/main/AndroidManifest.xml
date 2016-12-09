@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.echsylon.sample">
 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -18,10 +19,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
         <activity
             android:name=".HelpActivity"
             android:label="@string/help"
             android:parentActivityName=".MainActivity"/>
+
+        <!-- This is only to contaminate the Atlantis Settings activity with
+             the Sample apps app theme. -->
+        <activity
+            android:name="com.echsylon.atlantis.extras.AtlantisSettingsActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme"
+            tools:replace="android:theme"/>
 
     </application>
 

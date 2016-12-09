@@ -64,11 +64,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.atlantis: {
+                startActivity(new Intent()
+                        .setComponent(new ComponentName("com.echsylon.sample",
+                                "com.echsylon.atlantis.extras.AtlantisSettingsActivity")));
                 return true;
             }
             case R.id.help: {
-                Intent intent = new Intent(this, HelpActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(this, HelpActivity.class));
                 return true;
             }
             default:
@@ -80,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         if (progress != null && progress.isShowing())
             progress.dismiss();
 
-        progress = ProgressDialog.show(MainActivity.this, null, message, true);
+        progress = ProgressDialog.show(this, null, message, true);
     }
 
     private void hideProgress() {
@@ -137,12 +140,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(String result) {
                 hideProgress();
-
-                if (resultContainer != null)
-                    resultContainer.setText(result.replaceAll("\n", System.getProperty("line.separator")));
-
                 String message = getString(R.string.turn_around_time_x, time);
                 Snackbar.make(anchor, message, Snackbar.LENGTH_SHORT).show();
+                if (resultContainer != null)
+                    resultContainer.setText(result);
             }
         }.execute();
     }
