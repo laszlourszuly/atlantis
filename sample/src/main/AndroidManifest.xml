@@ -9,11 +9,12 @@
     <application
         android:name=".SampleApplication"
         android:allowBackup="true"
-        android:label="Sample"
+        android:label="@string/sample"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -29,9 +30,10 @@
              the Sample apps app theme. -->
         <activity
             android:name="com.echsylon.atlantis.extras.AtlantisSettingsActivity"
+            android:label="@string/sample_settings"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme"
-            tools:replace="android:theme"/>
+            tools:replace="android:theme,android:label"/>
 
     </application>
 

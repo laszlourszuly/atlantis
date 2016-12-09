@@ -11,5 +11,13 @@
     </string>
     <string name="how_to_use_app">How to use the Sample app</string>
     <string name="output">Output</string>
+    <string name="sample">Sample</string>
+    <string name="sample_settings">Sample Settings</string>
     <string name="turn_around_time_x">Turn-around time: %d</string>
+    <string name="url">URL</string>
+
+    <string-array name="default_urls">
+        <item>http://echo.jsontest.com/aye/a/bee/b/cee/c</item>
+        <item>http://localhost:8080/aye/a/bee/b/cee/c</item>
+    </string-array>
 </resources>

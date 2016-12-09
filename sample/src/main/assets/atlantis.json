@@ -2,7 +2,7 @@
   "fallbackBaseUrl": "http://echo.jsontest.com",
   "requests": [
     {
-      "url": "/one/1/two/2/three/3",
+      "url": "/aye/a/bee/b/cee/c",
       "method": "GET",
       "responses": [
         {
@@ -17,7 +17,7 @@
             "throttleMinDelayMillis": "100",
             "throttleMaxDelayMillis": "1200"
           },
-          "text": "{'mock_attr_1': 'mock value 1', 'mock_attr_2': 'mock value 2'}"
+          "text": "asset://mock_response.json"
         }
       ]
     }
