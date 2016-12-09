@@ -1,0 +1,29 @@
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.echsylon.atlantis.extras">
+
+    <application>
+        <activity
+            android:name=".AtlantisSettingsActivity"
+            android:label="@string/atlantis"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+
+                <data android:scheme="content"/>
+                <data android:host="atlantis.echsylon.com"/>
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".AtlantisService"
+            android:exported="false"/>
+
+    </application>
+
+</manifest>

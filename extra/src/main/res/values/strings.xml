@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="allows_atlantis_to_serve">Allows serving mocked network responses</string>
+    <string name="allows_recording_missing_requests">Saves responses fetched from Internet</string>
+    <string name="atlantis">Atlantis Settings</string>
+    <string name="configuration">Configuration</string>
+    <string name="enable_atlantis">Enable Atlantis</string>
+    <string name="enable_recording">Record missing requests</string>
+</resources>

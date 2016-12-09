@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceScreen
+        android:summary="asset://atlantis.json"
+        android:title="@string/configuration">
+
+        <EditTextPreference
+            android:key="atlantis_configuration_asset"
+            android:summary="asset://atlantis.json"
+            android:title="Asset"/>
+
+        <Preference
+            android:key="atlantis_configuration_file"
+            android:title="File">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="http://www.google.com"/>
+        </Preference>
+
+    </PreferenceScreen>
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="atlantis_enable"
+        android:persistent="false"
+        android:summary="@string/allows_atlantis_to_serve"
+        android:title="@string/enable_atlantis"/>
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="recording_enable"
+        android:persistent="false"
+        android:summary="@string/allows_recording_missing_requests"
+        android:title="@string/enable_recording"/>
+
+</PreferenceScreen>
