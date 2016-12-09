@@ -224,13 +224,17 @@ public class Atlantis {
     }
 
     /**
-     * Returns an unmodifiable list of served mock requests.
+     * Returns an unmodifiable list of served mock requests. The first item
+     * (list position 0) will be the first served request since this feature was
+     * enabled and the last item (list position {@code size() - 1}) will be the
+     * last served request.
      *
      * @return The unmodifiable served mock requests list as per definition in
      * {@link Collections#unmodifiableList(List)}.
      */
-    public List<MockRequest> served() {
-        return Collections.unmodifiableList(new ArrayList<>(servedRequests));
+    public List<MockRequest> servedRequests() {
+        List<MockRequest> served = new ArrayList<>(servedRequests);
+        return Collections.unmodifiableList(served);
     }
 
     /**
