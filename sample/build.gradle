@@ -35,10 +35,6 @@ android {
     }
 }
 
-repositories {
-    jcenter()
-}
-
 dependencies {
     debugCompile project(':library')
     compile 'com.android.support:appcompat-v7:25.0.1'
