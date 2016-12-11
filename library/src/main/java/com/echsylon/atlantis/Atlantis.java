@@ -263,12 +263,13 @@ public class Atlantis {
     private MockResponse serve(final Meta meta, final Source source) {
         MockRequest mockRequest = configuration.request(meta);
         if (mockRequest == null)
-            if (notEmpty(configuration.fallbackBaseUrl()))
-                mockRequest = new RealWebServer(configuration.fallbackBaseUrl())
-                        .getRealTemplate(meta, source,
-                                recordMissingRequests ?
-                                        atlantisDir :
-                                        null);
+            if (notEmpty(configuration.fallbackBaseUrl())) {
+                String url = configuration.fallbackBaseUrl() + meta.url();
+                mockRequest = new RealWebServer()
+                        .getRealTemplate(url, meta, source, recordMissingRequests ?
+                                atlantisDir :
+                                null);
+            }
 
         if (mockRequest == null)
             mockRequest = getFallbackTemplate(meta);
@@ -290,7 +291,7 @@ public class Atlantis {
     }
 
     /**
-     * Returns a date source through which the mocked response content body can
+     * Returns a data source through which the mocked response content body can
      * be read.
      *
      * @param text The text describing the resource. Interpreted as an asset

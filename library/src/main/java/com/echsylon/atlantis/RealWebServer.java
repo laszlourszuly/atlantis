@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import okio.Source;
 import static com.echsylon.atlantis.LogUtils.info;
 import static com.echsylon.atlantis.Utils.closeSilently;
 import static com.echsylon.atlantis.Utils.isEmpty;
+import static com.echsylon.atlantis.Utils.notEmpty;
 
 class RealWebServer {
 
@@ -51,31 +53,64 @@ class RealWebServer {
     }
 
 
-    private final String baseUrl;
+    /**
+     * Tries to get the Atlantis configuration JSON as a given URL.
+     *
+     * @param url The URL allegedly serving an Atlantis configuration.
+     * @return The Atlantis configuration object expressed as a JSON string or
+     * an empty string. Never null.
+     */
+    String getRealConfigurationJson(final String url) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
 
-    RealWebServer(final String baseUrl) {
-        this.baseUrl = baseUrl;
+        ResponseBody responseBody = null;
+        try {
+            Response response = getRealResponse(url, "GET", headers, null);
+            responseBody = response.body();
+            return response.code() == 200 ?
+                    responseBody.string() :
+                    "";
+        } catch (IOException e) {
+            info(e, "Couldn't get configuration, continuing with empty json: %s", url);
+            return "";
+        } finally {
+            closeSilently(responseBody);
+        }
     }
-
 
     /**
      * Performs a request to a real server and returns a mock request with the
      * corresponding real response (now expressed as a mock response).
+     * <p>
+     * If a directory is given, then the response will also be persisted in a
+     * sub folder of it. The path to the persisted response file will be as:
+     * <p>
+     * {@code <directory>/<request_method>/<request_path>/<response_timestamp>}
      *
+     * @param baseUrl     The base url for the "real" endpoint. The meta object
+     *                    will hold the remaining request information, like path
+     *                    method etc.
      * @param meta        The meta data describing the request to make.
      * @param requestBody The request body content stream.
      * @param directory   If given, the directory to persist the response to.
      * @return The mock request describing the real request and wrapping the
      * real response.
      */
-    MockRequest getRealTemplate(final Meta meta, final Source requestBody, final File directory) {
+    MockRequest getRealTemplate(final String baseUrl,
+                                final Meta meta,
+                                final Source requestBody,
+                                final File directory) {
+
+        ResponseBody responseBody = null;
         try {
             // We're leaving the Atlantis universe, let's reflect the new
             // reality in the "Host" header as well.
             meta.addHeader("Host", Uri.parse(baseUrl).getHost());
 
             // Now get the real response.
-            Response response = getRealResponse(meta, requestBody);
+            String url = baseUrl + meta.url();
+            Response response = getRealResponse(url, meta.method(), meta.headers(), requestBody);
             MockResponse.Builder mockResponse = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
                     .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS,
@@ -86,7 +121,7 @@ class RealWebServer {
             for (String key : headers.names())
                 mockResponse.addHeader(key, headers.get(key));
 
-            ResponseBody responseBody = response.body();
+            responseBody = response.body();
             if (responseBody.contentLength() > 0L) {
                 byte[] bytes = responseBody.bytes();
 
@@ -105,30 +140,42 @@ class RealWebServer {
                     .addResponse(mockResponse.build())
                     .build();
         } catch (IOException e) {
-            info(e, "Couldn't prepare real request: %s %s", meta.method(), meta.url());
+            info(e, "Couldn't prepare real request, ignoring: %s %s", meta.method(), meta.url());
             return null;
+        } finally {
+            closeSilently(responseBody);
         }
     }
 
     /**
-     * Gets a real response from a real server.
+     * Gets a real response from a real server. This method does *not* close the
+     * response body. The caller must ensure to close it to avoid resource
+     * leaks.
      *
-     * @param meta        The meta data describing the request.
+     * @param url         The request URL to get a response from.
+     * @param method      The request method ("GET", "POST", etc).
+     * @param headers     The request headers. Null means no headers.
      * @param requestBody The request body content stream.
      * @return The real response as delivered by the backing HTTP client.
      * @throws IOException if anything would go wrong during the request.
      */
-    private Response getRealResponse(final Meta meta, final Source requestBody) throws IOException {
-        Request.Builder request = new Request.Builder();
-        request.url(baseUrl + meta.url());
+    private Response getRealResponse(final String url,
+                                     final String method,
+                                     final Map<String, String> headers,
+                                     final Source requestBody) throws IOException {
 
-        for (Map.Entry<String, String> entry : meta.headers().entrySet())
-            request.addHeader(entry.getKey(), entry.getValue());
+        Request.Builder request = new Request.Builder();
+        request.url(url);
+
+        if (notEmpty(headers))
+            for (Map.Entry<String, String> entry : headers.entrySet())
+                request.addHeader(entry.getKey(), entry.getValue());
 
         if (requestBody != null) {
-            String contentType = meta.headers().get("Content-Type");
+            String contentType = notEmpty(headers) ?
+                    headers.get("Content-Type") : null;
             RequestBody body = new SourceRequestBody(contentType, requestBody);
-            request.method(meta.method(), body);
+            request.method(method, body);
         }
 
         return new OkHttpClient()
@@ -156,10 +203,10 @@ class RealWebServer {
             File file = getTargetFile(request, directory);
             target = Okio.buffer(Okio.sink(file));
             target.write(body);
-            info("Saved mock response to: %s", file.getAbsolutePath());
+            info("Saved response to: %s", file.getAbsolutePath());
             return file;
         } catch (Exception e) {
-            info(e, "Couldn't save mock response: %s", request.url());
+            info(e, "Couldn't save response: %s", request.url());
             return null;
         } finally {
             closeSilently(target);
