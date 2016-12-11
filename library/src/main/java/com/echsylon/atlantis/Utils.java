@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.Map;
 
 import okio.Buffer;
 import okio.Sink;
@@ -225,6 +226,17 @@ class Utils {
     }
 
     /**
+     * Tests if the given map is a null pointer or has no entries.
+     *
+     * @param map The map to test.
+     * @return Boolean true if the given map is a null pointer or has no
+     * entries, false otherwise.
+     */
+    static boolean isEmpty(Map<?, ?> map) {
+        return map == null || map.isEmpty();
+    }
+
+    /**
      * Tests if the given object array is a null pointer or has no length.
      *
      * @param array The object array to test.
@@ -278,6 +290,17 @@ class Utils {
      */
     static boolean notEmpty(List<?> list) {
         return !isEmpty(list);
+    }
+
+    /**
+     * The inverse of {@link #isEmpty(Map)}.
+     *
+     * @param map The map to validate.
+     * @return Boolean true if the map isn't a null pointer or empty, false
+     * otherwise.
+     */
+    static boolean notEmpty(Map<?, ?> map) {
+        return !isEmpty(map);
     }
 
     /**
