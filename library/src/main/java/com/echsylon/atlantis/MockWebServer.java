@@ -1,5 +1,6 @@
 package com.echsylon.atlantis;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -223,6 +224,8 @@ class MockWebServer {
                 }
             } catch (SocketException e) {
                 info("Socket connection closed: %s", socket.getInetAddress());
+            } catch (EOFException e) {
+                info("Socket exhausted, closing: %s", socket.getInetAddress());
             } catch (IOException e) {
                 info(e, "Couldn't parse request: %s", socket.getInetAddress());
             } catch (Exception e) {
