@@ -300,7 +300,6 @@ class MockWebServer {
                 buffer = new Buffer();
                 transfer(count, source, buffer, null);
 
-                info("Read default request body: %s bytes", buffer.size());
                 return buffer;
             }
 
@@ -318,11 +317,9 @@ class MockWebServer {
                     buffer.writeUtf8("\r\n");
                 } while (chunkSize != 0);
 
-                info("Read chunked request body: %s bytes", buffer.size());
                 return buffer;
             }
 
-            info("No request body to read");
             return null;
         } finally {
             closeSilently(buffer);
@@ -359,11 +356,12 @@ class MockWebServer {
 
             // Maybe set Content-Length header
             if (!headers.containsKey("Content-Length")) {
-                if (response.isExpectedToContinue())
+                if (response.isExpectedToContinue()) {
                     builder.append("Content-Length: 0\r\n");
-                else if (!response.isExpectedToBeChunked())
+                } else if (!response.isExpectedToBeChunked()) {
                     if (buffer != null)
                         builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
+                }
             }
 
             builder.append("\r\n");
@@ -385,8 +383,7 @@ class MockWebServer {
 
     /**
      * Transfers content from a source to a target. The transfer is performed
-     * chunk-wise as defined by the given thrott            // Honor any
-     * response delays le settings.
+     * chunk-wise as defined by the given throttle settings.
      *
      * @param byteCount The desired number of bytes to transfer. This method
      *                  will not wait for any more bytes if the source is
