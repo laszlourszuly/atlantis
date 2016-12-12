@@ -135,6 +135,7 @@ class JsonSerializers {
     static JsonDeserializer<MockResponse> newResponseDeserializer() {
         return (json, typeOfT, context) -> {
             normalizeHeaders(json);
+            normalizeResponseCode(json);
             return context.deserialize(json, _MockResponse.class);
         };
     }
@@ -149,6 +150,25 @@ class JsonSerializers {
         return (response, typeOfObject, context) -> context.serialize(response, _MockResponse.class);
     }
 
+
+    /**
+     * Converts any Postman v1 response code objects to expected member fields
+     * of the {@code Atlantis} {@code MockResponse} object.
+     *
+     * @param json The un-parsed response JSON element.
+     */
+    private static void normalizeResponseCode(JsonElement json) {
+        JsonObject jsonObject = json.getAsJsonObject();
+        if (jsonObject.has("responseCode")) {
+            JsonObject responseCode = jsonObject.remove("responseCode").getAsJsonObject();
+
+            if (responseCode.has("code"))
+                jsonObject.addProperty("code", responseCode.get("code").getAsNumber());
+
+            if (responseCode.has("name"))
+                jsonObject.addProperty("phrase", responseCode.get("name").getAsString());
+        }
+    }
 
     /**
      * Ensures any header attribute in the JSON object is formatted properly as

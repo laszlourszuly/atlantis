@@ -133,7 +133,8 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setStatus(final int code, final String phrase) {
-            mockResponse.responseCode = new ResponseCode(code, phrase);
+            mockResponse.code = code;
+            mockResponse.phrase = phrase;
             return this;
         }
 
@@ -200,23 +201,9 @@ public class MockResponse {
         }
     }
 
-    /**
-     * This is an internal helper class, representing the response status in
-     * terms of an HTTP response code and a corresponding response phrase.
-     */
-    private static final class ResponseCode {
-        private Integer code = null;
-        private String name = null;
-
-        private ResponseCode(final int code, final String name) {
-            this.code = code;
-            this.name = name;
-        }
-    }
-
-
     private String text = null;
-    private ResponseCode responseCode = null;
+    private Integer code = null;
+    private String phrase = null;
     private HeaderManager headers = null;
     private SettingsManager settings = null;
     private transient SourceHelper sourceHelper = null;
@@ -233,9 +220,7 @@ public class MockResponse {
      * @return The mocked HTTP response code.
      */
     public int code() {
-        return responseCode != null ?
-                getNative(responseCode.code, 0) :
-                0;
+        return getNative(code, 0);
     }
 
     /**
@@ -244,9 +229,7 @@ public class MockResponse {
      * @return The mocked HTTP response phrase.
      */
     public String phrase() {
-        return responseCode != null ?
-                getNonNull(responseCode.name, "") :
-                "";
+        return getNonNull(phrase, "");
     }
 
     /**
