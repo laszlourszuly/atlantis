@@ -21,6 +21,5 @@ public class AtlantisSettingsActivity extends AppCompatActivity {
         getFragmentManager().beginTransaction()
                 .replace(R.id.settings_container, new AtlantisSettingsFragment())
                 .commit();
-
     }
 }
