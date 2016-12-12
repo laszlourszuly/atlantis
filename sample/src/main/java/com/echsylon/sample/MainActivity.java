@@ -15,9 +15,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.EditText;
-import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
@@ -33,10 +32,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
-    private ProgressDialog progress;
-    private TextView output;
-    private EditText input;
     private View anchor;
+    private TextView output;
+    private ProgressDialog progress;
+    private AutoCompleteTextView input;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,44 +45,27 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.main_toolbar);
         setSupportActionBar(toolbar);
 
-        input = (EditText) findViewById(R.id.main_input);
-        output = (TextView) findViewById(R.id.main_output);
-        anchor = findViewById(R.id.main_coordinator_layout);
-
+        input = (AutoCompleteTextView) findViewById(R.id.main_input);
+        input.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
+                getResources().getStringArray(R.array.default_urls)));
         input.setOnEditorActionListener((textView, actionId, keyEvent) -> {
             if (actionId == EditorInfo.IME_ACTION_GO) {
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(textView.getWindowToken(), 0);
-                String url = input.getText().toString();
-                performNetworkRequest(url, output);
+                performNetworkRequest(input.getText().toString(), output);
                 return true;
             }
             return false;
         });
 
-        Spinner spinner = (Spinner) findViewById(R.id.main_spinner);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
-                input.setText(adapterView.getSelectedItem().toString());
-            }
+        output = (TextView) findViewById(R.id.main_output);
+        anchor = findViewById(R.id.main_coordinator_layout);
 
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-                input.setText(null);
-            }
-        });
-
-        View button = findViewById(R.id.main_get_button);
-        button.setOnClickListener(view -> {
-            String url = input.getText().toString();
-            performNetworkRequest(url, output);
-        });
-
-        if (savedInstanceState != null) {
-            input.setText(savedInstanceState.getString("input"));
-            output.setText(savedInstanceState.getString("output"));
-        }
+        findViewById(R.id.main_get_button)
+                .setOnClickListener(view -> {
+                    if (input != null)
+                        performNetworkRequest(input.getText().toString(), output);
+                });
     }
 
     @Override
@@ -97,33 +79,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.atlantis: {
+            case R.id.atlantis:
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("content://atlantis.echsylon.com")));
                 return true;
-            }
-            case R.id.help: {
+            case R.id.help:
                 startActivity(new Intent(this, HelpActivity.class));
                 return true;
-            }
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putString("input", input.getText().toString());
-        outState.putString("output", output.getText().toString());
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            input.setText(savedInstanceState.getString("input"));
-            output.setText(savedInstanceState.getString("output"));
-        }
-        super.onRestoreInstanceState(savedInstanceState);
     }
 
     /**
