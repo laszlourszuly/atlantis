@@ -133,6 +133,7 @@ class MockWebServer {
             try {
                 if (!executorService.awaitTermination(10, TimeUnit.SECONDS))
                     throw new IOException();
+                info("Successfully shut down");
             } catch (InterruptedException e) {
                 info("Interrupted prematurely by system");
             } catch (IOException e) {
@@ -176,7 +177,7 @@ class MockWebServer {
                         openClientSockets.add(socket);
                         serveConnection(socket);
                     } catch (SocketException e) {
-                        info(e, "Stopped accepting connections");
+                        info("Stopped accepting connections. Shutting down.");
                         break;
                     } catch (Exception e) {
                         info(e, "Failed unexpectedly");
@@ -220,6 +221,8 @@ class MockWebServer {
                         writeResponse(response, target);
                     }
                 }
+            } catch (SocketException e) {
+                info("Socket connection closed: %s", socket.getInetAddress());
             } catch (IOException e) {
                 info(e, "Couldn't parse request: %s", socket.getInetAddress());
             } catch (Exception e) {
