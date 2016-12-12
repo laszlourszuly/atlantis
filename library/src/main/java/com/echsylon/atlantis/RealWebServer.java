@@ -88,16 +88,16 @@ class RealWebServer {
      * <p>
      * {@code <directory>/<request_method>/<request_path>/<response_timestamp>}
      *
-     * @param baseUrl     The base url for the "real" endpoint. The meta object
-     *                    will hold the remaining request information, like path
-     *                    method etc.
+     * @param url         The url for the "real" endpoint. The meta object will
+     *                    hold the remaining request information, like method,
+     *                    headers etc.
      * @param meta        The meta data describing the request to make.
      * @param requestBody The request body content stream.
      * @param directory   If given, the directory to persist the response to.
      * @return The mock request describing the real request and wrapping the
      * real response.
      */
-    MockRequest getRealTemplate(final String baseUrl,
+    MockRequest getRealTemplate(final String url,
                                 final Meta meta,
                                 final Source requestBody,
                                 final File directory) {
@@ -106,10 +106,9 @@ class RealWebServer {
         try {
             // We're leaving the Atlantis universe, let's reflect the new
             // reality in the "Host" header as well.
-            meta.addHeader("Host", Uri.parse(baseUrl).getHost());
+            meta.addHeader("Host", Uri.parse(url).getHost());
 
             // Now get the real response.
-            String url = baseUrl + meta.url();
             Response response = getRealResponse(url, meta.method(), meta.headers(), requestBody);
             MockResponse.Builder mockResponse = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
@@ -140,7 +139,7 @@ class RealWebServer {
                     .addResponse(mockResponse.build())
                     .build();
         } catch (IOException e) {
-            info(e, "Couldn't prepare real request, ignoring: %s %s", meta.method(), meta.url());
+            info(e, "Couldn't prepare real request, ignoring: %s %s", meta.method(), url);
             return null;
         } finally {
             closeSilently(responseBody);
