@@ -6,10 +6,8 @@
       "method": "GET",
       "responses": [
         {
-          "responseCode": {
-            "code": 200,
-            "name": "OK"
-          },
+          "code": 200,
+          "phrase": "OK",
           "headers": {
             "Content-Type": "application/json; charset=utf-8"
           },
