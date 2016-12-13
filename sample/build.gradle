@@ -1,13 +1,13 @@
 // 3rd party plugins definition
 plugins {
-    id 'me.tatarka.retrolambda' version '3.3.1'
+    id 'me.tatarka.retrolambda' version '3.4.0'
 }
 
 apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.1'
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId 'com.echsylon.sample'
@@ -37,6 +37,6 @@ android {
 
 dependencies {
     debugCompile project(':extra')
-    compile 'com.android.support:appcompat-v7:25.0.1'
-    compile 'com.android.support:design:25.0.1'
+    compile 'com.android.support:appcompat-v7:25.1.0'
+    compile 'com.android.support:design:25.1.0'
 }
