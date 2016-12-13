@@ -1,8 +1,8 @@
 // 3rd party plugins definition
 plugins {
-    id 'com.github.kt3k.coveralls' version '2.4.0x'
-    id 'me.tatarka.retrolambda' version '3.3.1'
-    id 'com.jfrog.bintray' version '1.7.2'
+    id 'com.github.kt3k.coveralls' version '2.7.1'
+    id 'me.tatarka.retrolambda' version '3.4.0'
+    id 'com.jfrog.bintray' version '1.7.3'
 }
 
 apply plugin: 'com.android.library'
@@ -15,7 +15,7 @@ retrolambda {
 // Android configuration
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.1'
+    buildToolsVersion '25.0.2'
     defaultPublishConfig 'release'
 
     defaultConfig {
@@ -43,13 +43,13 @@ android {
 
 dependencies {
     compile 'com.google.code.gson:gson:2.8.0'
-    compile 'com.squareup.okhttp3:okhttp:3.4.2'
+    compile 'com.squareup.okhttp3:okhttp:3.5.0'
     compile 'com.squareup.okio:okio:1.11.0'
 
-    testCompile 'org.mockito:mockito-core:2.1.0'
-    testCompile 'org.robolectric:robolectric:3.1.2'
-    testCompile 'org.assertj:assertj-core:3.5.2'
-    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile 'org.robolectric:robolectric:3.1.4'
+    testCompile 'org.mockito:mockito-core:2.3.2'
+    testCompile 'org.assertj:assertj-core:3.6.1'
+    testCompile 'org.hamcrest:hamcrest-core:1.3'
     testCompile 'junit:junit:4.12'
 }
 
