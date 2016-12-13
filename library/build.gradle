@@ -1,6 +1,6 @@
 // 3rd party plugins definition
 plugins {
-    id 'com.github.kt3k.coveralls' version '2.7.1'
+    id 'com.github.kt3k.coveralls' version '2.5.0-x'
     id 'me.tatarka.retrolambda' version '3.4.0'
     id 'com.jfrog.bintray' version '1.7.3'
 }
