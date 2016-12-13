@@ -262,7 +262,7 @@ public class MockResponse {
      *
      * @return The response body.
      */
-    Source content() {
+    Source source() {
         return sourceHelper != null ?
                 sourceHelper.open(text) :
                 null;

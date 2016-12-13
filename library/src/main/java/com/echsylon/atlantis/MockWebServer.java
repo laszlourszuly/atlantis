@@ -341,7 +341,7 @@ class MockWebServer {
 
         try {
             // Maybe buffer response body.
-            source = response.content();
+            source = response.source();
             if (source != null && !response.isExpectedToContinue()) {
                 buffer = new Buffer();
                 transfer(-1, source, buffer, null);
