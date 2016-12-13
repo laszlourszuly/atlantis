@@ -43,6 +43,7 @@ public class Atlantis {
     private Context context;
     private File atlantisDir;
     private MockWebServer mockServer;
+    private RealWebServer realServer;
     private Configuration configuration;
     private Queue<MockRequest> servedRequests;
 
@@ -52,44 +53,20 @@ public class Atlantis {
 
     /**
      * Creates an {@code Atlantis} instance and initializes it with a
-     * configuration read from a file somewhere on the file system.
+     * configuration read from an input stream.
      *
-     * @param context           The context used when reading mock response
-     *                          resources.
-     * @param configurationFile The file to read the {@code Atlantis}
-     *                          configuration from.
+     * @param context     The context used when reading mock responses.
+     * @param inputStream The input stream to read the {@code Atlantis}
+     *                    configuration from.
      */
-    public Atlantis(final Context context, final File configurationFile) {
+    public Atlantis(final Context context, final InputStream inputStream) {
         try {
-            BufferedSource bufferedSource = Okio.buffer(Okio.source(configurationFile));
+            BufferedSource bufferedSource = Okio.buffer(Okio.source(inputStream));
             String json = bufferedSource.readString(Charset.forName("UTF-8"));
             Configuration configuration = new JsonParser().fromJson(json, Configuration.class);
             init(context, configuration);
-        } catch (FileNotFoundException e) {
-            info(e, "Couldn't open configuration file: %s", configurationFile.getAbsolutePath());
-            throw new RuntimeException(e);
         } catch (IOException e) {
-            info(e, "Couldn't read configuration file: %s", configurationFile.getAbsolutePath());
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Creates an {@code Atlantis} instance and initializes it with a
-     * configuration read from an application asset (in the "assets" folder).
-     *
-     * @param context           The context used when reading mock response
-     *                          resources.
-     * @param configurationJson The {@code Atlantis} configuration object,
-     *                          expressed as a JSON string.
-     */
-    public Atlantis(final Context context, final String configurationJson) {
-        try {
-            Configuration configuration = new JsonParser()
-                    .fromJson(configurationJson, Configuration.class);
-            init(context, configuration);
-        } catch (JsonException e) {
-            info(e, "Couldn't parse configuration json: %s", configurationJson);
+            info(e, "Couldn't read configuration from InputStream");
             throw new RuntimeException(e);
         }
     }
@@ -98,12 +75,30 @@ public class Atlantis {
      * Creates an {@code Atlantis} instance and initializes it with a provided
      * configuration object.
      *
-     * @param context       The context used when reading mock response
-     *                      resources.
+     * @param context       The context used when reading mock responses.
      * @param configuration The {@code Atlantis} configuration object.
      */
     public Atlantis(final Context context, final Configuration configuration) {
         init(context, configuration);
+    }
+
+    /**
+     * Creates an {@code Atlantis} instance and initializes it with a provided
+     * configuration object. Additionally it also allows injecting alternative
+     * mock web server and real web server.
+     * <p>
+     * This constructor is only intended for testing purposes.
+     *
+     * @param context       The context used when reading mock responses.
+     * @param realServer    An alternative real web server implementation.
+     * @param configuration The {@code Atlantis} configuration object.
+     */
+    Atlantis(final Context context, final RealWebServer realServer,
+             final Configuration configuration) {
+
+        this(context, configuration);
+        if (realServer != null)
+            this.realServer = realServer;
     }
 
     /**
@@ -237,6 +232,7 @@ public class Atlantis {
         return Collections.unmodifiableList(served);
     }
 
+
     /**
      * Initializes the internal state.
      *
@@ -247,6 +243,7 @@ public class Atlantis {
     private void init(final Context context, final Configuration configuration) {
         this.context = context;
         this.configuration = configuration;
+        this.realServer = new RealWebServer();
         this.mockServer = new MockWebServer(this::serve);
         this.servedRequests = new ConcurrentLinkedQueue<>();
         this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
@@ -265,8 +262,8 @@ public class Atlantis {
         if (mockRequest == null)
             if (notEmpty(configuration.fallbackBaseUrl())) {
                 String url = configuration.fallbackBaseUrl() + meta.url();
-                mockRequest = new RealWebServer()
-                        .getRealTemplate(url, meta, source, recordMissingRequests ?
+                mockRequest = realServer.getRealTemplate(url, meta, source,
+                        recordMissingRequests ?
                                 atlantisDir :
                                 null);
             }

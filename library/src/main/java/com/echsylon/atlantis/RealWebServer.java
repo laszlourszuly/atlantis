@@ -26,6 +26,7 @@ import static com.echsylon.atlantis.Utils.closeSilently;
 import static com.echsylon.atlantis.Utils.isEmpty;
 import static com.echsylon.atlantis.Utils.notEmpty;
 
+@SuppressWarnings("unused")
 class RealWebServer {
 
     /**
