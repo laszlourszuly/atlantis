@@ -1,4 +1,4 @@
-# Only buld the master and stage branches
+# Only buld the master branche
 general:
   branches:
     only:
@@ -9,14 +9,14 @@ machine:
   java:
     version: oraclejdk8
 
-# Custom Android dependency config
+# Custom Android dependency configuration
 dependencies:
   pre:
     - echo y | android update sdk --no-ui --all --filter tools,platform-tools,android-25
     - echo y | android update sdk --no-ui --all --filter build-tools-25.0.2
     - echo y | android update sdk --no-ui --all --filter extra-android-m2repository
 
-# Run library release tests and publish test results.
+# Run library release tests and archive + publish test results.
 test:
   override:
     - ./gradlew :library:clean :library:test :library:coveralls --stacktrace
@@ -25,7 +25,7 @@ test:
     - find . -type f -regex ".*/build/test-results/release/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/release \;
 
 # Trigger a Bintray deployment when a tag of a certain pattern is pushed to the
-# master branch in the repo owned echsylon (disqualifying any forked repos).
+# master branch in the repo owned by echsylon (disqualifying any forked repos).
 deployment:
   release:
     tag: /v[0-9]+\.[0-9]+\.[0-9]+/

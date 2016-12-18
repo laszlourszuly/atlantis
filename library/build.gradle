@@ -21,7 +21,7 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode Integer.parseInt(System.getenv('CIRCLE_BUILD_NUM') ?: '0')
+        versionCode prepareVersionCode()
         versionName prepareVersionName()
         project.archivesBaseName = 'atlantis'
         project.version = android.defaultConfig.versionName
@@ -54,9 +54,8 @@ dependencies {
 }
 
 // Custom archive build configurations
-apply from: "${rootProject.rootDir}/script/aar.gradle"
-apply from: "${rootProject.rootDir}/script/jar.gradle"
 apply from: "${rootProject.rootDir}/script/jacoco.gradle"
+apply from: "${rootProject.rootDir}/script/archive.gradle"
 apply from: "${rootProject.rootDir}/script/publish.gradle"
 apply from: "${rootProject.rootDir}/script/bintray.gradle"
 apply from: "${rootProject.rootDir}/script/coveralls.gradle"

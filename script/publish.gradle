@@ -22,14 +22,24 @@ publishing {
                 }
             }
 
-            // Source code bundle, from task defined in 'jar.gradle'
-            artifact(sourceJar)
+            def fileName = "${archivesBaseName}-${version}".toLowerCase()
 
-            // JavaDoc bundle, from task defined in 'jar.gradle'
-            artifact(javadocJar)
+            // Source code bundle from task defined in 'archive.gradle'
+            artifact("${buildDir}/outputs/jar/release/${fileName}-source.jar") {
+                classifier 'source'
+                extension 'jar'
+            }
 
-            // The actual library, from task defined in 'jar.gradle'
-            artifact(slimJar)
+            // JavaDoc bundle from task defined in 'archive.gradle'
+            artifact("${buildDir}/outputs/jar/release/${fileName}-javadoc.jar") {
+                classifier 'javadoc'
+                extension 'jar'
+            }
+
+            // The actual library from task defined in 'archive.gradle'
+            artifact("${buildDir}/outputs/jar/release/${fileName}.jar") {
+                extension 'jar'
+            }
         }
     }
 }

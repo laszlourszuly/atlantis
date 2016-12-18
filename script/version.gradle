@@ -69,7 +69,7 @@ task preparePatchRelease << {
  * 4. Delete the local gh-pages branch.
  * 5. Delete the temporary commit.
  */
-task updateRemoteJavaDoc(dependsOn: ':library:javadoc') << {
+task updateRemoteJavaDoc(dependsOn: ':library:javadocRelease') << {
     "git add docs".bash()
     "git commit --message 'javadoc'".bash()
     "git subtree split --prefix docs -b gh-pages".bash()
@@ -90,6 +90,13 @@ ext.prepareVersionName = {
     def versionName = getVersionFromLatestTag()
     println(versionName)
     return versionName
+}
+
+/**
+ * Returns the official version code for this library.
+ */
+ext.prepareVersionCode = {
+    return Integer.parseInt(System.getenv('CIRCLE_BUILD_NUM') ?: '0')
 }
 
 /**

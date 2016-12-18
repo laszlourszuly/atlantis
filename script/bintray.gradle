@@ -1,6 +1,6 @@
 bintray {
-    user = System.getenv('ATLANTIS_BINTRAY_USER')
-    key = System.getenv('ATLANTIS_BINTRAY_KEY')
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
     publications = ['atlantis']
     publish = true
 
