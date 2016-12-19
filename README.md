@@ -2,6 +2,8 @@
 
 The Atlantis library will aid you in "mocking the Internet" for your Android app. It offers means of delivering custom tailored responses to network requests made by your app, without forcing you to do massive changes to your code.
 
-You can get a "quick-n-dirty" introduction to Atlantis [here](https://github.com/echsylon/atlantis/wiki). You can also have a look at the [JSON configuration reference](https://github.com/echsylon/atlantis/wiki/JSON-Configuration-File) and the [JavaDoc](http://echsylon.github.io/atlantis/javadoc/index.html) documentation for more technically detailed information.
+The "News" section in [the Wiki](https://github.com/echsylon/atlantis/wiki) holds a rough change list. You can also get a "quick-n-dirty" introduction to Atlantis in the "How to" section, or have a look at the [JSON configuration reference](https://github.com/echsylon/atlantis/wiki/JSON-Configuration-File) and the [JavaDoc](http://echsylon.github.io/atlantis/javadoc/index.html) documentation for more technically detailed information in the "Reference" section.
 
 If you want even more love, you could check out the [Atlantis Extra](https://github.com/echsylon/atlantis-extra/wiki) integration layer as well.
+
+Feel free to [raise a ticket](https://github.com/echsylon/atlantis/issues) if you find a bug, would like something to change or just want to discuss a topic.
