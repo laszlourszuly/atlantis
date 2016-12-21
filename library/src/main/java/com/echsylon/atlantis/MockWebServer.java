@@ -295,8 +295,10 @@ class MockWebServer {
         try {
             // Regular request body.
             if (meta.isExpectedToHaveBody()) {
-                String headerValue = meta.headers().get("Content-Type");
-                long count = Long.valueOf(headerValue, 10);
+                String headerValue = meta.headers().get("Content-Length");
+                long count = Utils.notEmpty(headerValue) ?
+                        Long.valueOf(headerValue, 10) :
+                        Long.MAX_VALUE;
                 buffer = new Buffer();
                 transfer(count, source, buffer, null);
 
