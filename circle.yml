@@ -19,7 +19,7 @@ dependencies:
 # Run library release tests and archive + publish test results.
 test:
   override:
-    - ./gradlew :library:clean :library:test :library:coveralls --stacktrace
+    - ./gradlew :library:clean :library:testRelease :library:coveralls --stacktrace
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/release/
     - find . -type f -regex ".*/build/test-results/release/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/release \;
