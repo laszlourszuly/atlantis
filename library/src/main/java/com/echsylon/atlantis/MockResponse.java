@@ -147,6 +147,8 @@ public class MockResponse {
          */
         public Builder setBody(final String string) {
             mockResponse.text = string;
+            // Fallback to default source helper
+            // (provided by parent infrastructure).
             return this;
         }
 
@@ -157,6 +159,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final byte[] bytes) {
+            mockResponse.text = null;
             mockResponse.sourceHelper = text -> Okio.source(new ByteArrayInputStream(bytes));
             return this;
         }
@@ -169,6 +172,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final File file) {
+            mockResponse.text = null;
             mockResponse.sourceHelper = text -> {
                 try {
                     return Okio.source(file);
@@ -188,6 +192,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final InputStream inputStream) {
+            mockResponse.text = null;
             mockResponse.sourceHelper = text -> Okio.source(inputStream);
             return this;
         }

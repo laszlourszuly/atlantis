@@ -6,25 +6,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.echsylon.atlantis.LogUtils.info;
 import static com.echsylon.atlantis.Utils.notEmpty;
 
 /**
  * This class provides a set of custom JSON deserializers.
  */
 class JsonSerializers {
-
-    // This is a marker class preventing eternal circular parse loops in gson.
-    private static final class _Configuration extends Configuration {
-    }
-
-    // This is a marker class preventing eternal circular parse loops in gson.
-    private static final class _MockResponse extends MockResponse {
-    }
-
-    // This is a marker class preventing eternal circular parse loops in gson.
-    private static final class _MockRequest extends MockRequest {
-    }
-
 
     /**
      * Returns a new JSON deserializer, specialized for {@link Configuration}
@@ -34,23 +26,48 @@ class JsonSerializers {
      */
     static JsonDeserializer<Configuration> newConfigurationDeserializer() {
         return (json, typeOfT, context) -> {
-            // Remove the 'requestFilter' string attribute from the JSON. We'll
-            // later parse the removed string and set the object field manually.
-            JsonObject jsonObject = json.getAsJsonObject();
-            String filterClassName = jsonObject.has("requestFilter") ?
-                    jsonObject.remove("requestFilter").getAsString() :
-                    null;
+            if (json == null)
+                return null;
 
-            Configuration configuration = context.deserialize(jsonObject, _Configuration.class);
-            if (notEmpty(filterClassName))
+            JsonObject jsonObject = json.getAsJsonObject();
+            Configuration.Builder builder = new Configuration.Builder();
+            builder.setFallbackBaseUrl(jsonObject.get("fallbackBaseUrl").getAsString());
+
+            if (jsonObject.has("requestFilter"))
                 try {
+                    String filterClassName = jsonObject.get("requestFilter").getAsString();
                     MockRequest.Filter filter = (MockRequest.Filter) Class.forName(filterClassName).newInstance();
-                    configuration.setRequestFilter(filter);
+                    builder.setRequestFilter(filter);
                 } catch (Exception e) {
-                    throw new IllegalArgumentException(e);
+                    info(e, "Couldn't deserialize request filter");
                 }
 
-            return configuration;
+            if (jsonObject.has("defaultResponseHeaders"))
+                try {
+                    JsonObject headers = jsonObject.get("defaultResponseHeaders").getAsJsonObject();
+                    builder.addDefaultResponseHeaders(context.deserialize(headers, LinkedHashMap.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize default response headers");
+                }
+
+            if (jsonObject.has("defaultResponseSettings"))
+                try {
+                    JsonObject settings = jsonObject.get("defaultResponseSettings").getAsJsonObject();
+                    builder.addDefaultResponseSettings(context.deserialize(settings, LinkedHashMap.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize default response settings");
+                }
+
+            if (jsonObject.has("requests"))
+                try {
+                    JsonArray requests = jsonObject.get("requests").getAsJsonArray();
+                    for (int i = 0, c = requests.size(); i < c; i++)
+                        builder.addRequest(context.deserialize(requests.get(i), MockRequest.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize requests");
+                }
+
+            return builder.build();
         };
     }
 
@@ -62,14 +79,16 @@ class JsonSerializers {
      */
     static JsonSerializer<Configuration> newConfigurationSerializer() {
         return (configuration, typeOfObject, context) -> {
-            JsonElement jsonElement = context.serialize(configuration, _Configuration.class);
-            if (jsonElement == null)
+            if (configuration == null)
                 return null;
 
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
             MockRequest.Filter filter = configuration.requestFilter();
-            if (filter != null)
-                jsonObject.addProperty("requestFilter", filter.getClass().getName());
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("fallbackBaseUrl", configuration.fallbackBaseUrl());
+            jsonObject.addProperty("requestFilter", filter != null ? filter.getClass().getCanonicalName() : null);
+            jsonObject.add("defaultResponseHeaders", context.serialize(configuration.defaultResponseHeaders()));
+            jsonObject.add("defaultResponseSettings", context.serialize(configuration.defaultResponseSettings()));
+            jsonObject.add("requests", context.serialize(configuration.requests()));
 
             return jsonObject;
         };
@@ -83,24 +102,43 @@ class JsonSerializers {
      */
     static JsonDeserializer<MockRequest> newRequestDeserializer() {
         return (json, typeOfT, context) -> {
-            // Remove the 'responseFilter' string attribute from the JSON. We'll
-            // later parse the removed string and set the object field manually.
-            normalizeHeaders(json);
-            JsonObject jsonObject = json.getAsJsonObject();
-            String filterClassName = jsonObject.has("responseFilter") ?
-                    jsonObject.remove("responseFilter").getAsString() :
-                    null;
+            if (json == null)
+                return null;
 
-            MockRequest mockRequest = context.deserialize(jsonObject, _MockRequest.class);
-            if (notEmpty(filterClassName))
+            normalizeHeaders(json);
+
+            JsonObject jsonObject = json.getAsJsonObject();
+            MockRequest.Builder builder = new MockRequest.Builder();
+            builder.setMethod(jsonObject.get("method").getAsString());
+            builder.setUrl(jsonObject.get("url").getAsString());
+
+            if (jsonObject.has("responseFilter"))
                 try {
+                    String filterClassName = jsonObject.get("responseFilter").getAsString();
                     MockResponse.Filter filter = (MockResponse.Filter) Class.forName(filterClassName).newInstance();
-                    mockRequest.setResponseFilter(filter);
+                    builder.setResponseFilter(filter);
                 } catch (Exception e) {
-                    throw new IllegalArgumentException(e);
+                    info(e, "Couldn't deserialize response filter");
                 }
 
-            return mockRequest;
+            if (jsonObject.has("headers"))
+                try {
+                    JsonObject headers = jsonObject.get("headers").getAsJsonObject();
+                    builder.addHeaders(context.deserialize(headers, LinkedHashMap.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize headers");
+                }
+
+            if (jsonObject.has("responses"))
+                try {
+                    JsonArray responses = jsonObject.get("responses").getAsJsonArray();
+                    for (int i = 0, c = responses.size(); i < c; i++)
+                        builder.addResponse(context.deserialize(responses.get(i), MockResponse.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize responses");
+                }
+
+            return builder.build();
         };
     }
 
@@ -112,15 +150,24 @@ class JsonSerializers {
      */
     static JsonSerializer<MockRequest> newRequestSerializer() {
         return (request, typeOfObject, context) -> {
-            JsonElement jsonElement = context.serialize(request, _MockRequest.class);
-            if (jsonElement == null)
+            if (request == null)
                 return null;
 
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("method", request.method());
+            jsonObject.addProperty("url", request.url());
+
             MockResponse.Filter filter = request.responseFilter();
-            if (filter != null) {
-                jsonObject.addProperty("responseFilter", filter.getClass().getName());
-            }
+            if (filter != null)
+                jsonObject.addProperty("responseFilter", filter.getClass().getCanonicalName());
+
+            Map<String, String> headers = request.headers();
+            if (notEmpty(headers))
+                jsonObject.add("headers", context.serialize(headers));
+
+            List<MockResponse> responses = request.responses();
+            if (notEmpty(responses))
+                jsonObject.add("responses", context.serialize(responses));
 
             return jsonObject;
         };
@@ -134,9 +181,34 @@ class JsonSerializers {
      */
     static JsonDeserializer<MockResponse> newResponseDeserializer() {
         return (json, typeOfT, context) -> {
+            if (json == null)
+                return null;
+
             normalizeHeaders(json);
             normalizeResponseCode(json);
-            return context.deserialize(json, _MockResponse.class);
+
+            JsonObject jsonObject = json.getAsJsonObject();
+            MockResponse.Builder builder = new MockResponse.Builder();
+            builder.setStatus(jsonObject.get("code").getAsInt(), jsonObject.get("phrase").getAsString());
+            builder.setBody(jsonObject.get("text").getAsString());
+
+            if (jsonObject.has("headers"))
+                try {
+                    JsonObject headers = jsonObject.get("headers").getAsJsonObject();
+                    builder.addHeaders(context.deserialize(headers, LinkedHashMap.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize headers");
+                }
+
+            if (jsonObject.has("settings"))
+                try {
+                    JsonArray settings = jsonObject.get("settings").getAsJsonArray();
+                    builder.addSettings(context.deserialize(settings, LinkedHashMap.class));
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize responses");
+                }
+
+            return builder.build();
         };
     }
 
@@ -147,7 +219,28 @@ class JsonSerializers {
      * @return The serializer to serialize {@code MockResponse} objects with.
      */
     static JsonSerializer<MockResponse> newResponseSerializer() {
-        return (response, typeOfObject, context) -> context.serialize(response, _MockResponse.class);
+        return (response, typeOfObject, context) -> {
+            if (response == null)
+                return null;
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("code", response.code());
+            jsonObject.addProperty("phrase", response.phrase());
+
+            String text = response.body();
+            if (notEmpty(text))
+                jsonObject.addProperty("text", text);
+
+            Map<String, String> headers = response.headers();
+            if (notEmpty(headers))
+                jsonObject.add("headers", context.serialize(headers));
+
+            Map<String, String> settings = response.settings();
+            if (notEmpty(settings))
+                jsonObject.add("settings", context.serialize(settings));
+
+            return jsonObject;
+        };
     }
 
 
