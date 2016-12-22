@@ -4,8 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
-import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.notAnyEmpty;
+import static com.echsylon.atlantis.Utils.parseBoolean;
 import static com.echsylon.atlantis.Utils.parseInt;
 import static com.echsylon.atlantis.Utils.parseLong;
 
@@ -17,6 +17,7 @@ import static com.echsylon.atlantis.Utils.parseLong;
 @SuppressWarnings("WeakerAccess")
 class SettingsManager extends LinkedHashMap<String, String> {
     // Response body delivery throttle
+    static final String FOLLOW_REDIRECTS = "followRedirects";
     static final String THROTTLE_BYTE_COUNT = "throttleByteCount";
     static final String THROTTLE_MIN_DELAY_MILLIS = "throttleMinDelayMillis";
     static final String THROTTLE_MAX_DELAY_MILLIS = "throttleMaxDelayMillis";
@@ -42,7 +43,17 @@ class SettingsManager extends LinkedHashMap<String, String> {
     }
 
     /**
-     * The number of bytes from the response body to send at a time as a
+     * Returns a flag telling whether a response should automatically follow any
+     * redirects or not.
+     *
+     * @return Boolean true if a redirect should be followed, false otherwise.
+     */
+    boolean followRedirects() {
+        return parseBoolean(get(FOLLOW_REDIRECTS), true);
+    }
+
+    /**
+     * Returns the number of bytes from the response body to send at a time as a
      * "package".
      *
      * @return The desired response body package size.

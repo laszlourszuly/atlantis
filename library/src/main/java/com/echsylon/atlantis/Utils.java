@@ -344,15 +344,7 @@ class Utils {
      * @return The parsed boolean value or {@param fallback} on error.
      */
     static boolean parseBoolean(String string, boolean fallback) {
-        if (isEmpty(string))
-            return fallback;
-
-        try {
-            return Boolean.valueOf(string);
-        } catch (NumberFormatException e) {
-            info(e, "Couldn't parse '%s' as boolean. Falling back to %s", string, fallback);
-            return fallback;
-        }
+        return Boolean.valueOf(string);
     }
 
     /**
