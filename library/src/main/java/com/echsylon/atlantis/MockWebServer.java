@@ -252,26 +252,21 @@ class MockWebServer {
         if (isEmpty(line))
             return null;
 
-        // Used for building our log message.
-        StringBuilder builder = new StringBuilder(line).append("\n");
-        int mark;
-
         // Parse the request signature.
         // Example: "GET /path/to/resource HTTP/1.1"
+        int mark;
         Meta meta = new Meta();
         meta.setMethod(line.substring(0, (mark = line.indexOf(' '))));
         meta.setUrl(line.substring(++mark, (mark = line.indexOf(' ', mark))));
         meta.setProtocol(line.substring(++mark));
 
         // Parse the request headers
-        while (!(line = source.readUtf8LineStrict()).isEmpty()) {
-            builder.append(line).append("\n");
+        while (!(line = source.readUtf8LineStrict()).isEmpty())
             meta.addHeader(
                     line.substring(0, (mark = line.indexOf(':'))).trim(),
                     line.substring(++mark).trim());
-        }
 
-        info("Request: %s", builder.toString());
+        info("Request: %s", meta);
         return meta;
     }
 

@@ -123,4 +123,18 @@ class Meta {
     boolean isExpectedToBeChunked() {
         return headers.isExpectedToBeChunked();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(method).append(' ')
+                .append(url).append(' ')
+                .append(protocol).append('\n');
+
+        for (Map.Entry<String, String> entry : headers.entrySet())
+            stringBuilder.append(entry.getKey()).append(": ")
+                    .append(entry.getValue()).append('\n');
+
+        return stringBuilder.toString();
+    }
 }
