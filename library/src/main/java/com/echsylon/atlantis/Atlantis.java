@@ -259,14 +259,17 @@ public class Atlantis {
      */
     private MockResponse serve(final Meta meta, final Source source) {
         MockRequest mockRequest = configuration.request(meta);
-        if (mockRequest == null)
+        if (mockRequest == null) {
+            info("Couldn't find the request template configuration");
             if (notEmpty(configuration.fallbackBaseUrl())) {
                 String url = configuration.fallbackBaseUrl() + meta.url();
+                info("Falling back to real world: %s", url);
                 mockRequest = realServer.getRealTemplate(url, meta, source,
                         recordMissingRequests ?
                                 atlantisDir :
                                 null);
             }
+        }
 
         if (mockRequest == null)
             mockRequest = getFallbackTemplate(meta);
