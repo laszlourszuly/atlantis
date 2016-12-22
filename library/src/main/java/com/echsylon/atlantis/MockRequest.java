@@ -10,28 +10,29 @@ import java.util.Map;
 import static com.echsylon.atlantis.Utils.getNonNull;
 
 /**
- * This class contains the full description of a response mockRequest.
+ * This class contains the full description of a request that should get a mock
+ * response.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class MockRequest {
 
     /**
-     * This interface describes the mandatory feature set to provide a
-     * mockRequest mockRequest. Implementing classes are responsible for picking
-     * a mockRequest from a given list of available templates.
+     * This interface describes the mandatory feature set to provide a request
+     * template. Implementing classes are responsible for picking a request
+     * template from a given list of available templates.
      */
     public interface Filter {
 
         /**
-         * Returns a mockRequest mockRequest of choice, based on the given
-         * parameters. May be null, in which case the calling logic is
-         * responsible for deciding which mockRequest to use.
+         * Returns a request template of choice, based on the given parameters.
+         * May be null, in which case the calling logic is responsible for
+         * deciding which request template to use.
          *
          * @param method   The request method ("GET", "POST", etc).
          * @param url      The request url (e.g. "/path/to/resource").
          * @param headers  The request headers (key/value pairs).
          * @param requests All request templates available.
-         * @return The mockRequest mockRequest candidate.
+         * @return The request template candidate.
          */
         MockRequest findRequest(final String method,
                                 final String url,
@@ -41,22 +42,23 @@ public class MockRequest {
 
 
     /**
-     * This class offers means of building a mockRequest mockRequest directly
-     * from code (as opposed to configure one in a JSON file).
+     * This class offers means of building a request template directly from code
+     * (as opposed to configure one in a JSON file).
      */
     public static final class Builder {
         private final MockRequest mockRequest;
 
         /**
-         * Creates a new builder based on an uninitialized mockRequest object.
+         * Creates a new builder based on an uninitialized request template
+         * object.
          */
         public Builder() {
             mockRequest = new MockRequest();
         }
 
         /**
-         * Adds a header to the mockRequest being built. Doesn't add anything if
-         * the {@code key} or {@code value} is empty or null.
+         * Adds a header to the request template being built. Doesn't add
+         * anything if the {@code key} or {@code value} is empty or null.
          *
          * @param key   The header key.
          * @param value The header value.
@@ -68,8 +70,8 @@ public class MockRequest {
         }
 
         /**
-         * Adds all headers to the mockRequest mockRequest being built where
-         * neither the key nor the value is empty or null.
+         * Adds all headers to the request template being built where neither
+         * the key nor the value is empty or null.
          *
          * @param headers The headers to add.
          * @return This builder instance, allowing chaining of method calls.
@@ -80,7 +82,7 @@ public class MockRequest {
         }
 
         /**
-         * Adds a mock mockResponse to the mockRequest mockRequest being built.
+         * Adds a mock mockResponse to the request template being built.
          *
          * @param mockResponse The mockResponse to add.
          * @return This builder instance, allowing chaining of method calls.
@@ -92,9 +94,9 @@ public class MockRequest {
         }
 
         /**
-         * Sets the method of the mockRequest mockRequest being built.
+         * Sets the method of the request template being built.
          *
-         * @param method The new HTTP mockRequest method.
+         * @param method The new HTTP request method.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setMethod(final String method) {
@@ -103,7 +105,7 @@ public class MockRequest {
         }
 
         /**
-         * Sets the url of the mockRequest being built.
+         * Sets the url of the request template being built.
          *
          * @param url The new url.
          * @return This builder instance, allowing chaining of method calls.
@@ -114,8 +116,8 @@ public class MockRequest {
         }
 
         /**
-         * Sets the response filter logic of the mockRequest being built. This
-         * filter can be used when deciding which mock response to serve.
+         * Sets the response filter logic of the request template being built.
+         * This filter can be used when deciding which mock response to serve.
          *
          * @param responseFilter The response filter implementation.
          * @return This builder instance, allowing chaining of method calls.
@@ -126,10 +128,10 @@ public class MockRequest {
         }
 
         /**
-         * Returns a sealed mockRequest object which can not be further built
-         * on.
+         * Returns a sealed request template object which can not be further
+         * built on.
          *
-         * @return The final mockRequest object.
+         * @return The final request template object.
          */
         public MockRequest build() {
             return mockRequest;
@@ -150,18 +152,18 @@ public class MockRequest {
     }
 
     /**
-     * Returns the method of this mockRequest.
+     * Returns the method of this request template.
      *
-     * @return The mockRequest method.
+     * @return The request method.
      */
     public String method() {
         return getNonNull(method, "");
     }
 
     /**
-     * Returns the mockRequest url.
+     * Returns the request url.
      *
-     * @return The mockRequest url.
+     * @return The request url.
      */
     public String url() {
         return getNonNull(url, "");
@@ -169,20 +171,20 @@ public class MockRequest {
 
     /**
      * Returns an unmodifiable map of required header key/value pairs for this
-     * mockRequest mockRequest.
+     * request template.
      *
-     * @return The unmodifiable mockRequest headers map as per definition in
-     * {@link Collections#unmodifiableMap(Map)}.
+     * @return The unmodifiable request headers map as per definition in {@link
+     * Collections#unmodifiableMap(Map)}.
      */
     public Map<String, String> headers() {
         return Collections.unmodifiableMap(headers);
     }
 
     /**
-     * Returns an unmodifiable list of the currently configured mock
-     * mockResponses for this mockRequest mockRequest.
+     * Returns an unmodifiable list of the currently configured mock responses
+     * for this request template.
      *
-     * @return A list of mock mockResponses. The list is unmodifiable as per
+     * @return A list of mock responses. The list is unmodifiable as per
      * definition in {@link Collections#unmodifiableList(List)}.
      */
     public List<MockResponse> responses() {
@@ -190,7 +192,7 @@ public class MockRequest {
     }
 
     /**
-     * Returns the response filter of this mockRequest mockRequest.
+     * Returns the response filter of this request template.
      *
      * @return The response filter or null.
      */
@@ -199,7 +201,7 @@ public class MockRequest {
     }
 
     /**
-     * Returns a suitable mocked response to serve for this mockRequest.
+     * Returns a suitable mocked response to serve for this request template.
      *
      * @return The response to server, may be null.
      */
@@ -210,8 +212,7 @@ public class MockRequest {
     }
 
     /**
-     * Overrides forcefully the response filter of this mockRequest
-     * mockRequest.
+     * Forcefully overrides the response filter of this request template.
      *
      * @param responseFilter The new response filter.
      */
