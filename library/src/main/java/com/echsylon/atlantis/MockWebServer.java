@@ -419,7 +419,7 @@ class MockWebServer {
             if (delay > 0L)
                 sleepSilently(delay);
 
-            while (progress < chunk) {
+            while (progress < chunk && remaining > 0L) {
                 long read = source.read(buffer, Math.min(remaining, chunk));
                 if (read == -1)
                     return;
