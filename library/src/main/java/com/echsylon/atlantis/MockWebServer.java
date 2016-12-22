@@ -35,10 +35,6 @@ import static com.echsylon.atlantis.Utils.sleepSilently;
  * means. It's a streamlined implementation to meet the Atlantis needs.
  */
 class MockWebServer {
-    private static final MockResponse CONTINUE = new MockResponse.Builder()
-            .setStatus(100, "Continue")
-            .addHeader("Content-Length", "0")
-            .build();
 
     /**
      * This interface describes the mandatory features required to provide a
@@ -214,13 +210,9 @@ class MockWebServer {
                 Meta meta = null;
 
                 while ((meta = readRequestMeta(source)) != null) {
-                    if (meta.isExpectedToContinue()) {
-                        writeResponse(CONTINUE, target);
-                    } else {
-                        Buffer body = readRequestBody(meta, source);
-                        MockResponse response = responseHandler.getMockResponse(meta, body);
-                        writeResponse(response, target);
-                    }
+                    Buffer body = readRequestBody(meta, source);
+                    MockResponse response = responseHandler.getMockResponse(meta, body);
+                    writeResponse(response, target);
                 }
             } catch (SocketException e) {
                 info("Socket connection closed: %s", socket.getInetAddress());

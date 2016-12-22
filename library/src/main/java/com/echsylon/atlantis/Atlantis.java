@@ -34,6 +34,12 @@ import static com.echsylon.atlantis.Utils.notEmpty;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class Atlantis {
     private static final int PORT = 8080;
+
+    private static final MockResponse CONTINUE = new MockResponse.Builder()
+            .setStatus(100, "Continue")
+            .addHeader("Content-Length", "0")
+            .build();
+
     private static final MockResponse NOT_FOUND = new MockResponse.Builder()
             .setStatus(404, "Not Found")
             .addHeader("Content-Length", "0")
@@ -258,7 +264,10 @@ public class Atlantis {
      * @return The suggested mock response.
      */
     private MockResponse serve(final Meta meta, final Source source) {
-        MockRequest mockRequest = configuration.request(meta);
+        MockRequest mockRequest = !meta.isExpectedToContinue() ?
+                configuration.request(meta) :
+                getContinueTemplate(meta);
+
         if (mockRequest == null) {
             info("Couldn't find the request template configuration");
             if (notEmpty(configuration.fallbackBaseUrl())) {
@@ -272,7 +281,7 @@ public class Atlantis {
         }
 
         if (mockRequest == null)
-            mockRequest = getFallbackTemplate(meta);
+            mockRequest = getNotFoundTemplate(meta);
 
         if (recordServedRequests)
             servedRequests.add(mockRequest);
@@ -362,19 +371,35 @@ public class Atlantis {
     }
 
     /**
-     * Returns a default request template that holds the default response(s) to
-     * deliver when no configuration could be found and no real response could
-     * be retrieved.
+     * Returns a default request template that holds a default "404 Not found"
+     * response to deliver when no other template could be found and no real
+     * response could be retrieved.
      *
      * @param meta The meta data describing the request.
-     * @return A mock request holding any fallback responses.
+     * @return A request template holding the default 404 response.
      */
-    private MockRequest getFallbackTemplate(final Meta meta) {
+    private MockRequest getNotFoundTemplate(final Meta meta) {
         return new MockRequest.Builder()
                 .setMethod(meta.method())
                 .setUrl(meta.url())
                 .addHeaders(meta.headers())
                 .addResponse(NOT_FOUND)
+                .build();
+    }
+
+    /**
+     * Returns a default request template that holds a default "100 Continue"
+     * response to deliver when a corresponding request is made.
+     *
+     * @param meta The meta data describing the request.
+     * @return A request template holding the default "Continue" response.
+     */
+    private MockRequest getContinueTemplate(final Meta meta) {
+        return new MockRequest.Builder()
+                .setMethod(meta.method())
+                .setUrl(meta.url())
+                .addHeaders(meta.headers())
+                .addResponse(CONTINUE)
                 .build();
     }
 }
