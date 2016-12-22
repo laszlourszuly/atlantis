@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class contains all request mockRequests the {@link Atlantis} local web
@@ -40,6 +41,61 @@ public class Configuration implements Serializable {
             if (!configuration.requests.contains(mockRequest))
                 configuration.requests.add(mockRequest);
 
+            return this;
+        }
+
+        /**
+         * Adds a default response header to the configuration being built. Any
+         * existing keys will be overwritten. If a corresponding header exists
+         * in a mock response definition, then that header will be honored
+         * instead.
+         *
+         * @param key   The header key.
+         * @param value The header value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addDefaultResponseHeader(final String key, final String value) {
+            configuration.defaultResponseHeaders.put(key, value);
+            return this;
+        }
+
+        /**
+         * Adds all default response headers to the configuration being built,
+         * where neither the key nor the value is empty or null. Any existing
+         * keys will be overwritten. If a corresponding header exists in a mock
+         * response definition, then that header will be honored instead.
+         *
+         * @param responseHeaders The headers to add.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addDefaultResponseHeaders(final Map<String, String> responseHeaders) {
+            configuration.defaultResponseHeaders.putAll(responseHeaders);
+            return this;
+        }
+
+        /**
+         * Adds a default response setting to the configuration being built. Any
+         * existing keys will be overwritten.
+         *
+         * @param key   The setting key.
+         * @param value The setting value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addDefaultResponseSetting(final String key, final String value) {
+            configuration.defaultResponseSettings.put(key, value);
+            return this;
+        }
+
+        /**
+         * Adds all default response settings to the configuration being built
+         * where neither the key nor the value is empty or null. Any existing
+         * keys will be overwritten.
+         *
+         * @param settings The settings to add.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addDefaultResponseSettings(final Map<String, String> settings) {
+            configuration.defaultResponseSettings.putAll(settings);
             return this;
         }
 
@@ -80,11 +136,15 @@ public class Configuration implements Serializable {
 
     private String fallbackBaseUrl = null;
     private List<MockRequest> requests = null;
+    private HeaderManager defaultResponseHeaders = null;
+    private SettingsManager defaultResponseSettings = null;
     private transient MockRequest.Filter requestFilter = null;
 
 
     Configuration() {
         requests = new ArrayList<>();
+        defaultResponseHeaders = new HeaderManager();
+        defaultResponseSettings = new SettingsManager();
     }
 
     /**
@@ -129,6 +189,28 @@ public class Configuration implements Serializable {
                 requestFilter;
 
         return filter.findRequest(meta.method(), meta.url(), meta.headers(), requests);
+    }
+
+    /**
+     * Returns the default response behavior settings. If a corresponding
+     * setting is found in the mock response definition, then that setting will
+     * be honored instead.
+     *
+     * @return The response settings.
+     */
+    SettingsManager defaultResponseSettings() {
+        return defaultResponseSettings;
+    }
+
+    /**
+     * Returns the default response headers. If a corresponding header is found
+     * in the mock response definition, then that header will be honored
+     * instead.
+     *
+     * @return The default response headers.
+     */
+    HeaderManager defaultResponseHeaders() {
+        return defaultResponseHeaders;
     }
 
     /**

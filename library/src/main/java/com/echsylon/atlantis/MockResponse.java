@@ -14,6 +14,7 @@ import okio.Source;
 import static com.echsylon.atlantis.LogUtils.info;
 import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.getNonNull;
+import static com.echsylon.atlantis.Utils.notEmpty;
 
 /**
  * This class contains the full description of a mock response.
@@ -286,6 +287,28 @@ public class MockResponse {
     void setSourceHelperIfAbsent(final SourceHelper sourceHelper) {
         if (this.sourceHelper == null)
             this.sourceHelper = sourceHelper;
+    }
+
+    /**
+     * Adds any default headers to the mock response if not already exists.
+     *
+     * @param defaultHeaders The default headers map.
+     */
+    void addHeadersIfAbsent(final Map<String, String> defaultHeaders) {
+        if (notEmpty(defaultHeaders))
+            for (Map.Entry<String, String> entry : defaultHeaders.entrySet())
+                headers.putIfAbsent(entry.getKey(), entry.getValue());
+    }
+
+    /**
+     * Adds any default settings to the mock response if not already exists.
+     *
+     * @param defaultSettings The default headers map.
+     */
+    void addSettingsIfAbsent(final Map<String, String> defaultSettings) {
+        if (notEmpty(defaultSettings))
+            for (Map.Entry<String, String> entry : defaultSettings.entrySet())
+                settings.putIfAbsent(entry.getKey(), entry.getValue());
     }
 
     /**

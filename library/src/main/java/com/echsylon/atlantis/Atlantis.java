@@ -274,9 +274,8 @@ public class Atlantis {
                 String url = configuration.fallbackBaseUrl() + meta.url();
                 info("Falling back to real world: %s", url);
                 mockRequest = realServer.getRealTemplate(url, meta, source,
-                        recordMissingRequests ?
-                                atlantisDir :
-                                null);
+                        configuration.defaultResponseSettings(),
+                        recordMissingRequests ? atlantisDir : null);
             }
         }
 
@@ -296,6 +295,7 @@ public class Atlantis {
             return NOT_FOUND;
 
         mockResponse.setSourceHelperIfAbsent(this::open);
+        mockResponse.addHeadersIfAbsent(configuration.defaultResponseHeaders());
         return mockResponse;
     }
 

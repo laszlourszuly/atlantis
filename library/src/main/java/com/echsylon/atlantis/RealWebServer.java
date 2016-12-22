@@ -67,7 +67,7 @@ class RealWebServer {
 
         ResponseBody responseBody = null;
         try {
-            Response response = getRealResponse(url, "GET", headers, null);
+            Response response = getRealResponse(url, "GET", headers, null, null);
             responseBody = response.body();
             return response.code() == 200 ?
                     responseBody.string() :
@@ -89,18 +89,23 @@ class RealWebServer {
      * <p>
      * {@code <directory>/<request_method>/<request_path>/<response_timestamp>}
      *
-     * @param url         The url for the "real" endpoint. The meta object will
-     *                    hold the remaining request information, like method,
-     *                    headers etc.
-     * @param meta        The meta data describing the request to make.
-     * @param requestBody The request body content stream.
-     * @param directory   If given, the directory to persist the response to.
+     * @param url             The url for the "real" endpoint. The meta object
+     *                        will hold the remaining request information, like
+     *                        method, headers etc.
+     * @param meta            The meta data describing the request to make.
+     * @param requestBody     The request body content stream.
+     * @param defaultSettings The default settings for all responses. This may
+     *                        constrain how the response is fetched (e.g.
+     *                        whether to follow redirects or not).
+     * @param directory       If given, the directory to persist the response
+     *                        to.
      * @return The mock request describing the real request and wrapping the
      * real response.
      */
     MockRequest getRealTemplate(final String url,
                                 final Meta meta,
                                 final Source requestBody,
+                                final SettingsManager defaultSettings,
                                 final File directory) {
 
         ResponseBody responseBody = null;
@@ -110,7 +115,7 @@ class RealWebServer {
             meta.addHeader("Host", Uri.parse(url).getHost());
 
             // Now get the real response.
-            Response response = getRealResponse(url, meta.method(), meta.headers(), requestBody);
+            Response response = getRealResponse(url, meta.method(), meta.headers(), requestBody, defaultSettings);
             MockResponse.Builder mockResponse = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
                     .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS,
@@ -152,17 +157,19 @@ class RealWebServer {
      * response body. The caller must ensure to close it to avoid resource
      * leaks.
      *
-     * @param url         The request URL to get a response from.
-     * @param method      The request method ("GET", "POST", etc).
-     * @param headers     The request headers. Null means no headers.
-     * @param requestBody The request body content stream.
+     * @param url             The request URL to get a response from.
+     * @param method          The request method ("GET", "POST", etc).
+     * @param headers         The request headers. Null means no headers.
+     * @param requestBody     The request body content stream.
+     * @param defaultSettings The default settings for all responses.
      * @return The real response as delivered by the backing HTTP client.
      * @throws IOException if anything would go wrong during the request.
      */
     private Response getRealResponse(final String url,
                                      final String method,
                                      final Map<String, String> headers,
-                                     final Source requestBody) throws IOException {
+                                     final Source requestBody,
+                                     final SettingsManager defaultSettings) throws IOException {
 
         Request.Builder request = new Request.Builder();
         request.url(url);
@@ -178,7 +185,13 @@ class RealWebServer {
             request.method(method, body);
         }
 
-        return new OkHttpClient()
+        boolean followRedirects = defaultSettings == null || defaultSettings.followRedirects();
+        OkHttpClient httpClient = new OkHttpClient.Builder()
+                .followSslRedirects(followRedirects)
+                .followRedirects(followRedirects)
+                .build();
+
+        return httpClient
                 .newCall(request.build())
                 .execute();
     }
