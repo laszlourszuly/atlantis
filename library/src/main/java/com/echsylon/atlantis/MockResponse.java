@@ -73,9 +73,9 @@ public class MockResponse {
          * @param mockRequest     The mock request to be served.
          * @param rawMockResponse The configured or recorded mock response.
          * @return A modified mock response that can be served to waiting
-         * client. Note that {@code MockResponse}'s are immutable so any
-         * implementing class will have to create a new {@code MockResponse}
-         * instance (preferably  by using a {@code Builder} instance).
+         * client. Note that {@code MockResponse}'s are immutable (-ish).
+         * Implementing classes will have to create a new {@code MockResponse}
+         * instance to return, preferably  by using a {@code Builder} instance.
          */
         MockResponse parse(final MockRequest mockRequest, final MockResponse rawMockResponse);
     }
@@ -163,7 +163,7 @@ public class MockResponse {
         }
 
         /**
-         * Sets a string as the body content of the response being built.
+         * Sets a string as the body content of the mock response being built.
          *
          * @param string The new response body content.
          * @return This builder instance, allowing chaining of method calls.
@@ -176,7 +176,8 @@ public class MockResponse {
         }
 
         /**
-         * Sets a byte array as the body content of the response being built.
+         * Sets a byte array as the body content of the mock response being
+         * built.
          *
          * @param bytes The new response body content.
          * @return This builder instance, allowing chaining of method calls.
@@ -188,10 +189,10 @@ public class MockResponse {
         }
 
         /**
-         * Sets a file (the content of the file to be more specific) as the body
-         * content of the response being built.
+         * Sets a file that will provide the body content of the mock response
+         * being built.
          *
-         * @param file The new response body content.
+         * @param file The new response body content source.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final File file) {
@@ -208,10 +209,10 @@ public class MockResponse {
         }
 
         /**
-         * Sets an InputStream (the data provided by the input stream to be more
-         * specific) as the body content of the response being built.
+         * Sets an InputStream that will provide the body content of the mock
+         * response being built.
          *
-         * @param inputStream The new response body content.
+         * @param inputStream The new response body content source.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final InputStream inputStream) {
