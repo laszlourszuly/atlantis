@@ -57,6 +57,21 @@ public class MockRequest {
         }
 
         /**
+         * Offers (internal) help to easily create a mock request from a meta.
+         *
+         * @param meta The request meta data. Null is handled gracefully.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder fromMeta(final Meta meta) {
+            if (meta != null) {
+                mockRequest.url = meta.url();
+                mockRequest.method = meta.method();
+                mockRequest.headers.putAll(meta.headers());
+            }
+            return this;
+        }
+
+        /**
          * Adds a header to the request template being built. Doesn't add
          * anything if the {@code key} or {@code value} is empty or null.
          *
