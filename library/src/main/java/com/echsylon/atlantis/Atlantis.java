@@ -46,6 +46,47 @@ public class Atlantis {
             .build();
 
 
+    /**
+     * This interface describes the API offering means for preparing a request
+     * either for the real world or the mock environment. Atlantis will make
+     * sure any injected implementation of this interface is called when needed
+     * and possible, e.g. there needs to be "fallbackBaseUrl" defined in the
+     * configuration for this transformation to take place.
+     */
+    public interface TransformationHelper {
+
+        /**
+         * Returns a new mock request which doesn't reference any features in
+         * the mock environment. This indirectly requires any implementing
+         * classes to know of the "real world".
+         *
+         * @param realBaseUrl The base url of the real server.
+         * @param mockRequest The unchanged mock request as Atlantis knows it.
+         * @return A modified mock request which has all internal URL's and mock
+         * references replaced with corresponding real world values. Since the
+         * {@code MockRequest} is immutable (-ish), implementing classes must
+         * create and return a new instance, preferably by using a {@link
+         * MockRequest.Builder}).
+         */
+        MockRequest prepareForRealWorld(final String realBaseUrl, final MockRequest mockRequest);
+
+        /**
+         * Returns a new mock response which doesn't reference any real life
+         * resources, but targets internal, mocked, alternatives only.
+         *
+         * @param realBaseUrl      The base url of the real server.
+         * @param recordedResponse The mock response as recorded from the real
+         *                         world response.
+         * @return A modified mock response which has all external URL's and
+         * mock references replaced with corresponding mock values. Since the
+         * {@code MockResponse} is immutable (-ish), implementing classes must
+         * create and return a new instance, preferably by using a {@link
+         * MockResponse.Builder}).
+         */
+        MockResponse prepareForMockedWorld(final String realBaseUrl, final MockResponse recordedResponse);
+    }
+
+
     private Context context;
     private File atlantisDir;
     private MockWebServer mockServer;
