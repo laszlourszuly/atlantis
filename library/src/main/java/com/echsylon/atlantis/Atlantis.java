@@ -280,7 +280,11 @@ public class Atlantis {
         }
 
         if (mockRequest == null)
-            mockRequest = getNotFoundTemplate(meta);
+            return NOT_FOUND;
+
+        MockResponse mockResponse = mockRequest.response();
+        if (mockResponse == null)
+            return NOT_FOUND;
 
         if (recordServedRequests)
             servedRequests.add(mockRequest);
@@ -289,10 +293,6 @@ public class Atlantis {
             configuration.addRequest(mockRequest);
             writeConfigurationToFile(configuration, atlantisDir);
         }
-
-        MockResponse mockResponse = mockRequest.response();
-        if (mockResponse == null)
-            return NOT_FOUND;
 
         mockResponse.setSourceHelperIfAbsent(this::open);
         mockResponse.addHeadersIfAbsent(configuration.defaultResponseHeaders());
@@ -372,23 +372,6 @@ public class Atlantis {
         } finally {
             closeSilently(target);
         }
-    }
-
-    /**
-     * Returns a default request template that holds a default "404 Not found"
-     * response to deliver when no other template could be found and no real
-     * response could be retrieved.
-     *
-     * @param meta The meta data describing the request.
-     * @return A request template holding the default 404 response.
-     */
-    private MockRequest getNotFoundTemplate(final Meta meta) {
-        return new MockRequest.Builder()
-                .setMethod(meta.method())
-                .setUrl(meta.url())
-                .addHeaders(meta.headers())
-                .addResponse(NOT_FOUND)
-                .build();
     }
 
     /**
