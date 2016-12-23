@@ -310,13 +310,16 @@ public class Atlantis {
                 getContinueTemplate(meta);
 
         if (mockRequest == null) {
-            info("Couldn't find the request template configuration");
-            if (notEmpty(configuration.fallbackBaseUrl())) {
-                String url = configuration.fallbackBaseUrl() + meta.url();
-                info("Falling back to real world: %s", url);
-                mockRequest = realServer.getRealTemplate(url, meta, source,
+            info("Couldn't find request template: %s", meta.url());
+            String realBaseUrl = configuration.fallbackBaseUrl();
+            if (notEmpty(realBaseUrl)) {
+                info("Falling back to real world: %s", realBaseUrl);
+                mockRequest = realServer.getMockRequest(realBaseUrl, meta, source,
                         configuration.defaultResponseSettings(),
-                        recordMissingRequests ? atlantisDir : null);
+                        configuration.transformationHelper(),
+                        recordMissingRequests ?
+                                atlantisDir :
+                                null);
             }
         }
 

@@ -348,9 +348,8 @@ class MockWebServer {
             if (!headers.containsKey("Content-Length")) {
                 if (response.isExpectedToContinue()) {
                     builder.append("Content-Length: 0\r\n");
-                } else if (!response.isExpectedToBeChunked()) {
-                    if (buffer != null)
-                        builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
+                } else if (!response.isExpectedToBeChunked() && buffer != null) {
+                    builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
                 }
             }
 

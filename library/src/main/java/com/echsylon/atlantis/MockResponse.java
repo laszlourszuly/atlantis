@@ -297,7 +297,7 @@ public class MockResponse {
      * @return A string that describes the mock response body content.
      */
     public String body() {
-        return getNonNull(text, "");
+        return text;
     }
 
     /**

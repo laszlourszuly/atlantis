@@ -1,7 +1,5 @@
 package com.echsylon.atlantis;
 
-import android.net.Uri;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -89,9 +87,9 @@ class RealWebServer {
      * <p>
      * {@code <directory>/<request_method>/<request_path>/<response_timestamp>}
      *
-     * @param url             The url for the "real" endpoint. The meta object
-     *                        will hold the remaining request information, like
-     *                        method, headers etc.
+     * @param realBaseUrl     The base url for the "real" endpoint. The meta
+     *                        object will hold the remaining request metrics,
+     *                        like method, headers, path etc.
      * @param meta            The meta data describing the request to make.
      * @param requestBody     The request body content stream.
      * @param defaultSettings The default settings for all responses. This may
@@ -102,21 +100,32 @@ class RealWebServer {
      * @return The mock request describing the real request and wrapping the
      * real response.
      */
-    MockRequest getRealTemplate(final String url,
-                                final Meta meta,
-                                final Source requestBody,
-                                final SettingsManager defaultSettings,
-                                final File directory) {
+    MockRequest getMockRequest(final String realBaseUrl,
+                               final Meta meta,
+                               final Source requestBody,
+                               final SettingsManager defaultSettings,
+                               final Atlantis.TransformationHelper transformationHelper,
+                               final File directory) {
 
+        String url = realBaseUrl + meta.url();
         ResponseBody responseBody = null;
-        try {
-            // We're leaving the Atlantis universe, let's reflect the new
-            // reality in the "Host" header as well.
-            meta.addHeader("Host", Uri.parse(url).getHost());
 
+        try {
             // Now get the real response.
-            Response response = getRealResponse(url, meta.method(), meta.headers(), requestBody, defaultSettings);
-            MockResponse.Builder mockResponse = new MockResponse.Builder()
+            MockRequest mockRequest = new MockRequest.Builder()
+                    .fromMeta(meta)
+                    .build();
+
+            if (transformationHelper != null)
+                mockRequest = transformationHelper.prepareForRealWorld(realBaseUrl, mockRequest);
+
+            Response response = getRealResponse(url,
+                    mockRequest.method(),
+                    mockRequest.headers(),
+                    requestBody,
+                    defaultSettings);
+
+            MockResponse.Builder builder = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
                     .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS,
                             Long.toString(response.receivedResponseAtMillis() -
@@ -124,25 +133,30 @@ class RealWebServer {
 
             Headers headers = response.headers();
             for (String key : headers.names())
-                mockResponse.addHeader(key, headers.get(key));
+                builder.addHeader(key, headers.get(key));
 
             responseBody = response.body();
             if (responseBody.contentLength() > 0L) {
                 byte[] bytes = responseBody.bytes();
 
                 if (directory == null) {
-                    mockResponse.setBody(bytes);
+                    builder.setBody(bytes);
                 } else {
                     File file = writeResponseToFile(bytes, directory, response.request());
                     if (file != null)
-                        mockResponse.setBody("file://" + file.getAbsolutePath());
+                        builder.setBody("file://" + file.getAbsolutePath());
                 }
             }
+
+            MockResponse mockResponse = builder.build();
+
+            if (transformationHelper != null)
+                mockResponse = transformationHelper.prepareForMockedWorld(realBaseUrl, mockResponse);
 
             return new MockRequest.Builder()
                     .setMethod(meta.method())
                     .setUrl(meta.url())
-                    .addResponse(mockResponse.build())
+                    .addResponse(mockResponse)
                     .build();
         } catch (IOException e) {
             info(e, "Couldn't prepare real request, ignoring: %s %s", meta.method(), url);

@@ -100,6 +100,17 @@ public class Configuration implements Serializable {
         }
 
         /**
+         * Sets the fallback base url to hit when no mocked request was found.
+         *
+         * @param realBaseUrl The real-world base URL, including scheme.
+         * @return This builder object, allowing chaining of method calls.
+         */
+        public Builder setFallbackBaseUrl(final String realBaseUrl) {
+            configuration.fallbackBaseUrl = realBaseUrl;
+            return this;
+        }
+
+        /**
          * Sets the request filter logic to use when matching a request to
          * serve.
          *
@@ -112,13 +123,15 @@ public class Configuration implements Serializable {
         }
 
         /**
-         * Sets the fallback base url to hit when no mocked request was found.
+         * Sets the real/mock context transformation helper to use when relaying
+         * a request to a real server and introducing a real response to the
+         * mock context.
          *
-         * @param realBaseUrl The real-world base URL, including scheme.
+         * @param helper The mock transformation helper. May be null.
          * @return This builder object, allowing chaining of method calls.
          */
-        public Builder setFallbackBaseUrl(final String realBaseUrl) {
-            configuration.fallbackBaseUrl = realBaseUrl;
+        public Builder setTransformationHelper(final Atlantis.TransformationHelper helper) {
+            configuration.transformationHelper = helper;
             return this;
         }
 
@@ -139,6 +152,7 @@ public class Configuration implements Serializable {
     private HeaderManager defaultResponseHeaders = null;
     private SettingsManager defaultResponseSettings = null;
     private transient MockRequest.Filter requestFilter = null;
+    private transient Atlantis.TransformationHelper transformationHelper = null;
 
 
     Configuration() {
@@ -176,6 +190,16 @@ public class Configuration implements Serializable {
      */
     public MockRequest.Filter requestFilter() {
         return requestFilter;
+    }
+
+    /**
+     * Returns the atlantis transformation helper for this configuration.
+     *
+     * @return A transport helper implementation. May be null if no
+     * transformation helper has been defined.
+     */
+    Atlantis.TransformationHelper transformationHelper() {
+        return transformationHelper;
     }
 
     /**
