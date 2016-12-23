@@ -296,7 +296,11 @@ public class Atlantis {
 
         mockResponse.setSourceHelperIfAbsent(this::open);
         mockResponse.addHeadersIfAbsent(configuration.defaultResponseHeaders());
-        return mockResponse;
+
+        MockResponse.StateHelper stateHelper = mockResponse.stateHelper();
+        return stateHelper != null ?
+                stateHelper.parse(mockRequest, mockResponse) :
+                mockResponse;
     }
 
     /**
