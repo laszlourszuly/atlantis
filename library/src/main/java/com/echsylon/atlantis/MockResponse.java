@@ -221,6 +221,18 @@ public class MockResponse {
         }
 
         /**
+         * Sets the state helper implementation of the mock response being
+         * built.
+         *
+         * @param stateHelper The new state helper implementation.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setStateHelper(final StateHelper stateHelper) {
+            mockResponse.stateHelper = stateHelper;
+            return this;
+        }
+
+        /**
          * Returns a sealed response object which can not be further built on.
          *
          * @return The final response object.
@@ -235,6 +247,7 @@ public class MockResponse {
     private String phrase = null;
     private HeaderManager headers = null;
     private SettingsManager settings = null;
+    private transient StateHelper stateHelper = null;
     private transient SourceHelper sourceHelper = null;
 
 
@@ -304,6 +317,16 @@ public class MockResponse {
      */
     SettingsManager settings() {
         return settings;
+    }
+
+    /**
+     * Returns the response state helper implementation. See {@link StateHelper}
+     * for more info on what this is.
+     *
+     * @return The state helper.
+     */
+    StateHelper stateHelper() {
+        return stateHelper;
     }
 
     /**

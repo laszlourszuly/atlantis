@@ -192,6 +192,15 @@ class JsonSerializers {
             builder.setStatus(jsonObject.get("code").getAsInt(), jsonObject.get("phrase").getAsString());
             builder.setBody(jsonObject.get("text").getAsString());
 
+            if (jsonObject.has("stateHelper"))
+                try {
+                    String helperClassName = jsonObject.get("stateHelper").getAsString();
+                    MockResponse.StateHelper helper = (MockResponse.StateHelper) Class.forName(helperClassName).newInstance();
+                    builder.setStateHelper(helper);
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize state helper");
+                }
+
             if (jsonObject.has("headers"))
                 try {
                     JsonObject headers = jsonObject.get("headers").getAsJsonObject();
@@ -230,6 +239,10 @@ class JsonSerializers {
             String text = response.body();
             if (notEmpty(text))
                 jsonObject.addProperty("text", text);
+
+            MockResponse.StateHelper stateHelper = response.stateHelper();
+            if (stateHelper != null)
+                jsonObject.addProperty("stateHelper", stateHelper.getClass().getCanonicalName());
 
             Map<String, String> headers = response.headers();
             if (notEmpty(headers))
