@@ -42,6 +42,15 @@ class JsonSerializers {
                     info(e, "Couldn't deserialize request filter");
                 }
 
+            if (jsonObject.has("tokenHelper"))
+                try {
+                    String helperClassName = jsonObject.get("tokenHelper").getAsString();
+                    Atlantis.TokenHelper helper = (Atlantis.TokenHelper) Class.forName(helperClassName).newInstance();
+                    builder.setTokenHelper(helper);
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize token helper");
+                }
+
             if (jsonObject.has("transformationHelper"))
                 try {
                     String helperClassName = jsonObject.get("transformationHelper").getAsString();
@@ -91,13 +100,21 @@ class JsonSerializers {
             if (configuration == null)
                 return null;
 
-            MockRequest.Filter filter = configuration.requestFilter();
-            Atlantis.TransformationHelper helper = configuration.transformationHelper();
-
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("fallbackBaseUrl", configuration.fallbackBaseUrl());
-            jsonObject.addProperty("requestFilter", filter != null ? filter.getClass().getCanonicalName() : null);
-            jsonObject.addProperty("transformationHelper", helper != null ? helper.getClass().getCanonicalName() : null);
+
+            MockRequest.Filter filter = configuration.requestFilter();
+            if (filter != null)
+                jsonObject.addProperty("requestFilter", filter.getClass().getCanonicalName());
+
+            Atlantis.TokenHelper tokenHelper = configuration.tokenHelper();
+            if (tokenHelper != null)
+                jsonObject.addProperty("tokenHelper", tokenHelper.getClass().getCanonicalName());
+
+            Atlantis.TransformationHelper transformationHelper = configuration.transformationHelper();
+            if (transformationHelper != null)
+                jsonObject.addProperty("transformationHelper", transformationHelper.getClass().getCanonicalName());
+
             jsonObject.add("defaultResponseHeaders", context.serialize(configuration.defaultResponseHeaders()));
             jsonObject.add("defaultResponseSettings", context.serialize(configuration.defaultResponseSettings()));
             jsonObject.add("requests", context.serialize(configuration.requests()));
@@ -204,15 +221,6 @@ class JsonSerializers {
             builder.setStatus(jsonObject.get("code").getAsInt(), jsonObject.get("phrase").getAsString());
             builder.setBody(jsonObject.get("text").getAsString());
 
-            if (jsonObject.has("stateHelper"))
-                try {
-                    String helperClassName = jsonObject.get("stateHelper").getAsString();
-                    MockResponse.StateHelper helper = (MockResponse.StateHelper) Class.forName(helperClassName).newInstance();
-                    builder.setStateHelper(helper);
-                } catch (Exception e) {
-                    info(e, "Couldn't deserialize state helper");
-                }
-
             if (jsonObject.has("headers"))
                 try {
                     JsonObject headers = jsonObject.get("headers").getAsJsonObject();
@@ -251,10 +259,6 @@ class JsonSerializers {
             String text = response.body();
             if (notEmpty(text))
                 jsonObject.addProperty("text", text);
-
-            MockResponse.StateHelper stateHelper = response.stateHelper();
-            if (stateHelper != null)
-                jsonObject.addProperty("stateHelper", stateHelper.getClass().getCanonicalName());
 
             Map<String, String> headers = response.headers();
             if (notEmpty(headers))

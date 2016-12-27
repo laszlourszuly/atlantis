@@ -86,6 +86,29 @@ public class Atlantis {
         MockResponse prepareForMockedWorld(final String realBaseUrl, final MockResponse recordedResponse);
     }
 
+    /**
+     * This interface describes the token helper feature set. A token helpers
+     * main responsibility is to evaluate tokens and replace them with the
+     * corresponding evaluated values.
+     */
+    public interface TokenHelper {
+
+        /**
+         * Performs the actual token replacement activities and delivers a new,
+         * ready-to-serve mock response.
+         *
+         * @param mockRequest     The mock request to be served.
+         * @param rawMockResponse The configured or recorded mock response (with
+         *                        the yet un-parsed tokens).
+         * @return A new, modified mock response that can be served to a waiting
+         * client. Note that {@code MockResponse}'s are immutable from the users
+         * perspective. Implementing classes will have to create a new {@code
+         * MockResponse} instance to return, preferably  by using a {@code
+         * MockResponse.Builder} instance.
+         */
+        MockResponse parse(final MockRequest mockRequest, final MockResponse rawMockResponse);
+    }
+
 
     private Context context;
     private File atlantisDir;
@@ -341,9 +364,9 @@ public class Atlantis {
         mockResponse.setSourceHelperIfAbsent(this::open);
         mockResponse.addHeadersIfAbsent(configuration.defaultResponseHeaders());
 
-        MockResponse.StateHelper stateHelper = mockResponse.stateHelper();
-        return stateHelper != null ?
-                stateHelper.parse(mockRequest, mockResponse) :
+        TokenHelper tokenHelper = configuration.tokenHelper();
+        return tokenHelper != null ?
+                tokenHelper.parse(mockRequest, mockResponse) :
                 mockResponse;
     }
 

@@ -57,30 +57,6 @@ public class MockResponse {
     }
 
     /**
-     * This interface describes the state helper feature set. A state helpers
-     * main responsibility is to keep track of cross request state variables,
-     * which can't be mocked statically in a JSON configuration file. It can
-     * also be used to "mockify" recorded real world responses, e.g. to replace
-     * the base URL in a "Location" header from, say, "https://api.host.com/path"
-     * to "http://localhost:8080/path".
-     */
-    public interface StateHelper {
-
-        /**
-         * Performs the actual state keeping or token replacement activities and
-         * delivers a ready-to-serve mock response.
-         *
-         * @param mockRequest     The mock request to be served.
-         * @param rawMockResponse The configured or recorded mock response.
-         * @return A modified mock response that can be served to waiting
-         * client. Note that {@code MockResponse}'s are immutable (-ish).
-         * Implementing classes will have to create a new {@code MockResponse}
-         * instance to return, preferably  by using a {@code Builder} instance.
-         */
-        MockResponse parse(final MockRequest mockRequest, final MockResponse rawMockResponse);
-    }
-
-    /**
      * This class offers means of building a mocked response configuration
      * directly from code (as opposed to configure one in a JSON file).
      */
@@ -222,18 +198,6 @@ public class MockResponse {
         }
 
         /**
-         * Sets the state helper implementation of the mock response being
-         * built.
-         *
-         * @param stateHelper The new state helper implementation.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setStateHelper(final StateHelper stateHelper) {
-            mockResponse.stateHelper = stateHelper;
-            return this;
-        }
-
-        /**
          * Returns a sealed response object which can not be further built on.
          *
          * @return The final response object.
@@ -248,7 +212,6 @@ public class MockResponse {
     private String phrase = null;
     private HeaderManager headers = null;
     private SettingsManager settings = null;
-    private transient StateHelper stateHelper = null;
     private transient SourceHelper sourceHelper = null;
 
 
@@ -318,16 +281,6 @@ public class MockResponse {
      */
     SettingsManager settings() {
         return settings;
-    }
-
-    /**
-     * Returns the response state helper implementation. See {@link StateHelper}
-     * for more info on what this is.
-     *
-     * @return The state helper.
-     */
-    StateHelper stateHelper() {
-        return stateHelper;
     }
 
     /**

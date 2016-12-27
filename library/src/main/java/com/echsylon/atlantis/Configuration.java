@@ -123,6 +123,18 @@ public class Configuration implements Serializable {
         }
 
         /**
+         * Sets a helper implementation that manages token parsing and state
+         * keeping based on request data.
+         *
+         * @param tokenHelper The new token helper implementation.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setTokenHelper(final Atlantis.TokenHelper tokenHelper) {
+            configuration.tokenHelper = tokenHelper;
+            return this;
+        }
+
+        /**
          * Sets the real/mock context transformation helper to use when relaying
          * a request to a real server and introducing a real response to the
          * mock context.
@@ -152,6 +164,7 @@ public class Configuration implements Serializable {
     private HeaderManager defaultResponseHeaders = null;
     private SettingsManager defaultResponseSettings = null;
     private transient MockRequest.Filter requestFilter = null;
+    private transient Atlantis.TokenHelper tokenHelper = null;
     private transient Atlantis.TransformationHelper transformationHelper = null;
 
 
@@ -190,6 +203,16 @@ public class Configuration implements Serializable {
      */
     public MockRequest.Filter requestFilter() {
         return requestFilter;
+    }
+
+    /**
+     * Returns the current token helper implementation. See {@link
+     * Atlantis.TokenHelper} for more info on what this is.
+     *
+     * @return The token helper.
+     */
+    Atlantis.TokenHelper tokenHelper() {
+        return tokenHelper;
     }
 
     /**
