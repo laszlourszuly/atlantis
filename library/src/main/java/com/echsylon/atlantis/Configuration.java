@@ -27,7 +27,16 @@ public class Configuration implements Serializable {
          * object.
          */
         public Builder() {
-            configuration = new Configuration();
+            this(new Configuration());
+        }
+
+        /**
+         * Creates a new builder based on the provided configuration object.
+         *
+         * @param source The configuration to initialize this builder with.
+         */
+        public Builder(Configuration source) {
+            configuration = source != null ? source : new Configuration();
         }
 
         /**

@@ -53,7 +53,16 @@ public class MockRequest {
          * object.
          */
         public Builder() {
-            mockRequest = new MockRequest();
+            this(new MockRequest());
+        }
+
+        /**
+         * Creates a new builder based on the provided mock request object.
+         *
+         * @param source The mock request to initialize this builder with.
+         */
+        public Builder(final MockRequest source) {
+            mockRequest = source != null ? source : new MockRequest();
         }
 
         /**

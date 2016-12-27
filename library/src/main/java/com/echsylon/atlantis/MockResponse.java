@@ -67,7 +67,16 @@ public class MockResponse {
          * Creates a new builder based on an uninitialized response object.
          */
         public Builder() {
-            mockResponse = new MockResponse();
+            this(new MockResponse());
+        }
+
+        /**
+         * Creates a new builder based on the provided mock response object.
+         *
+         * @param source The mock response to initialize this builder with.
+         */
+        public Builder(final MockResponse source) {
+            mockResponse = source != null ? source : new MockResponse();
         }
 
         /**
