@@ -67,15 +67,6 @@ public class MockResponseTest {
     }
 
     @Test
-    public void public_neverReturnsNullBody() {
-        MockResponse response = new MockResponse.Builder()
-                .setBody((String) null)
-                .build();
-        assertThat(response.body(), is(not(nullValue())));
-        assertThat(response.body(), is(""));
-    }
-
-    @Test
     public void internal_doesNotOverwriteExistingSourceHelper() throws IOException {
         MockResponse response = new MockResponse.Builder()
                 .setBody("foo".getBytes())
