@@ -50,7 +50,7 @@ public class AtlantisTest {
 
         context = mock(Context.class);
         realWebServer = mock(RealWebServer.class);
-        when(realWebServer.getMockRequest(any(), any(), any(), any(), any(), any())).thenReturn(request);
+        when(realWebServer.getMockRequest(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(request);
     }
 
     @Test

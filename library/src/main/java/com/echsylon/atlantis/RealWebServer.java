@@ -103,7 +103,9 @@ class RealWebServer {
                                final Source requestBody,
                                final SettingsManager defaultSettings,
                                final Atlantis.TransformationHelper transformationHelper,
-                               final File directory) {
+                               final File directory,
+                               final boolean doRecord,
+                               final boolean doRecordFailure) {
 
         String url = realBaseUrl + meta.url();
         ResponseBody responseBody = null;
@@ -133,14 +135,14 @@ class RealWebServer {
             responseBody = response.body();
             if (responseBody.contentLength() > 0L) {
                 byte[] bytes = responseBody.bytes();
+                File file = doRecord && (response.code() < 400 || doRecordFailure) ?
+                        writeResponseToFile(bytes, directory, response.request()) :
+                        null;
 
-                if (directory == null) {
+                if (file == null)
                     builder.setBody(bytes);
-                } else {
-                    File file = writeResponseToFile(bytes, directory, response.request());
-                    if (file != null)
-                        builder.setBody("file://" + file.getAbsolutePath());
-                }
+                else
+                    builder.setBody("file://" + file.getAbsolutePath());
             }
 
             MockResponse mockResponse = builder.build();

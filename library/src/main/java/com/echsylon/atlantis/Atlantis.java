@@ -119,6 +119,7 @@ public class Atlantis {
 
     private boolean recordServedRequests;
     private boolean recordMissingRequests;
+    private boolean recordMissingFailures;
 
 
     /**
@@ -255,6 +256,22 @@ public class Atlantis {
     }
 
     /**
+     * Sets a boolean flag enabling or disabling recording of missing request
+     * templates that returned with an HTTP error from the real server. This
+     * feature can only be enabled if the "record missing requests" feature is
+     * enabled.
+     * <p>
+     * The recorded requests will be written to the "atlantis" directory in the
+     * client apps external files directory
+     *
+     * @param enabled Boolean true to enable the feature, false to disable it.
+     */
+    public void setRecordMissingFailuresEnabled(boolean enabled) {
+        recordMissingFailures = enabled && recordMissingRequests;
+        info("Record missing requests if failed: %s", enabled ? "enabled" : "disabled");
+    }
+
+    /**
      * Sets a boolean flag enabling or disabling recording of served request
      * templates.
      * <p>
@@ -340,9 +357,9 @@ public class Atlantis {
                 mockRequest = realServer.getMockRequest(realBaseUrl, meta, source,
                         configuration.defaultResponseSettings(),
                         configuration.transformationHelper(),
-                        recordMissingRequests ?
-                                atlantisDir :
-                                null);
+                        atlantisDir,
+                        recordMissingRequests,
+                        recordMissingFailures);
             }
         }
 
@@ -356,10 +373,11 @@ public class Atlantis {
         if (recordServedRequests)
             servedRequests.add(mockRequest);
 
-        if (recordMissingRequests) {
-            configuration.addRequest(mockRequest);
-            writeConfigurationToFile(configuration, atlantisDir);
-        }
+        if (recordMissingRequests)
+            if (mockResponse.code() < 400 || recordMissingFailures) {
+                configuration.addRequest(mockRequest);
+                writeConfigurationToFile(configuration, atlantisDir);
+            }
 
         mockResponse.setSourceHelperIfAbsent(this::open);
         mockResponse.headerManager()
