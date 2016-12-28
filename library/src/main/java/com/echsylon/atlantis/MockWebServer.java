@@ -9,7 +9,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -280,20 +280,22 @@ class MockWebServer {
         Buffer buffer = null;
 
         try {
+            HeaderManager headerManager = meta.headerManager();
+
             // Regular request body.
-            if (meta.isExpectedToHaveBody()) {
-                String headerValue = meta.headers().get("Content-Length");
+            if (headerManager.isExpectedToHaveBody()) {
+                String headerValue = headerManager.getMostRecent("Content-Length");
                 long count = Utils.notEmpty(headerValue) ?
                         Long.valueOf(headerValue, 10) :
                         Long.MAX_VALUE;
+
                 buffer = new Buffer();
                 transfer(count, source, buffer, null);
-
                 return buffer;
             }
 
             // Chunked request body
-            if (meta.isExpectedToBeChunked()) {
+            if (headerManager.isExpectedToBeChunked()) {
                 buffer = new Buffer();
                 String chunkSizeLine;
                 int chunkSize;
@@ -331,8 +333,10 @@ class MockWebServer {
         try {
             // Maybe buffer response body.
             source = response.source();
-            if (source != null && !response.isExpectedToContinue() &&
-                    (response.isExpectedToHaveBody() || response.isExpectedToBeChunked())) {
+            HeaderManager headerManager = response.headerManager();
+
+            if (source != null && !headerManager.isExpectedToContinue() &&
+                    (headerManager.isExpectedToHaveBody() || headerManager.isExpectedToBeChunked())) {
                 buffer = new Buffer();
                 transfer(-1, source, buffer, null);
             }
@@ -340,15 +344,16 @@ class MockWebServer {
             // Send the response meta
             StringBuilder builder = new StringBuilder();
             builder.append(String.format("HTTP/1.1 %s %s\r\n", response.code(), response.phrase()));
-            Map<String, String> headers = response.headers();
-            for (Map.Entry<String, String> entry : headers.entrySet())
-                builder.append(String.format("%s: %s\r\n", entry.getKey(), entry.getValue()));
+            List<String> headers = headerManager.getAllAsList();
+            for (int i = 0, c = headers.size(); i < c; i += 2)
+                builder.append(String.format("%s: %s\r\n", headers.get(i), headers.get(i + 1)));
 
             // Maybe set Content-Length header
-            if (!headers.containsKey("Content-Length")) {
-                if (response.isExpectedToContinue()) {
+            String value = headerManager.getMostRecent("Content-Length");
+            if (isEmpty(value)) {
+                if (headerManager.isExpectedToContinue()) {
                     builder.append("Content-Length: 0\r\n");
-                } else if (!response.isExpectedToBeChunked() && buffer != null) {
+                } else if (!headerManager.isExpectedToBeChunked() && buffer != null) {
                     builder.append(String.format("Content-Length: %s\r\n", buffer.size()));
                 }
             }

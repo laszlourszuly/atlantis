@@ -3,6 +3,7 @@ package com.echsylon.atlantis;
 import com.echsylon.atlantis.filter.DefaultResponseFilter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,8 @@ public class MockRequest {
          *
          * @param method   The request method ("GET", "POST", etc).
          * @param url      The request url (e.g. "/path/to/resource").
-         * @param headers  The request headers (key/value pairs).
+         * @param headers  The request headers map. Multiple header values with
+         *                 the same key are merged, separated by a comma (',').
          * @param requests All request templates available.
          * @return The request template candidate.
          */
@@ -69,14 +71,41 @@ public class MockRequest {
          * Offers (internal) help to easily create a mock request from a meta.
          *
          * @param meta The request meta data. Null is handled gracefully.
-         * @return This builder instance, allowing chaining of method calls.
          */
-        Builder fromMeta(final Meta meta) {
+        Builder(final Meta meta) {
+            mockRequest = new MockRequest();
             if (meta != null) {
                 mockRequest.url = meta.url();
                 mockRequest.method = meta.method();
-                mockRequest.headers.putAll(meta.headers());
+                mockRequest.headerManager = meta.headerManager();
             }
+        }
+
+        /**
+         * Sets the header manager of the mock response being built. This method
+         * is meant for internal use only.
+         *
+         * @param headerManager The new header manager. Null is handled
+         *                      gracefully.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder setHeaderManager(final HeaderManager headerManager) {
+            mockRequest.headerManager = headerManager == null ?
+                    new HeaderManager() :
+                    headerManager;
+            return this;
+        }
+
+        /**
+         * Adds a header to the mock request being built, replacing any and all
+         * existing values for the same key.
+         *
+         * @param key   The header key.
+         * @param value The new header value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setHeader(final String key, final String value) {
+            mockRequest.headerManager.set(key, value);
             return this;
         }
 
@@ -89,7 +118,33 @@ public class MockRequest {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addHeader(final String key, final String value) {
-            mockRequest.headers.put(key, value);
+            mockRequest.headerManager.add(key, value);
+            return this;
+        }
+
+        /**
+         * Adds all non-empty header keys and values to the mock request being
+         * built.
+         *
+         * @param key    The header key.
+         * @param values The header values.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addHeaders(final String key, final List<String> values) {
+            mockRequest.headerManager.add(key, values);
+            return this;
+        }
+
+        /**
+         * Adds all non-empty header keys and values to the mock request being
+         * built.
+         *
+         * @param key    The header key.
+         * @param values The header values.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addHeaders(final String key, final String... values) {
+            mockRequest.headerManager.add(key, Arrays.asList(values));
             return this;
         }
 
@@ -100,8 +155,8 @@ public class MockRequest {
          * @param headers The headers to add.
          * @return This builder instance, allowing chaining of method calls.
          */
-        public Builder addHeaders(final Map<String, String> headers) {
-            mockRequest.headers.putAll(headers);
+        public Builder addHeaders(final Map<String, List<String>> headers) {
+            mockRequest.headerManager.add(headers);
             return this;
         }
 
@@ -165,13 +220,13 @@ public class MockRequest {
 
     private String url = null;
     private String method = null;
-    private HeaderManager headers = null;
     private List<MockResponse> responses = null;
+    private transient HeaderManager headerManager = null;
     private transient MockResponse.Filter responseFilter = null;
 
 
     MockRequest() {
-        headers = new HeaderManager();
+        headerManager = new HeaderManager();
         responses = new ArrayList<>();
     }
 
@@ -191,17 +246,6 @@ public class MockRequest {
      */
     public String url() {
         return getNonNull(url, "");
-    }
-
-    /**
-     * Returns an unmodifiable map of required header key/value pairs for this
-     * request template.
-     *
-     * @return The unmodifiable request headers map as per definition in {@link
-     * Collections#unmodifiableMap(Map)}.
-     */
-    public Map<String, String> headers() {
-        return Collections.unmodifiableMap(headers);
     }
 
     /**
@@ -225,6 +269,15 @@ public class MockRequest {
     }
 
     /**
+     * Returns the header manager.
+     *
+     * @return The response header manager. Never null.
+     */
+    public HeaderManager headerManager() {
+        return headerManager;
+    }
+
+    /**
      * Returns a suitable mocked response to serve for this request template.
      *
      * @return The response to server, may be null.
@@ -242,27 +295,5 @@ public class MockRequest {
      */
     void setResponseFilter(final MockResponse.Filter responseFilter) {
         this.responseFilter = responseFilter;
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is a "Content-Length"
-     * header with a value greater than 0.
-     *
-     * @return Boolean true if there is a "Content-Length" header and a
-     * corresponding value greater than 0, false otherwise.
-     */
-    boolean isExpectedToHaveBody() {
-        return headers.isExpectedToHaveBody();
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is a "Transfer-Encoding"
-     * header with a "chunked" value.
-     *
-     * @return Boolean true if there is a "Transfer-Encoding" header and a
-     * corresponding "chunked" value, false otherwise.
-     */
-    boolean isExpectedToBeChunked() {
-        return headers.isExpectedToBeChunked();
     }
 }

@@ -133,7 +133,7 @@ public class Atlantis {
         try {
             BufferedSource bufferedSource = Okio.buffer(Okio.source(inputStream));
             String json = bufferedSource.readString(Charset.forName("UTF-8"));
-            Configuration configuration = new JsonParser().fromJson(json, Configuration.class);
+            Configuration configuration = JsonParser.fromJson(json, Configuration.class);
             init(context, configuration);
         } catch (IOException e) {
             info(e, "Couldn't read configuration from InputStream");
@@ -328,8 +328,8 @@ public class Atlantis {
      * @return The suggested mock response.
      */
     private MockResponse serve(final Meta meta, final Source source) {
-        MockRequest mockRequest = !meta.isExpectedToContinue() ?
-                configuration.request(meta) :
+        MockRequest mockRequest = !meta.headerManager().isExpectedToContinue() ?
+                configuration.findRequest(meta) :
                 getContinueTemplate(meta);
 
         if (mockRequest == null) {
@@ -362,7 +362,9 @@ public class Atlantis {
         }
 
         mockResponse.setSourceHelperIfAbsent(this::open);
-        mockResponse.addHeadersIfAbsent(configuration.defaultResponseHeaders());
+        mockResponse.headerManager()
+                .addIfKeyAbsent(configuration.defaultResponseHeaderManager()
+                        .getAllAsMultiMap());
 
         TokenHelper tokenHelper = configuration.tokenHelper();
         return tokenHelper != null ?
@@ -426,8 +428,7 @@ public class Atlantis {
                                           final File directory) {
         BufferedSink target = null;
         try {
-            JsonParser jsonParser = new JsonParser();
-            String json = jsonParser.toJson(configuration, Configuration.class);
+            String json = JsonParser.toJson(configuration, Configuration.class);
             File file = new File(directory, "configuration.json");
             directory.mkdirs();
             target = Okio.buffer(Okio.sink(file));
@@ -452,7 +453,7 @@ public class Atlantis {
         return new MockRequest.Builder()
                 .setMethod(meta.method())
                 .setUrl(meta.url())
-                .addHeaders(meta.headers())
+                .addHeaders(meta.headerManager().getAllAsMultiMap())
                 .addResponse(CONTINUE)
                 .build();
     }

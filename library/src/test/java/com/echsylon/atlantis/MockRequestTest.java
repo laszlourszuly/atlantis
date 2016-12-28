@@ -2,6 +2,7 @@ package com.echsylon.atlantis;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +18,11 @@ public class MockRequestTest {
 
     @Test
     public void public_canBuildValidMockRequestFromCode() {
-        HashMap<String, String> headers = new HashMap<>();
-        headers.put("k2", "v2");
+        ArrayList<String> values = new ArrayList<>();
+        values.add("v2");
+
+        HashMap<String, List<String>> headers = new HashMap<>();
+        headers.put("k2", values);
 
         MockResponse response = mock(MockResponse.class);
         MockResponse.Filter filter = mock(MockResponse.Filter.class);
@@ -34,9 +38,9 @@ public class MockRequestTest {
 
         assertThat(request.method(), is("get"));
         assertThat(request.url(), is("url"));
-        assertThat(request.headers().size(), is(2));
-        assertThat(request.headers().get("k1"), is("v1"));
-        assertThat(request.headers().get("k2"), is("v2"));
+        assertThat(request.headerManager().keyCount(), is(2));
+        assertThat(request.headerManager().getMostRecent("k1"), is("v1"));
+        assertThat(request.headerManager().getMostRecent("k2"), is("v2"));
         assertThat(request.responses().size(), is(1));
         assertThat(request.responses().get(0), is(response));
         assertThat(request.responseFilter(), is(filter));
@@ -47,9 +51,9 @@ public class MockRequestTest {
         MockRequest request = new MockRequest.Builder()
                 .addHeader("key", "value")
                 .build();
-        Map<String, String> headers = request.headers();
+        Map<String, List<String>> headers = request.headerManager().getAllAsMultiMap();
 
-        assertThatThrownBy(() -> headers.put("key2", "value2"))
+        assertThatThrownBy(() -> headers.put("key", null))
                 .isInstanceOf(UnsupportedOperationException.class);
 
         assertThatThrownBy(() -> headers.remove("key"))
@@ -119,20 +123,24 @@ public class MockRequestTest {
         assertThat(new MockRequest.Builder()
                 .addHeader("Content-Length", "1")
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(true));
 
         assertThat(new MockRequest.Builder()
                 .addHeader("Content-Length", "0")
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(false));
 
         assertThat(new MockRequest.Builder()
                 .addHeader("key", "value")
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(false));
 
         assertThat(new MockRequest.Builder()
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(false));
     }
 
@@ -141,20 +149,24 @@ public class MockRequestTest {
         assertThat(new MockRequest.Builder()
                 .addHeader("Transfer-Encoding", "Chunked")
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(true));
 
         assertThat(new MockRequest.Builder()
                 .addHeader("Transfer-Encoding", "foo")
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(false));
 
         assertThat(new MockRequest.Builder()
                 .addHeader("key", "value")
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(false));
 
         assertThat(new MockRequest.Builder()
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(false));
     }
 

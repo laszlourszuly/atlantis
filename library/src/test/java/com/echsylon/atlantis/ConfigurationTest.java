@@ -66,14 +66,17 @@ public class ConfigurationTest {
 
     @Test
     public void internal_canGetRequestWhenNoFilterSpecified() {
+        HeaderManager headerManager = mock(HeaderManager.class);
+        when(headerManager.keyCount()).thenReturn(0);
+
         Meta meta = mock(Meta.class);
         when(meta.method()).thenReturn("get");
-        when(meta.headers()).thenReturn(null);
+        when(meta.headerManager()).thenReturn(headerManager);
         when(meta.url()).thenReturn("url");
 
         MockRequest request = mock(MockRequest.class);
         when(request.method()).thenReturn("get");
-        when(request.headers()).thenReturn(null);
+        when(request.headerManager()).thenReturn(headerManager);
         when(request.url()).thenReturn("url");
 
         Configuration configuration = new Configuration.Builder()
@@ -82,7 +85,7 @@ public class ConfigurationTest {
                 .addRequest(mock(MockRequest.class))
                 .build();
 
-        assertThat(configuration.request(meta), is(request));
+        assertThat(configuration.findRequest(meta), is(request));
     }
 
     @Test

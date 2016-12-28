@@ -3,10 +3,10 @@ package com.echsylon.atlantis;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -60,9 +60,7 @@ class RealWebServer {
      * an empty string. Never null.
      */
     String getRealConfigurationJson(final String url) {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-
+        List<String> headers = Arrays.asList("Content-Type", "application/json");
         ResponseBody responseBody = null;
         try {
             Response response = getRealResponse(url, "GET", headers, null, null);
@@ -112,16 +110,13 @@ class RealWebServer {
 
         try {
             // Now get the real response.
-            MockRequest mockRequest = new MockRequest.Builder()
-                    .fromMeta(meta)
-                    .build();
-
+            MockRequest mockRequest = new MockRequest.Builder(meta).build();
             if (transformationHelper != null)
                 mockRequest = transformationHelper.prepareForRealWorld(realBaseUrl, mockRequest);
 
             Response response = getRealResponse(url,
                     mockRequest.method(),
-                    mockRequest.headers(),
+                    mockRequest.headerManager().getAllAsList(),
                     requestBody,
                     defaultSettings);
 
@@ -133,7 +128,7 @@ class RealWebServer {
 
             Headers headers = response.headers();
             for (String key : headers.names())
-                builder.addHeader(key, headers.get(key));
+                builder.addHeaders(key, headers.values(key));
 
             responseBody = response.body();
             if (responseBody.contentLength() > 0L) {
@@ -181,20 +176,25 @@ class RealWebServer {
      */
     private Response getRealResponse(final String url,
                                      final String method,
-                                     final Map<String, String> headers,
+                                     final List<String> headers,
                                      final Source requestBody,
                                      final SettingsManager defaultSettings) throws IOException {
 
         Request.Builder request = new Request.Builder();
         request.url(url);
 
+        String contentType = null;
         if (notEmpty(headers))
-            for (Map.Entry<String, String> entry : headers.entrySet())
-                request.addHeader(entry.getKey(), entry.getValue());
+            for (int i = 0, c = headers.size(); i < c; i += 2) {
+                String key = headers.get(i);
+                String value = headers.get(i + 1);
+                request.addHeader(key, value);
+
+                if ("Content-Type".equalsIgnoreCase(key))
+                    contentType = value;
+            }
 
         if (requestBody != null) {
-            String contentType = notEmpty(headers) ?
-                    headers.get("Content-Type") : null;
             RequestBody body = new SourceRequestBody(contentType, requestBody);
             request.method(method, body);
         }

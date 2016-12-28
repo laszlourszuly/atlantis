@@ -4,6 +4,7 @@ import com.echsylon.atlantis.filter.DefaultRequestFilter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,34 @@ public class Configuration implements Serializable {
         }
 
         /**
+         * Sets the header manager of the configuration being built. This method
+         * is meant for internal use only.
+         *
+         * @param headerManager The new header manager. Null is handled
+         *                      gracefully.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder setDefaultResponseHeaderManager(final HeaderManager headerManager) {
+            configuration.headerManager = headerManager == null ?
+                    new HeaderManager() :
+                    headerManager;
+            return this;
+        }
+
+        /**
+         * Adds a default response header to the configuration being build,
+         * replacing any and all existing values for the same key.
+         *
+         * @param key   The header key.
+         * @param value The new header value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setDefaultResponseHeader(final String key, final String value) {
+            configuration.headerManager.set(key, value);
+            return this;
+        }
+
+        /**
          * Adds a default response header to the configuration being built. Any
          * existing keys will be overwritten. If a corresponding header exists
          * in a mock response definition, then that header will be honored
@@ -64,7 +93,33 @@ public class Configuration implements Serializable {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addDefaultResponseHeader(final String key, final String value) {
-            configuration.defaultResponseHeaders.put(key, value);
+            configuration.headerManager.add(key, value);
+            return this;
+        }
+
+        /**
+         * Adds all non-empty default response headers to the configuration
+         * being built.
+         *
+         * @param key    The header key.
+         * @param values The header values.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addDefaultResponseHeaders(final String key, final List<String> values) {
+            configuration.headerManager.add(key, values);
+            return this;
+        }
+
+        /**
+         * Adds all non-empty default response headers to the configuration
+         * being built.
+         *
+         * @param key    The header key.
+         * @param values The header values.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addDefaultResponseHeaders(final String key, final String... values) {
+            configuration.headerManager.add(key, Arrays.asList(values));
             return this;
         }
 
@@ -77,8 +132,8 @@ public class Configuration implements Serializable {
          * @param responseHeaders The headers to add.
          * @return This builder instance, allowing chaining of method calls.
          */
-        public Builder addDefaultResponseHeaders(final Map<String, String> responseHeaders) {
-            configuration.defaultResponseHeaders.putAll(responseHeaders);
+        public Builder addDefaultResponseHeaders(final Map<String, List<String>> responseHeaders) {
+            configuration.headerManager.add(responseHeaders);
             return this;
         }
 
@@ -170,8 +225,8 @@ public class Configuration implements Serializable {
 
     private String fallbackBaseUrl = null;
     private List<MockRequest> requests = null;
-    private HeaderManager defaultResponseHeaders = null;
     private SettingsManager defaultResponseSettings = null;
+    private transient HeaderManager headerManager = null;
     private transient MockRequest.Filter requestFilter = null;
     private transient Atlantis.TokenHelper tokenHelper = null;
     private transient Atlantis.TransformationHelper transformationHelper = null;
@@ -179,7 +234,7 @@ public class Configuration implements Serializable {
 
     Configuration() {
         requests = new ArrayList<>();
-        defaultResponseHeaders = new HeaderManager();
+        headerManager = new HeaderManager();
         defaultResponseSettings = new SettingsManager();
     }
 
@@ -195,6 +250,24 @@ public class Configuration implements Serializable {
     }
 
     /**
+     * Returns the request filter of this configuration.
+     *
+     * @return The request filter or null.
+     */
+    public MockRequest.Filter requestFilter() {
+        return requestFilter;
+    }
+
+    /**
+     * Returns the header manager managing the default response headers.
+     *
+     * @return The default response header manager. Never null.
+     */
+    public HeaderManager defaultResponseHeaderManager() {
+        return headerManager;
+    }
+
+    /**
      * Returns an unmodifiable list of the currently tracked request
      * mockRequests in this configuration.
      *
@@ -203,15 +276,6 @@ public class Configuration implements Serializable {
      */
     public List<MockRequest> requests() {
         return Collections.unmodifiableList(requests);
-    }
-
-    /**
-     * Returns the request filter of this configuration.
-     *
-     * @return The request filter or null.
-     */
-    public MockRequest.Filter requestFilter() {
-        return requestFilter;
     }
 
     /**
@@ -239,12 +303,12 @@ public class Configuration implements Serializable {
      *
      * @return The request filter. May be null.
      */
-    MockRequest request(final Meta meta) {
+    MockRequest findRequest(final Meta meta) {
         MockRequest.Filter filter = requestFilter == null ?
                 new DefaultRequestFilter() :
                 requestFilter;
 
-        return filter.findRequest(meta.method(), meta.url(), meta.headers(), requests);
+        return filter.findRequest(meta.method(), meta.url(), meta.headerManager().getAllAsMap(), requests);
     }
 
     /**
@@ -256,17 +320,6 @@ public class Configuration implements Serializable {
      */
     SettingsManager defaultResponseSettings() {
         return defaultResponseSettings;
-    }
-
-    /**
-     * Returns the default response headers. If a corresponding header is found
-     * in the mock response definition, then that header will be honored
-     * instead.
-     *
-     * @return The default response headers.
-     */
-    HeaderManager defaultResponseHeaders() {
-        return defaultResponseHeaders;
     }
 
     /**

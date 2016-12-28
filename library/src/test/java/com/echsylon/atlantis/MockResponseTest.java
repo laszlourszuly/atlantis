@@ -4,7 +4,9 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import okio.BufferedSource;
@@ -20,8 +22,11 @@ public class MockResponseTest {
 
     @Test
     public void public_canBuildValidMockResponseFromCode() {
-        HashMap<String, String> headers = new HashMap<>();
-        headers.put("k2", "v2");
+        ArrayList<String> values = new ArrayList<>();
+        values.add("v2");
+
+        HashMap<String, List<String>> headers = new HashMap<>();
+        headers.put("k2", values);
 
         HashMap<String, String> settings = new HashMap<>();
         settings.put("p2", "a2");
@@ -37,9 +42,9 @@ public class MockResponseTest {
 
         assertThat(response.code(), is(1));
         assertThat(response.phrase(), is("phrase"));
-        assertThat(response.headers().size(), is(2));
-        assertThat(response.headers().get("k1"), is("v1"));
-        assertThat(response.headers().get("k2"), is("v2"));
+        assertThat(response.headerManager().keyCount(), is(2));
+        assertThat(response.headerManager().getMostRecent("k1"), is("v1"));
+        assertThat(response.headerManager().getMostRecent("k2"), is("v2"));
         assertThat(response.body(), is("body"));
     }
 
@@ -48,11 +53,11 @@ public class MockResponseTest {
         MockResponse response = new MockResponse.Builder()
                 .addHeader("key", "value")
                 .build();
-        Map<String, String> headers = response.headers();
 
-        assertThatThrownBy(() -> headers.put("key2", "value2"))
+        Map<String, List<String>> headers = response.headerManager().getAllAsMultiMap();
+
+        assertThatThrownBy(() -> headers.put("key", null))
                 .isInstanceOf(UnsupportedOperationException.class);
-
         assertThatThrownBy(() -> headers.remove("key"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
@@ -84,20 +89,24 @@ public class MockResponseTest {
         assertThat(new MockResponse.Builder()
                 .addHeader("Content-Length", "1")
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(true));
 
         assertThat(new MockResponse.Builder()
                 .addHeader("Content-Length", "0")
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(false));
 
         assertThat(new MockResponse.Builder()
                 .addHeader("key", "value")
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(false));
 
         assertThat(new MockResponse.Builder()
                 .build()
+                .headerManager()
                 .isExpectedToHaveBody(), is(false));
     }
 
@@ -106,20 +115,24 @@ public class MockResponseTest {
         assertThat(new MockResponse.Builder()
                 .addHeader("Transfer-Encoding", "Chunked")
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(true));
 
         assertThat(new MockResponse.Builder()
                 .addHeader("Transfer-Encoding", "foo")
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(false));
 
         assertThat(new MockResponse.Builder()
                 .addHeader("key", "value")
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(false));
 
         assertThat(new MockResponse.Builder()
                 .build()
+                .headerManager()
                 .isExpectedToBeChunked(), is(false));
     }
 
@@ -128,20 +141,24 @@ public class MockResponseTest {
         assertThat(new MockResponse.Builder()
                 .addHeader("Expect", "100-continue")
                 .build()
+                .headerManager()
                 .isExpectedToContinue(), is(true));
 
         assertThat(new MockResponse.Builder()
                 .addHeader("Expect", "bar")
                 .build()
+                .headerManager()
                 .isExpectedToContinue(), is(false));
 
         assertThat(new MockResponse.Builder()
                 .addHeader("key", "value")
                 .build()
+                .headerManager()
                 .isExpectedToContinue(), is(false));
 
         assertThat(new MockResponse.Builder()
                 .build()
+                .headerManager()
                 .isExpectedToContinue(), is(false));
     }
 }

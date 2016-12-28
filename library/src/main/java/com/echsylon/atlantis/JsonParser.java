@@ -19,10 +19,11 @@ class JsonParser {
      * @throws JsonException If anything would go wrong during the parse
      *                       attempt.
      */
-    <T> T fromJson(String json, Class<T> expectedResultType) throws JsonException {
+    static synchronized <T> T fromJson(String json, Class<T> expectedResultType) throws JsonException {
         try {
             return new GsonBuilder()
                     .registerTypeAdapter(Configuration.class, JsonSerializers.newConfigurationDeserializer())
+                    .registerTypeAdapter(HeaderManager.class, JsonSerializers.newHeaderDeserializer())
                     .registerTypeAdapter(MockResponse.class, JsonSerializers.newResponseDeserializer())
                     .registerTypeAdapter(MockRequest.class, JsonSerializers.newRequestDeserializer())
                     .create()
@@ -40,9 +41,10 @@ class JsonParser {
      * @param <T>           The generic class type.
      * @return The JSON string notation of the given object.
      */
-    <T> String toJson(Object object, Class<T> classOfObject) {
+    static synchronized <T> String toJson(Object object, Class<T> classOfObject) {
         return new GsonBuilder()
                 .registerTypeAdapter(Configuration.class, JsonSerializers.newConfigurationSerializer())
+                .registerTypeAdapter(HeaderManager.class, JsonSerializers.newHeaderSerializer())
                 .registerTypeAdapter(MockResponse.class, JsonSerializers.newResponseSerializer())
                 .registerTypeAdapter(MockRequest.class, JsonSerializers.newRequestSerializer())
                 .disableHtmlEscaping()

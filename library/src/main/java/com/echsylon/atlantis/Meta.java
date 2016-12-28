@@ -1,6 +1,6 @@
 package com.echsylon.atlantis;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static com.echsylon.atlantis.Utils.getNonNull;
@@ -14,7 +14,7 @@ class Meta {
     private String method;
     private String url;
     private String protocol;
-    private final HeaderManager headers = new HeaderManager();
+    private final HeaderManager headerManager = new HeaderManager();
 
 
     /**
@@ -45,12 +45,12 @@ class Meta {
     }
 
     /**
-     * Returns any intercepted request headers.
+     * Returns the header manager holding any intercepted request headers.
      *
-     * @return The request headers. The map may be empty but never null.
+     * @return The request header manager.
      */
-    Map<String, String> headers() {
-        return Collections.unmodifiableMap(headers);
+    HeaderManager headerManager() {
+        return headerManager;
     }
 
 
@@ -88,40 +88,7 @@ class Meta {
      * @param value The header value.
      */
     void addHeader(final String key, final String value) {
-        headers.put(key, value);
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is a "Content-Length"
-     * header with a value greater than 0.
-     *
-     * @return Boolean true if there is a "Content-Length" header and a
-     * corresponding value greater than 0, false otherwise.
-     */
-    boolean isExpectedToHaveBody() {
-        return headers.isExpectedToHaveBody();
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is an "Expect" header
-     * with a "100-continue" value.
-     *
-     * @return Boolean true if there is an "Expect" header and a corresponding
-     * "100-Continue" value, false otherwise.
-     */
-    boolean isExpectedToContinue() {
-        return headers.isExpectedToContinue();
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is a "Transfer-Encoding"
-     * header with a "chunked" value.
-     *
-     * @return Boolean true if there is a "Transfer-Encoding" header and a
-     * corresponding "chunked" value, false otherwise.
-     */
-    boolean isExpectedToBeChunked() {
-        return headers.isExpectedToBeChunked();
+        headerManager.add(key, value);
     }
 
     @Override
@@ -131,9 +98,14 @@ class Meta {
                 .append(url).append(' ')
                 .append(protocol).append('\n');
 
-        for (Map.Entry<String, String> entry : headers.entrySet())
-            stringBuilder.append(entry.getKey()).append(": ")
-                    .append(entry.getValue()).append('\n');
+        if (headerManager.keyCount() > 0) {
+            Map<String, List<String>> headers = headerManager.getAllAsMultiMap();
+            for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                String key = entry.getKey();
+                for (String value : entry.getValue())
+                    stringBuilder.append(key).append(": ").append(value).append('\n');
+            }
+        }
 
         return stringBuilder.toString();
     }

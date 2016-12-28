@@ -15,7 +15,7 @@ public class DefaultRequestFilter implements MockRequest.Filter {
      *
      * @param method   The request method ("GET", "POST", etc).
      * @param url      The request url (e.g. "/path/to/resource").
-     * @param headers  The request headers (key/value pairs).
+     * @param headers  The request headers manager.
      * @param requests All request templates available.
      * @return A request template that matches the given criteria or null.
      */
@@ -36,7 +36,7 @@ public class DefaultRequestFilter implements MockRequest.Filter {
             if (!matchesUrlPattern(url, template.url()))
                 continue;
 
-            if (!hasRequiredHeaders(headers, template.headers()))
+            if (!hasRequiredHeaders(headers, template.headerManager().getAllAsMap()))
                 continue;
 
             return template;
@@ -71,15 +71,16 @@ public class DefaultRequestFilter implements MockRequest.Filter {
      * @return Boolean true if all required headers exist in the test map, false
      * otherwise.
      */
-    private boolean hasRequiredHeaders(Map<String, String> test, Map<String, String> reference) {
-        if (reference == null || reference.isEmpty())
+    private boolean hasRequiredHeaders(final Map<String, String> test, final Map<String, String> reference) {
+        if (reference == null || reference.size() == 0)
             return true;
 
         // Verify all required headers are present.
         for (Map.Entry<String, String> entry : reference.entrySet()) {
             String key = entry.getKey();
-            String value = entry.getValue();
-            if (!test.containsKey(key) || !test.get(key).equals(value))
+            if (!test.containsKey(key))
+                return false;
+            if (!test.get(key).contains(entry.getValue()))
                 return false;
         }
 

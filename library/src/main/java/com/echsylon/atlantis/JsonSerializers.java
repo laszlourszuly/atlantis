@@ -11,12 +11,114 @@ import java.util.List;
 import java.util.Map;
 
 import static com.echsylon.atlantis.LogUtils.info;
+import static com.echsylon.atlantis.Utils.isEmpty;
 import static com.echsylon.atlantis.Utils.notEmpty;
 
 /**
  * This class provides a set of custom JSON deserializers.
  */
 class JsonSerializers {
+
+    /**
+     * Returns a new JSON deserializer, specialized for {@link HeaderManager}
+     * objects.
+     *
+     * @return The deserializer to parse {@code HeaderManager} JSON with.
+     */
+    static JsonDeserializer<HeaderManager> newHeaderDeserializer() {
+        return (json, typeOfT, context) -> {
+            if (json == null)
+                return null;
+
+            HeaderManager headerManager = new HeaderManager();
+            if (json.isJsonObject()) {
+                // Recommended dictionary style headers
+                JsonObject jsonObject = json.getAsJsonObject();
+                for (Map.Entry<String, JsonElement> property : jsonObject.entrySet()) {
+                    String key = property.getKey();
+                    JsonElement jsonElement = property.getValue();
+
+                    if (jsonElement.isJsonPrimitive()) {
+                        // Single header value for the key
+                        headerManager.add(key, jsonElement.getAsString());
+                    } else if (jsonElement.isJsonArray()) {
+                        // Multiple header values for the key
+                        JsonArray jsonArray = jsonElement.getAsJsonArray();
+                        for (JsonElement e : jsonArray)
+                            if (e.isJsonPrimitive())
+                                headerManager.add(key, e.getAsString());
+                    }
+                }
+            } else if (json.isJsonArray()) {
+                // List of objects  with "key" + "value" properties
+                JsonArray jsonArray = json.getAsJsonArray();
+                for (JsonElement jsonElement : jsonArray) {
+                    if (jsonElement.isJsonObject()) {
+                        JsonObject jsonObject = jsonElement.getAsJsonObject();
+                        if (jsonObject.has("key") && jsonObject.has("value")) {
+                            String key = jsonObject.get("key").getAsString();
+                            String value = jsonObject.get("value").getAsString();
+                            headerManager.add(key, value);
+                        }
+                    }
+                }
+            } else if (json.isJsonPrimitive()) {
+                // New-Line separated headers (as expressed by Postman v1)
+                String[] strings = json.getAsString().split("\n");
+
+                for (String string : strings) {
+                    int index = string.indexOf(':');
+                    int maxIndex = string.length() - 1;
+                    if (index != -1 && index < maxIndex) {
+                        // Everything before the first ':' is seen as a key and
+                        // everything after it is considered a value
+                        String key = string.substring(0, index).trim();
+                        String value = string.substring(index + 1).trim();
+                        headerManager.add(key, value);
+                    }
+                }
+
+            }
+
+            return headerManager;
+        };
+    }
+
+    /**
+     * Returns a new JSON serializer, specialized for {@link HeaderManager}
+     * objects.
+     *
+     * @return The serializer to serialize {@code HeaderManager} objects with.
+     */
+    static JsonSerializer<HeaderManager> newHeaderSerializer() {
+        return (headerManager, typeOfObject, context) -> {
+            if (headerManager == null)
+                return null;
+
+            Map<String, List<String>> headers = headerManager.getAllAsMultiMap();
+            if (isEmpty(headers))
+                return null;
+
+            JsonObject jsonObject = new JsonObject();
+            for (Map.Entry<String, List<String>> header : headers.entrySet()) {
+                List<String> values = header.getValue();
+                int count = values.size();
+
+                if (count == 1) {
+                    // Single value; add as string
+                    jsonObject.addProperty(header.getKey(), values.get(0));
+                } else if (count > 1) {
+                    // Multiple values; add as array
+                    JsonArray jsonArray = new JsonArray();
+                    for (String value : values)
+                        jsonArray.add(value);
+                    jsonObject.add(header.getKey(), jsonArray);
+                }
+            }
+
+            return jsonObject;
+        };
+    }
 
     /**
      * Returns a new JSON deserializer, specialized for {@link Configuration}
@@ -62,8 +164,8 @@ class JsonSerializers {
 
             if (jsonObject.has("defaultResponseHeaders"))
                 try {
-                    JsonObject headers = jsonObject.get("defaultResponseHeaders").getAsJsonObject();
-                    builder.addDefaultResponseHeaders(context.deserialize(headers, LinkedHashMap.class));
+                    HeaderManager headerManager = context.deserialize(jsonObject.get("defaultResponseHeaders"), HeaderManager.class);
+                    builder.setDefaultResponseHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize default response headers");
                 }
@@ -115,7 +217,10 @@ class JsonSerializers {
             if (transformationHelper != null)
                 jsonObject.addProperty("transformationHelper", transformationHelper.getClass().getCanonicalName());
 
-            jsonObject.add("defaultResponseHeaders", context.serialize(configuration.defaultResponseHeaders()));
+            HeaderManager defaultResponseHeaderManager = configuration.defaultResponseHeaderManager();
+            if (defaultResponseHeaderManager.keyCount() > 0)
+                jsonObject.add("defaultResponseHeaders", context.serialize(defaultResponseHeaderManager));
+
             jsonObject.add("defaultResponseSettings", context.serialize(configuration.defaultResponseSettings()));
             jsonObject.add("requests", context.serialize(configuration.requests()));
 
@@ -134,8 +239,6 @@ class JsonSerializers {
             if (json == null)
                 return null;
 
-            normalizeHeaders(json);
-
             JsonObject jsonObject = json.getAsJsonObject();
             MockRequest.Builder builder = new MockRequest.Builder();
             builder.setMethod(jsonObject.get("method").getAsString());
@@ -152,8 +255,8 @@ class JsonSerializers {
 
             if (jsonObject.has("headers"))
                 try {
-                    JsonObject headers = jsonObject.get("headers").getAsJsonObject();
-                    builder.addHeaders(context.deserialize(headers, LinkedHashMap.class));
+                    HeaderManager headerManager = context.deserialize(jsonObject.get("headers"), HeaderManager.class);
+                    builder.setHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize headers");
                 }
@@ -190,9 +293,9 @@ class JsonSerializers {
             if (filter != null)
                 jsonObject.addProperty("responseFilter", filter.getClass().getCanonicalName());
 
-            Map<String, String> headers = request.headers();
-            if (notEmpty(headers))
-                jsonObject.add("headers", context.serialize(headers));
+            HeaderManager headerManager = request.headerManager();
+            if (headerManager.keyCount() > 0)
+                jsonObject.add("headers", context.serialize(headerManager));
 
             List<MockResponse> responses = request.responses();
             if (notEmpty(responses))
@@ -213,7 +316,6 @@ class JsonSerializers {
             if (json == null)
                 return null;
 
-            normalizeHeaders(json);
             normalizeResponseCode(json);
 
             JsonObject jsonObject = json.getAsJsonObject();
@@ -223,8 +325,8 @@ class JsonSerializers {
 
             if (jsonObject.has("headers"))
                 try {
-                    JsonObject headers = jsonObject.get("headers").getAsJsonObject();
-                    builder.addHeaders(context.deserialize(headers, LinkedHashMap.class));
+                    HeaderManager headerManager = context.deserialize(jsonObject.get("header"), HeaderManager.class);
+                    builder.setHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize headers");
                 }
@@ -260,9 +362,9 @@ class JsonSerializers {
             if (notEmpty(text))
                 jsonObject.addProperty("text", text);
 
-            Map<String, String> headers = response.headers();
-            if (notEmpty(headers))
-                jsonObject.add("headers", context.serialize(headers));
+            HeaderManager headerManager = response.headerManager();
+            if (headerManager.keyCount() > 0)
+                jsonObject.add("headers", context.serialize(headerManager));
 
             Map<String, String> settings = response.settings();
             if (notEmpty(settings))
@@ -292,77 +394,4 @@ class JsonSerializers {
         }
     }
 
-    /**
-     * Ensures any header attribute in the JSON object is formatted properly as
-     * a dictionary. Headers can appear as '\n' separated strings (keys and
-     * values separated by ':'), or as an array of objects with "key" and
-     * "value" attributes, or as a dictionary. This method will transform the
-     * two former patterns to the latter.
-     *
-     * @param json The json element holding the headers structure to transform.
-     */
-    private static void normalizeHeaders(JsonElement json) {
-        JsonObject jsonObject = json.getAsJsonObject();
-        JsonElement headers = jsonObject.get("headers");
-
-        if (headers != null) {
-            if (headers.isJsonPrimitive()) {
-                String headerString = headers.getAsString();
-                JsonElement headersJsonElement = splitHeaders(headerString);
-                jsonObject.add("headers", headersJsonElement);
-            } else if (headers.isJsonArray()) {
-                JsonArray headerArray = headers.getAsJsonArray();
-                JsonElement headersJsonElement = transformHeaders(headerArray);
-                jsonObject.add("headers", headersJsonElement);
-            }
-        }
-    }
-
-    /**
-     * Splits a header string into a JSON dictionary.
-     *
-     * @param headerString The string of all headers to split.
-     * @return The transformed json dictionary element.
-     */
-    private static JsonElement splitHeaders(String headerString) {
-        JsonObject jsonObject = new JsonObject();
-        String[] splitHeaders = headerString.split("\n");
-
-        for (String header : splitHeaders) {
-            int firstIndex = header.indexOf(':');
-            if (firstIndex != -1) {
-                String key = header.substring(0, firstIndex).trim();
-                String value = header.substring(firstIndex + 1).trim();
-                if (notEmpty(key) && notEmpty(value))
-                    jsonObject.addProperty(key, value);
-            }
-        }
-
-        return jsonObject;
-    }
-
-    /**
-     * Transforms an array of header objects into a JSON dictionary
-     *
-     * @param headerArray The array of json objects to transform into a json
-     *                    dictionary.
-     * @return The transformed json dictionary element.
-     */
-    private static JsonElement transformHeaders(JsonArray headerArray) {
-        JsonObject jsonObject = new JsonObject();
-
-        for (JsonElement header : headerArray) {
-            if (header.isJsonObject()) {
-                JsonObject o = header.getAsJsonObject();
-                if (o.has("key") && o.has("value")) {
-                    String key = o.get("key").getAsString();
-                    String value = o.get("value").getAsString();
-                    if (notEmpty(key) && notEmpty(value))
-                        jsonObject.addProperty(key, value);
-                }
-            }
-        }
-
-        return jsonObject;
-    }
 }

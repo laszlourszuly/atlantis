@@ -403,4 +403,43 @@ class Utils {
             return fallback;
         }
     }
+
+    /**
+     * Joins the given components into a "glue"-separated string. Empty
+     * components (i.e. nulls or zero-lengths) are omitted.
+     *
+     * @param glue       The separator string.
+     * @param components The string components to join.
+     * @return The joined string or an empty string if no components where
+     * provided.
+     */
+    static String join(final String glue, final String... components) {
+        if (isEmpty(components))
+            return "";
+
+        String realGlue = notEmpty(glue) ? glue : "";
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String component : components)
+            if (notEmpty(component))
+                stringBuilder.append(realGlue).append(component);
+
+        return stringBuilder.substring(realGlue.length());
+    }
+
+    /**
+     * Same as {@link #join(String, String...)}, but for lists.
+     *
+     * @param glue       The separator string.
+     * @param components The string components to join.
+     * @return The joined string or an empty string if no components where
+     * provided.
+     */
+    static String join(final String glue, final List<String> components) {
+        if (isEmpty(components))
+            return "";
+
+        String[] strings = new String[components.size()];
+        components.toArray(strings);
+        return join(glue, strings);
+    }
 }

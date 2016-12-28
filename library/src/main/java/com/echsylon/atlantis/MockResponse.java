@@ -2,16 +2,14 @@ package com.echsylon.atlantis;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import okio.Okio;
 import okio.Source;
 
-import static com.echsylon.atlantis.LogUtils.info;
 import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.getNonNull;
 import static com.echsylon.atlantis.Utils.notEmpty;
@@ -24,19 +22,19 @@ public class MockResponse {
 
     /**
      * This interface describes the mandatory feature set to provide a mocked
-     * response. Implementing classes are responsible for picking a response
-     * from a given list of available responses. Any state machine etc is also
-     * in the scope of the implementing class.
+     * response. Implementing classes are responsible for picking a mock
+     * response from a given list of available responses. Any state machine etc
+     * is also in the scope of the implementing class.
      */
     public interface Filter {
 
         /**
          * Returns a mocked response of choice. May be null, in which case the
-         * calling logic is responsible for deciding what response to serve.
+         * calling logic is responsible for deciding what to do.
          *
-         * @param mockResponses All available response to pick a candidate from.
-         *                      Null and empty lists are acceptable.
-         * @return The response candidate.
+         * @param mockResponses All available mock responses to pick a candidate
+         *                      from. Null and empty lists are acceptable.
+         * @return The mock response candidate.
          */
         MockResponse findResponse(final List<MockResponse> mockResponses);
     }
@@ -48,7 +46,8 @@ public class MockResponse {
     public interface SourceHelper {
 
         /**
-         * Returns a stream from which the response body content can be read.
+         * Returns a content stream from which the mock response body content
+         * can be read.
          *
          * @param text The description of the content to stream.
          * @return A data stream or null.
@@ -64,7 +63,7 @@ public class MockResponse {
         private final MockResponse mockResponse;
 
         /**
-         * Creates a new builder based on an uninitialized response object.
+         * Creates a new builder based on an empty mock response object.
          */
         public Builder() {
             this(new MockResponse());
@@ -80,34 +79,86 @@ public class MockResponse {
         }
 
         /**
-         * Adds a header to the response being built. Any existing keys will be
-         * overwritten.
+         * Sets the header manager of the mock response being built. This method
+         * is meant for internal use only.
+         *
+         * @param headerManager The new header manager. Null is handled
+         *                      gracefully.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder setHeaderManager(final HeaderManager headerManager) {
+            mockResponse.headerManager = headerManager == null ?
+                    new HeaderManager() :
+                    headerManager;
+            return this;
+        }
+
+        /**
+         * Adds a header to the mock response being build, replacing any and all
+         * existing values for the same key.
+         *
+         * @param key   The header key.
+         * @param value The new header value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setHeader(final String key, final String value) {
+            mockResponse.headerManager.set(key, value);
+            return this;
+        }
+
+        /**
+         * Adds a header to the mock response being built.
          *
          * @param key   The header key.
          * @param value The header value.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addHeader(final String key, final String value) {
-            mockResponse.headers.put(key, value);
+            mockResponse.headerManager.add(key, value);
             return this;
         }
 
         /**
-         * Adds all headers to the response being built where neither the key
-         * nor the value is empty or null. Any existing keys will be
-         * overwritten.
+         * Adds all non-empty header keys and values to the mock response being
+         * built.
+         *
+         * @param key    The header key.
+         * @param values The header values.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addHeaders(final String key, final List<String> values) {
+            mockResponse.headerManager.add(key, values);
+            return this;
+        }
+
+        /**
+         * Adds all non-empty header keys and values to the mock response being
+         * built.
+         *
+         * @param key    The header key.
+         * @param values The header values.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder addHeaders(final String key, final String... values) {
+            mockResponse.headerManager.add(key, Arrays.asList(values));
+            return this;
+        }
+
+        /**
+         * Adds all non-empty header keys and values to the mock response being
+         * built.
          *
          * @param headers The headers to add.
          * @return This builder instance, allowing chaining of method calls.
          */
-        public Builder addHeaders(final Map<String, String> headers) {
-            mockResponse.headers.putAll(headers);
+        public Builder addHeaders(final Map<String, List<String>> headers) {
+            mockResponse.headerManager.add(headers);
             return this;
         }
 
         /**
-         * Adds a setting to the response being built. Any existing keys will be
-         * overwritten.
+         * Adds a setting to the mock response being built. Any existing value
+         * with the same key will be overwritten.
          *
          * @param key   The setting key.
          * @param value The setting value.
@@ -119,9 +170,8 @@ public class MockResponse {
         }
 
         /**
-         * Adds all settings to the response being built where neither the key
-         * nor the value is empty or null. Any existing keys will be
-         * overwritten.
+         * Adds all non-empty settings to the mock response being built. Any
+         * existing values with the same keys will be overwritten.
          *
          * @param settings The settings to add.
          * @return This builder instance, allowing chaining of method calls.
@@ -132,9 +182,9 @@ public class MockResponse {
         }
 
         /**
-         * Sets the status of the response being built. Doesn't validate neither
-         * the given status code nor the phrase. It's up to the caller to ensure
-         * they match and make sense in the given context.
+         * Sets the status of the mock response being built. Doesn't validate
+         * neither the given status code nor the phrase. It's up to the caller
+         * to ensure they match and make sense in the given context.
          *
          * @param code   The new HTTP status code.
          * @param phrase The corresponding human readable status text (e.g.
@@ -150,13 +200,12 @@ public class MockResponse {
         /**
          * Sets a string as the body content of the mock response being built.
          *
-         * @param string The new response body content.
+         * @param string The new mock response body content.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final String string) {
+            mockResponse.sourceHelper = null;
             mockResponse.text = string;
-            // Fallback to default source helper
-            // (provided by parent infrastructure).
             return this;
         }
 
@@ -164,12 +213,12 @@ public class MockResponse {
          * Sets a byte array as the body content of the mock response being
          * built.
          *
-         * @param bytes The new response body content.
+         * @param bytes The new mock response body content.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final byte[] bytes) {
+            mockResponse.sourceHelper = ignored -> Okio.source(new ByteArrayInputStream(bytes));
             mockResponse.text = null;
-            mockResponse.sourceHelper = text -> Okio.source(new ByteArrayInputStream(bytes));
             return this;
         }
 
@@ -177,19 +226,14 @@ public class MockResponse {
          * Sets a file that will provide the body content of the mock response
          * being built.
          *
-         * @param file The new response body content source.
+         * @param file The new mock response body content source.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final File file) {
-            mockResponse.text = null;
-            mockResponse.sourceHelper = text -> {
-                try {
-                    return Okio.source(file);
-                } catch (FileNotFoundException e) {
-                    info(e, "Couldn't open source: %s", file.getAbsolutePath());
-                    return null;
-                }
-            };
+            mockResponse.sourceHelper = null;
+            mockResponse.text = file != null ?
+                    "file://" + file.getAbsolutePath() :
+                    null;
             return this;
         }
 
@@ -197,19 +241,20 @@ public class MockResponse {
          * Sets an InputStream that will provide the body content of the mock
          * response being built.
          *
-         * @param inputStream The new response body content source.
+         * @param inputStream The new mock response body content source.
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final InputStream inputStream) {
+            mockResponse.sourceHelper = ignored -> Okio.source(inputStream);
             mockResponse.text = null;
-            mockResponse.sourceHelper = text -> Okio.source(inputStream);
             return this;
         }
 
         /**
-         * Returns a sealed response object which can not be further built on.
+         * Returns a sealed mock response object which can not be further built
+         * on.
          *
-         * @return The final response object.
+         * @return The final mock response object.
          */
         public MockResponse build() {
             return mockResponse;
@@ -219,13 +264,13 @@ public class MockResponse {
     private String text = null;
     private Integer code = null;
     private String phrase = null;
-    private HeaderManager headers = null;
     private SettingsManager settings = null;
     private transient SourceHelper sourceHelper = null;
+    private transient HeaderManager headerManager = null;
 
 
     MockResponse() {
-        headers = new HeaderManager();
+        headerManager = new HeaderManager();
         settings = new SettingsManager();
     }
 
@@ -248,22 +293,18 @@ public class MockResponse {
     }
 
     /**
-     * Returns an unmodifiable map of the mocked response headers. NOTE! that
-     * {@code Atlantis} may internally decide to add, remove or overwrite some
-     * headers, depending on the characteristics of the response itself.
-     * "Content-Length" would be an example of this.
+     * Returns the header manager.
      *
-     * @return The unmodifiable response headers map as per definition in {@link
-     * Collections#unmodifiableMap(Map)}.
+     * @return The response header manager. Never null.
      */
-    public Map<String, String> headers() {
-        return Collections.unmodifiableMap(headers);
+    public HeaderManager headerManager() {
+        return headerManager;
     }
 
     /**
      * Returns the body content description of this mock response. NOTE! that
-     * this isn't necessarily the actual data, but rather a description of how
-     * to get hold of the data, e.g. "file://path/to/file.json" is a perfectly
+     * this isn't necessarily the actual data, but maybe a description of how to
+     * get hold of the data, e.g. "file://path/to/file.json" is a perfectly
      * valid body content descriptor.
      *
      * @return A string that describes the mock response body content.
@@ -275,7 +316,7 @@ public class MockResponse {
     /**
      * Returns the mocked response body stream.
      *
-     * @return The response body.
+     * @return The mock response body content stream.
      */
     Source source() {
         return sourceHelper != null ?
@@ -284,9 +325,9 @@ public class MockResponse {
     }
 
     /**
-     * Returns the response behavior settings.
+     * Returns the mock response behavior settings.
      *
-     * @return The response settings.
+     * @return The mock response settings.
      */
     SettingsManager settings() {
         return settings;
@@ -294,24 +335,13 @@ public class MockResponse {
 
     /**
      * Sets the source helper implementation that will help open a data stream
-     * for any response body content.
+     * for any mock response body content.
      *
      * @param sourceHelper The source open helper.
      */
     void setSourceHelperIfAbsent(final SourceHelper sourceHelper) {
         if (this.sourceHelper == null)
             this.sourceHelper = sourceHelper;
-    }
-
-    /**
-     * Adds any default headers to the mock response if not already exists.
-     *
-     * @param defaultHeaders The default headers map.
-     */
-    void addHeadersIfAbsent(final Map<String, String> defaultHeaders) {
-        if (notEmpty(defaultHeaders))
-            for (Map.Entry<String, String> entry : defaultHeaders.entrySet())
-                headers.putIfAbsent(entry.getKey(), entry.getValue());
     }
 
     /**
@@ -323,38 +353,5 @@ public class MockResponse {
         if (notEmpty(defaultSettings))
             for (Map.Entry<String, String> entry : defaultSettings.entrySet())
                 settings.putIfAbsent(entry.getKey(), entry.getValue());
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is a "Content-Length"
-     * header with a value greater than 0.
-     *
-     * @return Boolean true if there is a "Content-Length" header and a
-     * corresponding value greater than 0, false otherwise.
-     */
-    boolean isExpectedToHaveBody() {
-        return headers.isExpectedToHaveBody();
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is an "Expect" header
-     * with a "100-continue" value.
-     *
-     * @return Boolean true if there is an "Expect" header and a corresponding
-     * "100-Continue" value, false otherwise.
-     */
-    boolean isExpectedToContinue() {
-        return headers.isExpectedToContinue();
-    }
-
-    /**
-     * Returns a boolean flag indicating whether there is a "Transfer-Encoding"
-     * header with a "chunked" value.
-     *
-     * @return Boolean true if there is a "Transfer-Encoding" header and a
-     * corresponding "chunked" value, false otherwise.
-     */
-    boolean isExpectedToBeChunked() {
-        return headers.isExpectedToBeChunked();
     }
 }
