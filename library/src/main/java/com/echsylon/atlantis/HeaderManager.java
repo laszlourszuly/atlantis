@@ -28,6 +28,9 @@ class HeaderManager extends LinkedHashMap<String, String> {
         if (isAnyEmpty(key, value))
             return null;
 
+        if (containsKey(key))
+            value += ("; " + get(key));
+
         String previous = super.put(key, value);
 
         if (key.equalsIgnoreCase("expect"))
