@@ -366,7 +366,7 @@ class MockWebServer {
 
             // Maybe send response body
             if (buffer != null) {
-                SettingsManager throttle = response.settings();
+                SettingsManager throttle = response.settingsManager();
                 transfer(buffer.size(), buffer, target, throttle);
             }
         } finally {

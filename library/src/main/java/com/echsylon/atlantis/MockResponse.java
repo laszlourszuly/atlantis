@@ -12,7 +12,6 @@ import okio.Source;
 
 import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.getNonNull;
-import static com.echsylon.atlantis.Utils.notEmpty;
 
 /**
  * This class contains the full description of a mock response.
@@ -165,7 +164,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addSetting(final String key, final String value) {
-            mockResponse.settings.put(key, value);
+            mockResponse.settingsManager.set(key, value);
             return this;
         }
 
@@ -177,7 +176,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addSettings(final Map<String, String> settings) {
-            mockResponse.settings.putAll(settings);
+            mockResponse.settingsManager.set(settings);
             return this;
         }
 
@@ -264,14 +263,14 @@ public class MockResponse {
     private String text = null;
     private Integer code = null;
     private String phrase = null;
-    private SettingsManager settings = null;
     private transient SourceHelper sourceHelper = null;
     private transient HeaderManager headerManager = null;
+    private transient SettingsManager settingsManager = null;
 
 
     MockResponse() {
         headerManager = new HeaderManager();
-        settings = new SettingsManager();
+        settingsManager = new SettingsManager();
     }
 
     /**
@@ -293,15 +292,6 @@ public class MockResponse {
     }
 
     /**
-     * Returns the header manager.
-     *
-     * @return The response header manager. Never null.
-     */
-    public HeaderManager headerManager() {
-        return headerManager;
-    }
-
-    /**
      * Returns the body content description of this mock response. NOTE! that
      * this isn't necessarily the actual data, but maybe a description of how to
      * get hold of the data, e.g. "file://path/to/file.json" is a perfectly
@@ -311,6 +301,24 @@ public class MockResponse {
      */
     public String body() {
         return text;
+    }
+
+    /**
+     * Returns the header manager.
+     *
+     * @return The response header manager. Never null.
+     */
+    public HeaderManager headerManager() {
+        return headerManager;
+    }
+
+    /**
+     * Returns the settings manager.
+     *
+     * @return The response settings manager. Never null.
+     */
+    SettingsManager settingsManager() {
+        return settingsManager;
     }
 
     /**
@@ -325,15 +333,6 @@ public class MockResponse {
     }
 
     /**
-     * Returns the mock response behavior settings.
-     *
-     * @return The mock response settings.
-     */
-    SettingsManager settings() {
-        return settings;
-    }
-
-    /**
      * Sets the source helper implementation that will help open a data stream
      * for any mock response body content.
      *
@@ -342,16 +341,5 @@ public class MockResponse {
     void setSourceHelperIfAbsent(final SourceHelper sourceHelper) {
         if (this.sourceHelper == null)
             this.sourceHelper = sourceHelper;
-    }
-
-    /**
-     * Adds any default settings to the mock response if not already exists.
-     *
-     * @param defaultSettings The default headers map.
-     */
-    void addSettingsIfAbsent(final Map<String, String> defaultSettings) {
-        if (notEmpty(defaultSettings))
-            for (Map.Entry<String, String> entry : defaultSettings.entrySet())
-                settings.putIfAbsent(entry.getKey(), entry.getValue());
     }
 }

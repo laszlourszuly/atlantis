@@ -146,7 +146,7 @@ public class Configuration implements Serializable {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addDefaultResponseSetting(final String key, final String value) {
-            configuration.defaultResponseSettings.put(key, value);
+            configuration.settingsManager.set(key, value);
             return this;
         }
 
@@ -159,7 +159,7 @@ public class Configuration implements Serializable {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder addDefaultResponseSettings(final Map<String, String> settings) {
-            configuration.defaultResponseSettings.putAll(settings);
+            configuration.settingsManager.set(settings);
             return this;
         }
 
@@ -225,8 +225,8 @@ public class Configuration implements Serializable {
 
     private String fallbackBaseUrl = null;
     private List<MockRequest> requests = null;
-    private SettingsManager defaultResponseSettings = null;
     private transient HeaderManager headerManager = null;
+    private transient SettingsManager settingsManager = null;
     private transient MockRequest.Filter requestFilter = null;
     private transient Atlantis.TokenHelper tokenHelper = null;
     private transient Atlantis.TransformationHelper transformationHelper = null;
@@ -235,7 +235,7 @@ public class Configuration implements Serializable {
     Configuration() {
         requests = new ArrayList<>();
         headerManager = new HeaderManager();
-        defaultResponseSettings = new SettingsManager();
+        settingsManager = new SettingsManager();
     }
 
     /**
@@ -259,6 +259,17 @@ public class Configuration implements Serializable {
     }
 
     /**
+     * Returns an unmodifiable list of the currently tracked request
+     * mockRequests in this configuration.
+     *
+     * @return A list of known request mockRequests. The list is unmodifiable as
+     * per definition in {@link Collections#unmodifiableList(List)}.
+     */
+    public List<MockRequest> requests() {
+        return Collections.unmodifiableList(requests);
+    }
+
+    /**
      * Returns the header manager managing the default response headers.
      *
      * @return The default response header manager. Never null.
@@ -268,14 +279,12 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Returns an unmodifiable list of the currently tracked request
-     * mockRequests in this configuration.
+     * Returns the default response behavior settings manager.
      *
-     * @return A list of known request mockRequests. The list is unmodifiable as
-     * per definition in {@link Collections#unmodifiableList(List)}.
+     * @return The default response settings manager. Never null.
      */
-    public List<MockRequest> requests() {
-        return Collections.unmodifiableList(requests);
+    SettingsManager defaultResponseSettingsManager() {
+        return settingsManager;
     }
 
     /**
@@ -309,17 +318,6 @@ public class Configuration implements Serializable {
                 requestFilter;
 
         return filter.findRequest(meta.method(), meta.url(), meta.headerManager().getAllAsMap(), requests);
-    }
-
-    /**
-     * Returns the default response behavior settings. If a corresponding
-     * setting is found in the mock response definition, then that setting will
-     * be honored instead.
-     *
-     * @return The response settings.
-     */
-    SettingsManager defaultResponseSettings() {
-        return defaultResponseSettings;
     }
 
     /**

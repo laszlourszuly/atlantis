@@ -18,6 +18,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +51,7 @@ public class AtlantisTest {
 
         context = mock(Context.class);
         realWebServer = mock(RealWebServer.class);
-        when(realWebServer.getMockRequest(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(request);
+        when(realWebServer.getMockRequest(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean())).thenReturn(request);
     }
 
     @Test

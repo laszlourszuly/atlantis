@@ -355,7 +355,7 @@ public class Atlantis {
             if (notEmpty(realBaseUrl)) {
                 info("Falling back to real world: %s", realBaseUrl);
                 mockRequest = realServer.getMockRequest(realBaseUrl, meta, source,
-                        configuration.defaultResponseSettings(),
+                        configuration.defaultResponseSettingsManager(),
                         configuration.transformationHelper(),
                         atlantisDir,
                         recordMissingRequests,

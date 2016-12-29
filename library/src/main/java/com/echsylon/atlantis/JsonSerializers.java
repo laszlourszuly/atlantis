@@ -6,7 +6,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializer;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +17,55 @@ import static com.echsylon.atlantis.Utils.notEmpty;
  * This class provides a set of custom JSON deserializers.
  */
 class JsonSerializers {
+
+    /**
+     * Returns a new JSON deserializer, specialized for {@link SettingsManager}
+     * objects.
+     *
+     * @return The deserializer to parse {@code SettingsManager} JSON with.
+     */
+    static JsonDeserializer<SettingsManager> newSettingsDeserializer() {
+        return (json, typeOfT, context) -> {
+            if (json == null)
+                return null;
+
+            SettingsManager settingsManager = new SettingsManager();
+            if (json.isJsonObject()) {
+                JsonObject jsonObject = json.getAsJsonObject();
+                for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                    JsonElement jsonElement = entry.getValue();
+                    if (jsonElement.isJsonPrimitive())
+                        settingsManager.set(entry.getKey(), jsonElement.getAsString());
+                }
+            }
+
+            return settingsManager;
+        };
+    }
+
+    /**
+     * Returns a new JSON serializer, specialized for {@link SettingsManager}
+     * objects.
+     *
+     * @return The serializer to serialize {@code SettingsManager} objects with.
+     */
+    static JsonSerializer<SettingsManager> newSettingsSerializer() {
+        return (settingsManager, typeOfObject, context) -> {
+            if (settingsManager == null)
+                return null;
+
+            Map<String, String> settings = settingsManager.getAllAsMap();
+            if (isEmpty(settings))
+                return null;
+
+            JsonObject jsonObject = new JsonObject();
+            for (Map.Entry<String, String> entry : settings.entrySet())
+                jsonObject.addProperty(entry.getKey(), entry.getValue());
+
+            return jsonObject;
+        };
+
+    }
 
     /**
      * Returns a new JSON deserializer, specialized for {@link HeaderManager}
@@ -100,19 +148,19 @@ class JsonSerializers {
                 return null;
 
             JsonObject jsonObject = new JsonObject();
-            for (Map.Entry<String, List<String>> header : headers.entrySet()) {
-                List<String> values = header.getValue();
+            for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                List<String> values = entry.getValue();
                 int count = values.size();
 
                 if (count == 1) {
                     // Single value; add as string
-                    jsonObject.addProperty(header.getKey(), values.get(0));
+                    jsonObject.addProperty(entry.getKey(), values.get(0));
                 } else if (count > 1) {
                     // Multiple values; add as array
                     JsonArray jsonArray = new JsonArray();
                     for (String value : values)
                         jsonArray.add(value);
-                    jsonObject.add(header.getKey(), jsonArray);
+                    jsonObject.add(entry.getKey(), jsonArray);
                 }
             }
 
@@ -173,7 +221,7 @@ class JsonSerializers {
             if (jsonObject.has("defaultResponseSettings"))
                 try {
                     JsonObject settings = jsonObject.get("defaultResponseSettings").getAsJsonObject();
-                    builder.addDefaultResponseSettings(context.deserialize(settings, LinkedHashMap.class));
+                    builder.addDefaultResponseSettings(context.deserialize(settings, SettingsManager.class));
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize default response settings");
                 }
@@ -221,7 +269,7 @@ class JsonSerializers {
             if (defaultResponseHeaderManager.keyCount() > 0)
                 jsonObject.add("defaultResponseHeaders", context.serialize(defaultResponseHeaderManager));
 
-            jsonObject.add("defaultResponseSettings", context.serialize(configuration.defaultResponseSettings()));
+            jsonObject.add("defaultResponseSettings", context.serialize(configuration.defaultResponseSettingsManager()));
             jsonObject.add("requests", context.serialize(configuration.requests()));
 
             return jsonObject;
@@ -334,7 +382,7 @@ class JsonSerializers {
             if (jsonObject.has("settings"))
                 try {
                     JsonArray settings = jsonObject.get("settings").getAsJsonArray();
-                    builder.addSettings(context.deserialize(settings, LinkedHashMap.class));
+                    builder.addSettings(context.deserialize(settings, SettingsManager.class));
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize responses");
                 }
@@ -366,9 +414,9 @@ class JsonSerializers {
             if (headerManager.keyCount() > 0)
                 jsonObject.add("headers", context.serialize(headerManager));
 
-            Map<String, String> settings = response.settings();
-            if (notEmpty(settings))
-                jsonObject.add("settings", context.serialize(settings));
+            SettingsManager settingsManager = response.settingsManager();
+            if (settingsManager.entryCount() > 0)
+                jsonObject.add("settings", context.serialize(settingsManager));
 
             return jsonObject;
         };
