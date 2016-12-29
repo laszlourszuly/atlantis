@@ -55,8 +55,8 @@ public class Configuration implements Serializable {
         }
 
         /**
-         * Sets the header manager of the configuration being built. This method
-         * is meant for internal use only.
+         * Sets the default response header manager of the configuration being
+         * built. This method is meant for internal use only.
          *
          * @param headerManager The new header manager. Null is handled
          *                      gracefully.
@@ -66,6 +66,21 @@ public class Configuration implements Serializable {
             configuration.headerManager = headerManager == null ?
                     new HeaderManager() :
                     headerManager;
+            return this;
+        }
+
+        /**
+         * Sets the default response settings manager of the configuration being
+         * built. This method is meant for internal use only.
+         *
+         * @param settingsManager The new settings manager. Null is handled
+         *                        gracefully.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder setDefaultResponseSettingsManager(final SettingsManager settingsManager) {
+            configuration.settingsManager = settingsManager == null ?
+                    new SettingsManager() :
+                    settingsManager;
             return this;
         }
 

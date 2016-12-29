@@ -212,7 +212,8 @@ class JsonSerializers {
 
             if (jsonObject.has("defaultResponseHeaders"))
                 try {
-                    HeaderManager headerManager = context.deserialize(jsonObject.get("defaultResponseHeaders"), HeaderManager.class);
+                    JsonElement headers = jsonObject.get("defaultResponseHeaders");
+                    HeaderManager headerManager = context.deserialize(headers, HeaderManager.class);
                     builder.setDefaultResponseHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize default response headers");
@@ -220,8 +221,9 @@ class JsonSerializers {
 
             if (jsonObject.has("defaultResponseSettings"))
                 try {
-                    JsonObject settings = jsonObject.get("defaultResponseSettings").getAsJsonObject();
-                    builder.addDefaultResponseSettings(context.deserialize(settings, SettingsManager.class));
+                    JsonElement settings = jsonObject.get("defaultResponseSettings");
+                    SettingsManager settingsManager = context.deserialize(settings, SettingsManager.class);
+                    builder.setDefaultResponseSettingsManager(settingsManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize default response settings");
                 }
@@ -269,8 +271,13 @@ class JsonSerializers {
             if (defaultResponseHeaderManager.keyCount() > 0)
                 jsonObject.add("defaultResponseHeaders", context.serialize(defaultResponseHeaderManager));
 
-            jsonObject.add("defaultResponseSettings", context.serialize(configuration.defaultResponseSettingsManager()));
-            jsonObject.add("requests", context.serialize(configuration.requests()));
+            SettingsManager defaultResponseSettingsManager = configuration.defaultResponseSettingsManager();
+            if (defaultResponseSettingsManager.entryCount() > 0)
+                jsonObject.add("defaultResponseSettings", context.serialize(defaultResponseSettingsManager));
+
+            List<MockRequest> requests = configuration.requests();
+            if (requests.size() > 0)
+                jsonObject.add("requests", context.serialize(requests));
 
             return jsonObject;
         };
@@ -364,16 +371,31 @@ class JsonSerializers {
             if (json == null)
                 return null;
 
-            normalizeResponseCode(json);
-
             JsonObject jsonObject = json.getAsJsonObject();
             MockResponse.Builder builder = new MockResponse.Builder();
-            builder.setStatus(jsonObject.get("code").getAsInt(), jsonObject.get("phrase").getAsString());
             builder.setBody(jsonObject.get("text").getAsString());
+
+            if (jsonObject.has("responseCode")) {
+                // Assuming Postman v1 response status notation
+                try {
+                    JsonObject statusObject = jsonObject.get("responseCode").getAsJsonObject();
+                    builder.setStatus(statusObject.get("code").getAsInt(), statusObject.get("name").getAsString());
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize response code");
+                }
+            } else {
+                // Assuming default Atlantis status notation
+                try {
+                    builder.setStatus(jsonObject.get("code").getAsInt(), jsonObject.get("phrase").getAsString());
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize response code and phrase");
+                }
+            }
 
             if (jsonObject.has("headers"))
                 try {
-                    HeaderManager headerManager = context.deserialize(jsonObject.get("header"), HeaderManager.class);
+                    JsonElement headers = jsonObject.get("header");
+                    HeaderManager headerManager = context.deserialize(headers, HeaderManager.class);
                     builder.setHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize headers");
@@ -381,8 +403,9 @@ class JsonSerializers {
 
             if (jsonObject.has("settings"))
                 try {
-                    JsonArray settings = jsonObject.get("settings").getAsJsonArray();
-                    builder.addSettings(context.deserialize(settings, SettingsManager.class));
+                    JsonElement settings = jsonObject.get("settings");
+                    SettingsManager settingsManager = context.deserialize(settings, SettingsManager.class);
+                    builder.setSettingsManager(settingsManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize responses");
                 }
@@ -421,25 +444,4 @@ class JsonSerializers {
             return jsonObject;
         };
     }
-
-
-    /**
-     * Converts any Postman v1 response code objects to expected member fields
-     * of the {@code Atlantis} {@code MockResponse} object.
-     *
-     * @param json The un-parsed response JSON element.
-     */
-    private static void normalizeResponseCode(JsonElement json) {
-        JsonObject jsonObject = json.getAsJsonObject();
-        if (jsonObject.has("responseCode")) {
-            JsonObject responseCode = jsonObject.remove("responseCode").getAsJsonObject();
-
-            if (responseCode.has("code"))
-                jsonObject.addProperty("code", responseCode.get("code").getAsNumber());
-
-            if (responseCode.has("name"))
-                jsonObject.addProperty("phrase", responseCode.get("name").getAsString());
-        }
-    }
-
 }

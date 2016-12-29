@@ -93,6 +93,21 @@ public class MockResponse {
         }
 
         /**
+         * Sets the settings manager of the mock response being built. This
+         * method is meant for internal use only.
+         *
+         * @param settingsManager The new settings manager. Null is handled
+         *                        gracefully.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder setSettingsManager(final SettingsManager settingsManager) {
+            mockResponse.settingsManager = settingsManager == null ?
+                    new SettingsManager() :
+                    settingsManager;
+            return this;
+        }
+
+        /**
          * Adds a header to the mock response being build, replacing any and all
          * existing values for the same key.
          *
