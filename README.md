@@ -6,4 +6,4 @@ The "News" section in [the Wiki](https://github.com/echsylon/atlantis/wiki) hold
 
 If you want even more love, you could check out the [Atlantis Extra](https://github.com/echsylon/atlantis-extra/wiki) integration layer as well. You can also find the source code to a demo app, using the said integration layer, [here](https://github.com/echsylon/atlantis-demo).
 
-Feel free to [raise a ticket](https://github.com/echsylon/atlantis/issues) if you find a bug, would like something to change or just want to discuss a topic.
+Feel free to [raise a ticket](https://github.com/echsylon/atlantis/issues) if you find a bug, would like something to change (actually I'd consider buying you a beer if you submit a pull request with a suggested change), or just want to discuss a topic.
