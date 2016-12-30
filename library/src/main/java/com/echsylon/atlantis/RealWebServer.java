@@ -140,7 +140,7 @@ class RealWebServer {
                         null;
 
                 if (file == null)
-                    builder.setBody(bytes);
+                    builder.setBody(new String(bytes));
                 else
                     builder.setBody("file://" + file.getAbsolutePath());
             }

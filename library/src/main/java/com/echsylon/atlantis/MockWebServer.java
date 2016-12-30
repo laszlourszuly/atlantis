@@ -1,5 +1,6 @@
 package com.echsylon.atlantis;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -332,11 +333,10 @@ class MockWebServer {
 
         try {
             // Maybe buffer response body.
-            source = response.source();
             HeaderManager headerManager = response.headerManager();
+            source = Okio.source(new ByteArrayInputStream(response.body().getBytes()));
 
-            if (source != null && !headerManager.isExpectedToContinue() &&
-                    (headerManager.isExpectedToHaveBody() || headerManager.isExpectedToBeChunked())) {
+            if (!headerManager.isExpectedToContinue() && (headerManager.isExpectedToHaveBody() || headerManager.isExpectedToBeChunked())) {
                 buffer = new Buffer();
                 transfer(-1, source, buffer, null);
             }

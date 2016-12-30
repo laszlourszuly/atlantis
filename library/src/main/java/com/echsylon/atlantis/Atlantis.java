@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -401,7 +400,7 @@ public class Atlantis {
      */
     private Source open(final String text) {
         if (isEmpty(text))
-            return null;
+            return Okio.source(new ByteArrayInputStream(new byte[0]));
 
         if (text.startsWith("asset://"))
             try {
@@ -409,7 +408,7 @@ public class Atlantis {
                 InputStream inputStream = context.getAssets().open(asset);
                 return Okio.source(inputStream);
             } catch (IOException e) {
-                info(e, "Couldn't open source: %s", text);
+                info(e, "Couldn't open asset: %s", text);
                 return null;
             }
 
@@ -418,18 +417,14 @@ public class Atlantis {
                 String file = text.substring(7);
                 return Okio.source(new File(file));
             } catch (FileNotFoundException e) {
-                info(e, "Couldn't open source: %s", text);
+                info(e, "Couldn't open file: %s", text);
                 return null;
             }
 
-        if (notEmpty(text))
-            try {
-                InputStream inputStream = new ByteArrayInputStream(text.getBytes("UTF-8"));
-                return Okio.source(inputStream);
-            } catch (UnsupportedEncodingException e) {
-                info(e, "Couldn't open UTF-8 string source: %s", text);
-                return null;
-            }
+        if (notEmpty(text)) {
+            InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+            return Okio.source(inputStream);
+        }
 
         return null;
     }

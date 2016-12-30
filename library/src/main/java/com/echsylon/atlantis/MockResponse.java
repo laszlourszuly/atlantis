@@ -1,15 +1,15 @@
 package com.echsylon.atlantis;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import okio.BufferedSource;
 import okio.Okio;
 import okio.Source;
 
+import static com.echsylon.atlantis.Utils.closeSilently;
 import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.getNonNull;
 
@@ -48,10 +48,10 @@ public class MockResponse {
          * Returns a content stream from which the mock response body content
          * can be read.
          *
-         * @param text The description of the content to stream.
+         * @param source The description of the content body source.
          * @return A data stream or null.
          */
-        Source open(final String text);
+        Source open(final String source);
     }
 
     /**
@@ -218,49 +218,7 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final String string) {
-            mockResponse.sourceHelper = null;
-            mockResponse.text = string;
-            return this;
-        }
-
-        /**
-         * Sets a byte array as the body content of the mock response being
-         * built.
-         *
-         * @param bytes The new mock response body content.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setBody(final byte[] bytes) {
-            mockResponse.sourceHelper = ignored -> Okio.source(new ByteArrayInputStream(bytes));
-            mockResponse.text = null;
-            return this;
-        }
-
-        /**
-         * Sets a file that will provide the body content of the mock response
-         * being built.
-         *
-         * @param file The new mock response body content source.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setBody(final File file) {
-            mockResponse.sourceHelper = null;
-            mockResponse.text = file != null ?
-                    "file://" + file.getAbsolutePath() :
-                    null;
-            return this;
-        }
-
-        /**
-         * Sets an InputStream that will provide the body content of the mock
-         * response being built.
-         *
-         * @param inputStream The new mock response body content source.
-         * @return This builder instance, allowing chaining of method calls.
-         */
-        public Builder setBody(final InputStream inputStream) {
-            mockResponse.sourceHelper = ignored -> Okio.source(inputStream);
-            mockResponse.text = null;
+            mockResponse.source = string;
             return this;
         }
 
@@ -275,9 +233,9 @@ public class MockResponse {
         }
     }
 
-    private String text = null;
     private Integer code = null;
     private String phrase = null;
+    private String source = null;
     private transient SourceHelper sourceHelper = null;
     private transient HeaderManager headerManager = null;
     private transient SettingsManager settingsManager = null;
@@ -307,15 +265,20 @@ public class MockResponse {
     }
 
     /**
-     * Returns the body content description of this mock response. NOTE! that
-     * this isn't necessarily the actual data, but maybe a description of how to
-     * get hold of the data, e.g. "file://path/to/file.json" is a perfectly
-     * valid body content descriptor.
+     * Tries to return the body as a string.
      *
-     * @return A string that describes the mock response body content.
+     * @return The response body string or null.
      */
     public String body() {
-        return text;
+        BufferedSource bufferedSource = null;
+        try {
+            bufferedSource = Okio.buffer(sourceHelper.open(source));
+            return bufferedSource.readUtf8();
+        } catch (NullPointerException | IOException e) {
+            return null;
+        } finally {
+            closeSilently(bufferedSource);
+        }
     }
 
     /**
@@ -328,33 +291,30 @@ public class MockResponse {
     }
 
     /**
+     * Sets the source reader if not already set.
+     *
+     * @param helper The source helper used to open the data source with.
+     */
+    void setSourceHelperIfAbsent(final SourceHelper helper) {
+        if (sourceHelper == null)
+            sourceHelper = helper;
+    }
+
+    /**
+     * Returns the content body description.
+     *
+     * @return The content body description.
+     */
+    String source() {
+        return source;
+    }
+
+    /**
      * Returns the settings manager.
      *
      * @return The response settings manager. Never null.
      */
     SettingsManager settingsManager() {
         return settingsManager;
-    }
-
-    /**
-     * Returns the mocked response body stream.
-     *
-     * @return The mock response body content stream.
-     */
-    Source source() {
-        return sourceHelper != null ?
-                sourceHelper.open(text) :
-                null;
-    }
-
-    /**
-     * Sets the source helper implementation that will help open a data stream
-     * for any mock response body content.
-     *
-     * @param sourceHelper The source open helper.
-     */
-    void setSourceHelperIfAbsent(final SourceHelper sourceHelper) {
-        if (this.sourceHelper == null)
-            this.sourceHelper = sourceHelper;
     }
 }

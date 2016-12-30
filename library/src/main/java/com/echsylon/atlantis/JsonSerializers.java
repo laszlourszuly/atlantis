@@ -373,7 +373,11 @@ class JsonSerializers {
 
             JsonObject jsonObject = json.getAsJsonObject();
             MockResponse.Builder builder = new MockResponse.Builder();
-            builder.setBody(jsonObject.get("text").getAsString());
+
+            if (jsonObject.has("source"))
+                builder.setBody(jsonObject.get("source").getAsString());
+            else if (jsonObject.has("text"))
+                builder.setBody(jsonObject.get("text").getAsString());
 
             if (jsonObject.has("responseCode")) {
                 // Assuming Postman v1 response status notation
@@ -429,9 +433,9 @@ class JsonSerializers {
             jsonObject.addProperty("code", response.code());
             jsonObject.addProperty("phrase", response.phrase());
 
-            String text = response.body();
-            if (notEmpty(text))
-                jsonObject.addProperty("text", text);
+            String source = response.source();
+            if (notEmpty(source))
+                jsonObject.addProperty("source", source);
 
             HeaderManager headerManager = response.headerManager();
             if (headerManager.keyCount() > 0)

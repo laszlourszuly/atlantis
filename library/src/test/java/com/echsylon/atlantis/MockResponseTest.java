@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import okio.BufferedSource;
 import okio.Okio;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,7 +44,7 @@ public class MockResponseTest {
         assertThat(response.headerManager().keyCount(), is(2));
         assertThat(response.headerManager().getMostRecent("k1"), is("v1"));
         assertThat(response.headerManager().getMostRecent("k2"), is("v2"));
-        assertThat(response.body(), is("body"));
+        assertThat(response.source(), is("body"));
     }
 
     @Test
@@ -74,14 +73,17 @@ public class MockResponseTest {
     @Test
     public void internal_doesNotOverwriteExistingSourceHelper() throws IOException {
         MockResponse response = new MockResponse.Builder()
-                .setBody("foo".getBytes())
+                .setBody("foo")
                 .build();
 
-        response.setSourceHelperIfAbsent(text ->
-                Okio.source(new ByteArrayInputStream("bar".getBytes())));
+        // Set the original source helper
+        response.setSourceHelperIfAbsent(text -> Okio.source(new ByteArrayInputStream(text.getBytes())));
 
-        BufferedSource source = Okio.buffer(response.source());
-        assertThat(source.readUtf8(), is("foo"));
+        // Now try to overwrite it
+        response.setSourceHelperIfAbsent(text -> Okio.source(new ByteArrayInputStream("bar".getBytes())));
+
+        // Verify overwrite failed
+        assertThat(response.body(), is("foo"));
     }
 
     @Test
