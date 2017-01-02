@@ -9,6 +9,7 @@ import okio.BufferedSource;
 import okio.Okio;
 import okio.Source;
 
+import static com.echsylon.atlantis.LogUtils.info;
 import static com.echsylon.atlantis.Utils.closeSilently;
 import static com.echsylon.atlantis.Utils.getNative;
 import static com.echsylon.atlantis.Utils.getNonNull;
@@ -275,7 +276,8 @@ public class MockResponse {
             bufferedSource = Okio.buffer(sourceHelper.open(source));
             return bufferedSource.readUtf8();
         } catch (NullPointerException | IOException e) {
-            return null;
+            info(e, "Couldn't deliver mock response body: %s", source);
+            return "";
         } finally {
             closeSilently(bufferedSource);
         }
