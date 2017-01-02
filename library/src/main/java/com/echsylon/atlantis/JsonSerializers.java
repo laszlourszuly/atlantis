@@ -312,7 +312,8 @@ class JsonSerializers {
 
             if (jsonObject.has("headers"))
                 try {
-                    HeaderManager headerManager = context.deserialize(jsonObject.get("headers"), HeaderManager.class);
+                    JsonElement headers = jsonObject.get("headers");
+                    HeaderManager headerManager = context.deserialize(headers, HeaderManager.class);
                     builder.setHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize headers");
