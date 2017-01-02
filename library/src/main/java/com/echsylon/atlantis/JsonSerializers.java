@@ -181,7 +181,9 @@ class JsonSerializers {
 
             JsonObject jsonObject = json.getAsJsonObject();
             Configuration.Builder builder = new Configuration.Builder();
-            builder.setFallbackBaseUrl(jsonObject.get("fallbackBaseUrl").getAsString());
+
+            if (jsonObject.has("fallbackBaseUrl"))
+                builder.setFallbackBaseUrl(jsonObject.get("fallbackBaseUrl").getAsString());
 
             if (jsonObject.has("requestFilter"))
                 try {
