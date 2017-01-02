@@ -333,6 +333,9 @@ public class Atlantis {
         this.mockServer = new MockWebServer(this::serve);
         this.servedRequests = new ConcurrentLinkedQueue<>();
         this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
+
+        NOT_FOUND.setSourceHelperIfAbsent(this::open);
+        CONTINUE.setSourceHelperIfAbsent(this::open);
     }
 
     /**
@@ -369,6 +372,15 @@ public class Atlantis {
         if (mockResponse == null)
             return NOT_FOUND;
 
+        mockResponse.setSourceHelperIfAbsent(this::open);
+        mockResponse.headerManager()
+                .addIfKeyAbsent(configuration.defaultResponseHeaderManager()
+                        .getAllAsMultiMap());
+
+        TokenHelper tokenHelper = configuration.tokenHelper();
+        if (tokenHelper != null)
+            mockResponse = tokenHelper.parse(mockRequest, mockResponse);
+
         if (recordServedRequests)
             servedRequests.add(mockRequest);
 
@@ -378,15 +390,11 @@ public class Atlantis {
                 writeConfigurationToFile(configuration, atlantisDir);
             }
 
+        // There is no guarantee that the custom token helper delivered a mock
+        // response with the source helper intact. Hence we'll make sure there
+        // is one before the response is finally served.
         mockResponse.setSourceHelperIfAbsent(this::open);
-        mockResponse.headerManager()
-                .addIfKeyAbsent(configuration.defaultResponseHeaderManager()
-                        .getAllAsMultiMap());
-
-        TokenHelper tokenHelper = configuration.tokenHelper();
-        return tokenHelper != null ?
-                tokenHelper.parse(mockRequest, mockResponse) :
-                mockResponse;
+        return mockResponse;
     }
 
     /**
