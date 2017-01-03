@@ -334,21 +334,24 @@ class MockWebServer {
         try {
             // Maybe buffer response body.
             HeaderManager headerManager = response.headerManager();
-            source = Okio.source(new ByteArrayInputStream(response.body().getBytes()));
+            byte[] bytes = response.body().getBytes();
 
-            if (!headerManager.isExpectedToContinue() && (headerManager.isExpectedToHaveBody() || headerManager.isExpectedToBeChunked())) {
+            // We can't really check the "isExpectedToHaveBody()" here as the
+            // content length isn't necessarily set yet.
+            if (bytes.length > 0) {
+                source = Okio.source(new ByteArrayInputStream(bytes));
                 buffer = new Buffer();
                 transfer(-1, source, buffer, null);
             }
 
-            // Send the response meta
+            // Write the response meta data
             StringBuilder builder = new StringBuilder();
             builder.append(String.format("HTTP/1.1 %s %s\r\n", response.code(), response.phrase()));
             List<String> headers = headerManager.getAllAsList();
             for (int i = 0, c = headers.size(); i < c; i += 2)
                 builder.append(String.format("%s: %s\r\n", headers.get(i), headers.get(i + 1)));
 
-            // Maybe set Content-Length header
+            // Maybe set the Content-Length header
             String value = headerManager.getMostRecent("Content-Length");
             if (isEmpty(value)) {
                 if (headerManager.isExpectedToContinue()) {
@@ -358,13 +361,14 @@ class MockWebServer {
                 }
             }
 
+            // Now actually send the response meta data
             builder.append("\r\n");
             String string = builder.toString();
             target.writeUtf8(string);
             target.flush();
             info("Response: %s", string);
 
-            // Maybe send response body
+            // ...and maybe also send a response body
             if (buffer != null) {
                 SettingsManager throttle = response.settingsManager();
                 transfer(buffer.size(), buffer, target, throttle);
