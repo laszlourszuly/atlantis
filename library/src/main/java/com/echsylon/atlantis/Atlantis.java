@@ -96,16 +96,16 @@ public class Atlantis {
          * Performs the actual token replacement activities and delivers a new,
          * ready-to-serve mock response.
          *
-         * @param mockRequest     The mock request to be served.
-         * @param rawMockResponse The configured or recorded mock response (with
-         *                        the yet un-parsed tokens).
+         * @param requestBeingMocked The request that is about to be served.
+         * @param rawMockResponse    The configured or recorded mock response
+         *                           (with the yet un-parsed tokens).
          * @return A new, modified mock response that can be served to a waiting
          * client. Note that {@code MockResponse}'s are immutable from the users
          * perspective. Implementing classes will have to create a new {@code
          * MockResponse} instance to return, preferably  by using a {@code
          * MockResponse.Builder} instance.
          */
-        MockResponse parse(final MockRequest mockRequest, final MockResponse rawMockResponse);
+        MockResponse parse(final MockRequest requestBeingMocked, final MockResponse rawMockResponse);
     }
 
 
@@ -378,8 +378,10 @@ public class Atlantis {
                         .getAllAsMultiMap());
 
         TokenHelper tokenHelper = configuration.tokenHelper();
-        if (tokenHelper != null)
-            mockResponse = tokenHelper.parse(mockRequest, mockResponse);
+        if (tokenHelper != null) {
+            MockRequest requestBeingMocked = new MockRequest.Builder(meta).build();
+            mockResponse = tokenHelper.parse(requestBeingMocked, mockResponse);
+        }
 
         if (recordServedRequests)
             servedRequests.add(mockRequest);
