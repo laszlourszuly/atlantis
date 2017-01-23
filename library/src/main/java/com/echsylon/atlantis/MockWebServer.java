@@ -108,8 +108,8 @@ class MockWebServer {
      */
     boolean isRunning() {
         return started &&
-                serverSocket.isBound() && !serverSocket.isClosed() &&
-                !executorService.isShutdown() && !executorService.isTerminated();
+                serverSocket != null && serverSocket.isBound() && !serverSocket.isClosed() &&
+                executorService != null && !executorService.isShutdown() && !executorService.isTerminated();
     }
 
 
@@ -155,7 +155,6 @@ class MockWebServer {
         if (started)
             throw new IllegalStateException("Already running");
 
-        started = true;
         executorService = Executors.newCachedThreadPool(runnable -> {
             Thread result = new Thread(runnable, "Atlantis MockWebServer");
             result.setDaemon(true);
@@ -190,6 +189,8 @@ class MockWebServer {
                 started = false;
             }
         });
+
+        started = true;
     }
 
     /**
