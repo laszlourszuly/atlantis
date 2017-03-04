@@ -59,6 +59,26 @@ task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
 }
 
 /**
+ * This task will trigger a new patch release. An exception will be thrown if the desired version
+ * name segment or the version code couldn't be incremented properly. This task will trigger the
+ * production environment to perform the actual release. Local releases can only be performed
+ * manually for now.
+ *
+ * The flow for triggering the release is as follows:
+ *
+ * 1. Get the version name and version code from the latest tag's subject line.
+ * 2. Split the version name into ${major}.${minor}.${patch} segments.
+ * 3. Increase the ${patch} segment and the version code by one.
+ * 4. Create a new annotated tag and push it to the remote repository.
+ */
+task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') << {
+    def oldVersionName = getVersionFromLatestTag()
+    def (major, minor, patch) = oldVersionName.tokenize('.')
+    def newVersionName = [major, minor, patch + '-SNAPSHOT'].join('.')
+    createNewTag(oldVersionName, newVersionName)
+}
+
+/**
  * This task will generate new JavaDoc and push it to the remote 'gh-pages' branch.
  * 
  * The flow for triggering the JavaDoc release is as follows:
