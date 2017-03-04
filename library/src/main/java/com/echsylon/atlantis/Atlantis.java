@@ -318,6 +318,16 @@ public class Atlantis {
         return Collections.unmodifiableList(served);
     }
 
+    /**
+     * Returns the working directory of Atlantis. This is where any recorded
+     * responses are stored.
+     *
+     * @return The working directory for Atlantis.
+     */
+    File workingDirectory() {
+        return atlantisDir;
+    }
+
 
     /**
      * Initializes the internal state.

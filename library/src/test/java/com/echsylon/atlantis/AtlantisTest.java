@@ -10,6 +10,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -119,12 +120,25 @@ public class AtlantisTest {
     }
 
     @After
+    @SuppressWarnings("ResultOfMethodCallIgnored") // Ignore file.delete()
     public void after() {
         context = null;
         configuration = null;
         if (atlantis != null) {
+            deleteRecursively(atlantis.workingDirectory());
             atlantis.stop();
             atlantis = null;
+        }
+    }
+
+    private void deleteRecursively(final File file) {
+        if (file != null) {
+            if (file.isDirectory()) {
+                for (File f : file.listFiles()) {
+                    deleteRecursively(f);
+                }
+            }
+            file.delete();
         }
     }
 }
