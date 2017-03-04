@@ -22,7 +22,7 @@ publishing {
                 }
             }
 
-            def fileName = "${archivesBaseName}-${version}".toLowerCase()
+            def fileName = "${archivesBaseName}-${version}"
 
             // Source code bundle from task defined in 'archive.gradle'
             artifact("${buildDir}/outputs/jar/release/${fileName}-source.jar") {
