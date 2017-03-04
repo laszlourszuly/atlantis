@@ -74,7 +74,8 @@ task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
 task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') << {
     def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
-    def newVersionName = [major, minor, patch + '-SNAPSHOT'].join('.')
+    def newVersionName = [major, minor, (patch + 1) + '-SNAPSHOT'].join('.')
+    deleteTag("v$newVersionName")
     createNewTag(oldVersionName, newVersionName)
 }
 
@@ -136,6 +137,15 @@ private def getVersionFromLatestTag() {
         return '0.0.0'
 
     return versions
+}
+
+/**
+ * Deletes a tag with a given version name, both locally as remotely.
+ *
+ * @param tagName The name of the tag to delete.
+ */
+private def deleteTag(String tagName) {
+    "git tag -d $tagName && git push origin :$tagName".bash();
 }
 
 /**
