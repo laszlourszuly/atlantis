@@ -356,12 +356,7 @@ public class Atlantis {
             String realBaseUrl = configuration.fallbackBaseUrl();
             if (notEmpty(realBaseUrl)) {
                 info("Falling back to real world: %s", realBaseUrl);
-                mockRequest = realServer.getMockRequest(realBaseUrl, meta, source,
-                        configuration.defaultResponseSettingsManager(),
-                        configuration.transformationHelper(),
-                        atlantisDir,
-                        recordMissingRequests,
-                        recordMissingFailures);
+                mockRequest = getRealWorldTemplate(meta, realBaseUrl, source);
             }
         }
 
@@ -480,6 +475,55 @@ public class Atlantis {
                 .setUrl(meta.url())
                 .addHeaders(meta.headerManager().getAllAsMultiMap())
                 .addResponse(CONTINUE)
+                .build();
+    }
+
+    /**
+     * Returns a new request template based on a real world response.
+     *
+     * @param meta        The meta data describing the request.
+     * @param realBaseUrl The real world base url, e.g. "http://www.google.com".
+     * @param source      The request body source. May be null.
+     * @return A request template holding a mock of a real world response.
+     */
+    private MockRequest getRealWorldTemplate(final Meta meta,
+                                             final String realBaseUrl,
+                                             final Source source) {
+        // Prepare a new mock request
+        MockRequest mockRequest = new MockRequest.Builder(meta).build();
+
+        // Possibly allow the caller to transform some request metrics.
+        TransformationHelper transformationHelper = configuration.transformationHelper();
+        if (transformationHelper != null)
+            mockRequest = transformationHelper.prepareForRealWorld(realBaseUrl, mockRequest);
+
+        // Get a mocked response from the real world.
+        MockResponse mockResponse = proxy.getMockResponse(realBaseUrl,
+                mockRequest,
+                source,
+                atlantisDir,
+                recordMissingRequests,
+                recordMissingFailures,
+                configuration.defaultResponseSettingsManager().followRedirects());
+
+        if (mockResponse == null) {
+            return null;
+        }
+
+        if (transformationHelper != null) {
+            // Ensure the source can be read.
+            mockResponse.setSourceHelperIfAbsent(this::open);
+            mockResponse = transformationHelper.prepareForMockedWorld(realBaseUrl, mockResponse);
+
+            // The caller has returned a new mock response, make sure the source
+            // can be read from that one too.
+            mockResponse.setSourceHelperIfAbsent(this::open);
+        }
+
+        // Return a clean mock request, which hasn't been prepared for a real
+        // world request.
+        return new MockRequest.Builder(meta)
+                .addResponse(mockResponse)
                 .build();
     }
 }

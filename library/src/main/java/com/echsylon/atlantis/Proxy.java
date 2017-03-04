@@ -53,7 +53,7 @@ class Proxy {
 
 
     /**
-     * Tries to get the Atlantis configuration JSON as a given URL.
+     * Tries to get the Atlantis configuration JSON at a given URL.
      *
      * @param url The URL allegedly serving an Atlantis configuration.
      * @return The Atlantis configuration object expressed as a JSON string or
@@ -63,7 +63,7 @@ class Proxy {
         List<String> headers = Arrays.asList("Content-Type", "application/json");
         ResponseBody responseBody = null;
         try {
-            Response response = getRealResponse(url, "GET", headers, null, null);
+            Response response = getRealResponse(url, "GET", headers, null, false);
             responseBody = response.body();
             return response.code() == 200 ?
                     responseBody.string() :
@@ -88,45 +88,48 @@ class Proxy {
      * @param realBaseUrl     The base url for the "real" endpoint. The meta
      *                        object will hold the remaining request metrics,
      *                        like method, headers, path etc.
-     * @param meta            The meta data describing the request to make.
+     * @param mockRequest     The prepared mock request to fetch a real world
+     *                        response for.
      * @param requestBody     The request body content stream.
-     * @param defaultSettings The default settings for all responses. This may
-     *                        constrain how the response is fetched (e.g.
-     *                        whether to follow redirects or not).
      * @param directory       If given, the directory to persist the response
      *                        to.
+     * @param doRecord        Whether to record a successful (as per HTTP status
+     *                        code) real world response or not. If recorded then
+     *                        this response will be delivered for future
+     *                        requests as well.
+     * @param doRecordFailure Whether to record a failed (as per HTTP status
+     *                        code) real world response or not as well.
+     * @param followRedirects Whether to follow real world redirects or not.
      * @return The mock request describing the real request and wrapping the
      * real response.
      */
-    MockRequest getMockRequest(final String realBaseUrl,
-                               final Meta meta,
-                               final Source requestBody,
-                               final SettingsManager defaultSettings,
-                               final Atlantis.TransformationHelper transformationHelper,
-                               final File directory,
-                               final boolean doRecord,
-                               final boolean doRecordFailure) {
+    MockResponse getMockResponse(final String realBaseUrl,
+                                 final MockRequest mockRequest,
+                                 final Source requestBody,
+                                 final File directory,
+                                 final boolean doRecord,
+                                 final boolean doRecordFailure,
+                                 final boolean followRedirects) {
 
-        String url = realBaseUrl + meta.url();
+        // Prepare the real world url
+        String url = realBaseUrl + mockRequest.url();
         ResponseBody responseBody = null;
 
         try {
-            // Now get the real response.
-            MockRequest mockRequest = new MockRequest.Builder(meta).build();
-            if (transformationHelper != null)
-                mockRequest = transformationHelper.prepareForRealWorld(realBaseUrl, mockRequest);
-
+            // Fetch the real response.
             Response response = getRealResponse(url,
                     mockRequest.method(),
                     mockRequest.headerManager().getAllAsList(),
                     requestBody,
-                    defaultSettings);
+                    followRedirects);
 
+            // Build the mock response.
+            long t1 = response.sentRequestAtMillis();
+            long t2 = response.receivedResponseAtMillis();
+            String maxDelay = Long.toString((long) ((t2 - t1) * 1.2f)); // Add 20% slack.
             MockResponse.Builder builder = new MockResponse.Builder()
                     .setStatus(response.code(), response.message())
-                    .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS,
-                            Long.toString(response.receivedResponseAtMillis() -
-                                    response.sentRequestAtMillis()));
+                    .addSetting(SettingsManager.THROTTLE_MAX_DELAY_MILLIS, maxDelay);
 
             Headers headers = response.headers();
             for (String key : headers.names())
@@ -145,18 +148,10 @@ class Proxy {
                     builder.setBody("file://" + file.getAbsolutePath());
             }
 
-            MockResponse mockResponse = builder.build();
-
-            if (transformationHelper != null)
-                mockResponse = transformationHelper.prepareForMockedWorld(realBaseUrl, mockResponse);
-
-            return new MockRequest.Builder()
-                    .setMethod(meta.method())
-                    .setUrl(meta.url())
-                    .addResponse(mockResponse)
-                    .build();
+            // And return the final mock response.
+            return builder.build();
         } catch (IOException e) {
-            info(e, "Couldn't prepare real request, ignoring: %s %s", meta.method(), url);
+            info(e, "Couldn't prepare real request, ignoring: %s %s", mockRequest.method(), url);
             return null;
         } finally {
             closeSilently(responseBody);
@@ -172,7 +167,7 @@ class Proxy {
      * @param method          The request method ("GET", "POST", etc).
      * @param headers         The request headers. Null means no headers.
      * @param requestBody     The request body content stream.
-     * @param defaultSettings The default settings for all responses.
+     * @param followRedirects Whether to follow any redirects or not.
      * @return The real response as delivered by the backing HTTP client.
      * @throws IOException if anything would go wrong during the request.
      */
@@ -180,7 +175,7 @@ class Proxy {
                                      final String method,
                                      final List<String> headers,
                                      final Source requestBody,
-                                     final SettingsManager defaultSettings) throws IOException {
+                                     final boolean followRedirects) throws IOException {
 
         Request.Builder request = new Request.Builder();
         request.url(url);
@@ -201,7 +196,6 @@ class Proxy {
             request.method(method, body);
         }
 
-        boolean followRedirects = defaultSettings == null || defaultSettings.followRedirects();
         OkHttpClient httpClient = new OkHttpClient.Builder()
                 .followSslRedirects(followRedirects)
                 .followRedirects(followRedirects)

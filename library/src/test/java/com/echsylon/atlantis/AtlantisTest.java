@@ -51,7 +51,7 @@ public class AtlantisTest {
 
         context = mock(Context.class);
         proxy = mock(Proxy.class);
-        when(proxy.getMockRequest(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean())).thenReturn(request);
+        when(proxy.getMockResponse(any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(response);
     }
 
     @Test
