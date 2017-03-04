@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE, sdk = 16)
 public class AtlantisTest {
-    private RealWebServer realWebServer;
+    private Proxy proxy;
     private Configuration configuration;
     private MockResponse response;
     private MockRequest request;
@@ -50,8 +50,8 @@ public class AtlantisTest {
                 .build();
 
         context = mock(Context.class);
-        realWebServer = mock(RealWebServer.class);
-        when(realWebServer.getMockRequest(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean())).thenReturn(request);
+        proxy = mock(Proxy.class);
+        when(proxy.getMockRequest(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean())).thenReturn(request);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class AtlantisTest {
     @Test
     public void public_canRecordMissingRequests() throws IOException {
         // Verify possible to start recording.
-        atlantis = new Atlantis(context, realWebServer, configuration);
+        atlantis = new Atlantis(context, proxy, configuration);
         atlantis.start();
         atlantis.setRecordMissingRequestsEnabled(true);
         assertThat(atlantis.isRecordingMissingRequests(), is(true));

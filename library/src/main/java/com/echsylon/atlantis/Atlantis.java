@@ -112,7 +112,7 @@ public class Atlantis {
     private Context context;
     private File atlantisDir;
     private MockWebServer mockServer;
-    private RealWebServer realServer;
+    private Proxy proxy;
     private Configuration configuration;
     private Queue<MockRequest> servedRequests;
 
@@ -160,15 +160,15 @@ public class Atlantis {
      * This constructor is only intended for testing purposes.
      *
      * @param context       The context used when reading mock responses.
-     * @param realServer    An alternative real web server implementation.
+     * @param proxy         An alternative real web server implementation.
      * @param configuration The {@code Atlantis} configuration object.
      */
-    Atlantis(final Context context, final RealWebServer realServer,
+    Atlantis(final Context context, final Proxy proxy,
              final Configuration configuration) {
 
         this(context, configuration);
-        if (realServer != null)
-            this.realServer = realServer;
+        if (proxy != null)
+            this.proxy = proxy;
     }
 
     /**
@@ -329,7 +329,7 @@ public class Atlantis {
     private void init(final Context context, final Configuration configuration) {
         this.context = context;
         this.configuration = configuration;
-        this.realServer = new RealWebServer();
+        this.proxy = new Proxy();
         this.mockServer = new MockWebServer(this::serve);
         this.servedRequests = new ConcurrentLinkedQueue<>();
         this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
@@ -379,6 +379,8 @@ public class Atlantis {
 
         TokenHelper tokenHelper = configuration.tokenHelper();
         if (tokenHelper != null) {
+            // Don't expose the internal mock request object, create a copy
+            // of it and pass that one instead.
             MockRequest requestBeingMocked = new MockRequest.Builder(meta).build();
             mockResponse = tokenHelper.parse(requestBeingMocked, mockResponse);
         }

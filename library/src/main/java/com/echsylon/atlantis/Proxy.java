@@ -25,7 +25,7 @@ import static com.echsylon.atlantis.Utils.isEmpty;
 import static com.echsylon.atlantis.Utils.notEmpty;
 
 @SuppressWarnings("unused")
-class RealWebServer {
+class Proxy {
 
     /**
      * This class provides the body content to the real request as expected by
