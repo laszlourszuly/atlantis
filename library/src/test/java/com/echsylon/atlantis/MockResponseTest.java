@@ -77,10 +77,10 @@ public class MockResponseTest {
                 .build();
 
         // Set the original source helper
-        response.setSourceHelperIfAbsent(text -> Okio.source(new ByteArrayInputStream(text.getBytes())));
+        response.setSourceHelperIfAbsent(bytes -> Okio.source(new ByteArrayInputStream(bytes)));
 
         // Now try to overwrite it
-        response.setSourceHelperIfAbsent(text -> Okio.source(new ByteArrayInputStream("bar".getBytes())));
+        response.setSourceHelperIfAbsent(bytes -> Okio.source(new ByteArrayInputStream("bar".getBytes())));
 
         // Verify overwrite failed
         assertThat(response.body(), is("foo"));
