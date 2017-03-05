@@ -143,7 +143,7 @@ class Proxy {
                         null;
 
                 if (file == null)
-                    builder.setBody(new String(bytes));
+                    builder.setBody(bytes);
                 else
                     builder.setBody("file://" + file.getAbsolutePath());
             }

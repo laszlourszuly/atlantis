@@ -52,7 +52,7 @@ public class MockResponse {
          * @param source The description of the content body source.
          * @return A data stream or null.
          */
-        Source open(final String source);
+        Source open(final byte[] source);
     }
 
     /**
@@ -219,7 +219,19 @@ public class MockResponse {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setBody(final String string) {
-            mockResponse.source = string;
+            mockResponse.source = string.getBytes();
+            return this;
+        }
+
+        /**
+         * Sets a byte array as the body content fo the mock response being
+         * built.
+         *
+         * @param bytes The new mock response body content.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setBody(final byte[] bytes) {
+            mockResponse.source = bytes;
             return this;
         }
 
@@ -236,7 +248,7 @@ public class MockResponse {
 
     private Integer code = null;
     private String phrase = null;
-    private String source = null;
+    private byte[] source = null;
     private transient SourceHelper sourceHelper = null;
     private transient HeaderManager headerManager = null;
     private transient SettingsManager settingsManager = null;
@@ -276,11 +288,18 @@ public class MockResponse {
             bufferedSource = Okio.buffer(sourceHelper.open(source));
             return bufferedSource.readUtf8();
         } catch (NullPointerException | IOException e) {
-            info(e, "Couldn't deliver mock response body: %s", source);
+            info(e, "Couldn't deliver mock response body: %s", new String(source));
             return "";
         } finally {
             closeSilently(bufferedSource);
         }
+    }
+
+    /**
+     * @return The body as a byte array.
+     */
+    public byte[] bodyAsByteArray() {
+        return source;
     }
 
     /**
@@ -308,7 +327,7 @@ public class MockResponse {
      * @return The content body description.
      */
     String source() {
-        return source;
+        return new String(source);
     }
 
     /**

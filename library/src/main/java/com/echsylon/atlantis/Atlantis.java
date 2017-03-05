@@ -410,15 +410,23 @@ public class Atlantis {
      * Returns a data source through which the mocked response content body can
      * be read.
      *
-     * @param text The text describing the resource. Interpreted as an asset
-     *             path if starting with "asset://", or a file path if starting
-     *             with "file://" or text if not empty.
+     * @param content The text describing the resource. Interpreted as an asset
+     *                path if starting with "asset://", or a file path if
+     *                starting with "file://" or text if not empty.
      * @return A data source or null if no data described.
      */
-    private Source open(final String text) {
-        if (isEmpty(text))
+    private Source open(final byte[] content) {
+        if (isEmpty(content))
             return Okio.source(new ByteArrayInputStream(new byte[0]));
 
+        // Don't transform the entire content to a string only to test if it
+        // start with the corresponding "asset://" bytes. Instead only convert
+        // the beginning of the content array to a string and then test for the
+        // scheme.
+        String text;
+
+        // Check if "asset" scheme
+        text = new String(content, 0, "asset://".getBytes().length);
         if (text.startsWith("asset://"))
             try {
                 String asset = text.substring(8);
@@ -429,6 +437,8 @@ public class Atlantis {
                 return null;
             }
 
+        // Check if "file" scheme.
+        text = new String(content, 0, "file://".getBytes().length);
         if (text.startsWith("file://"))
             try {
                 String file = text.substring(7);
@@ -438,12 +448,9 @@ public class Atlantis {
                 return null;
             }
 
-        if (notEmpty(text)) {
-            InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-            return Okio.source(inputStream);
-        }
-
-        return null;
+        // Fall back to content byte array stream.
+        InputStream inputStream = new ByteArrayInputStream(content);
+        return Okio.source(inputStream);
     }
 
     /**
@@ -516,9 +523,8 @@ public class Atlantis {
                 recordMissingFailures,
                 configuration.defaultResponseSettingsManager().followRedirects());
 
-        if (mockResponse == null) {
+        if (mockResponse == null)
             return null;
-        }
 
         if (transformationHelper != null) {
             // Ensure the source can be read.
