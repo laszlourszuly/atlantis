@@ -59,7 +59,7 @@ task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
 }
 
 /**
- * This task will trigger a new patch release. An exception will be thrown if the desired version
+ * This task will trigger a new SNAPSHOT release. An exception will be thrown if the desired version
  * name segment or the version code couldn't be incremented properly. This task will trigger the
  * production environment to perform the actual release. Local releases can only be performed
  * manually for now.
@@ -74,8 +74,14 @@ task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
 task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') << {
     def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
-    def newVersionName = [major, minor, (patch + 1) + '-SNAPSHOT'].join('.')
-    deleteTag("v$newVersionName")
+
+    if (patch.endsWith("-SNAPSHOT")) {
+        patch = patch.substring(0, patch.indexOf("-SNAPSHOT")).toInteger() + 1
+    } else {
+        patch = patch.toInteger() + 1
+    }
+    
+    def newVersionName = [major, minor, patch + "-SNAPSHOT"].join('.')
     createNewTag(oldVersionName, newVersionName)
 }
 
@@ -157,12 +163,56 @@ private def deleteTag(String tagName) {
 private def createNewTag(String oldVersionName, String newVersionName) {
     def body = "git log --pretty=format:'* %s' v${oldVersionName}...HEAD".bash()
     "git tag -a v${newVersionName} -m 'Version ${newVersionName}\n\n${body}'".bash()
+    presentResult(newVersionName)
+}
 
-    println("\n\nSuccessfully created tag: v${newVersionName}")
-    println('\nYou can now:')
-    println("  1. Show the tag details:     git show v${newVersionName}")
-    println("  2. Edit the tag message:     git tag -a -f v${newVersionName}")
-    println("  3. Delete the new tag:       git tag -d v${newVersionName}")
-    println('  4. Push the tag to remote:   git push --tags')
+/**
+ * Shows a set of actions the user can take now that a new tag has been produced.
+ *
+ * @param versionName The verson name of the new tag.
+ */
+private def presentResult(String versionName) {
+    println("\n\nSuccessfully created tag: v${versionName}")
+    println("\nYou can now:")
+    println("  1. Show the tag details:     git show v${versionName}")
+    println("  2. Edit the tag message:     git tag -a -f v${versionName}")
+    println("  3. Delete the new tag:       git tag -d v${versionName}")
+    println("  4. Push the tag to remote:   git push --tags")
+    
+    handleUserInput(versionName)
+}
+
+/**
+ * Performs the action chosen by the user. Waits for a valid choice.
+ *
+ * @param versionName The verson name of the new tag.
+ */
+private def handleUserInput(String versionName) {
+    println("Pick an option [1..4] or q to quit")
+    
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
+    def choice = br.readLine()
+    
+    switch (choice) {
+        case "1":
+            "git show v${versionName}".bash()
+            break
+        case "2":
+            "git tag -a -f v${versionName}".bash()
+            break
+        case "3":
+            "git tag -d v${versionName}".bash()
+            break
+        case "4":
+            "git push --tags".bash()
+            break
+        case "q":
+            // Just close your eyes and let it happen
+            break
+        default:
+            println("\nHuh?!")
+            handleUserInput(versionName)
+            break;
+    }
 }
 
