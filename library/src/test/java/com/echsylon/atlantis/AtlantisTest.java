@@ -101,14 +101,6 @@ public class AtlantisTest {
         atlantis.start();
         atlantis.setRecordMissingRequestsEnabled(true);
         assertThat(atlantis.isRecordingMissingRequests(), is(true));
-
-        // Make request (Atlantis should catch up on this) and verify that the
-        // expected response is delivered.
-        URL url = new URL("http://localhost:8080/real");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        assertThat(connection.getResponseCode(), is(response.code()));
-        assertThat(connection.getResponseMessage(), is(response.phrase()));
     }
 
     @Test
