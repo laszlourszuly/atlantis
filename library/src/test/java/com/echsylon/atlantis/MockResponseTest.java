@@ -83,7 +83,7 @@ public class MockResponseTest {
         response.setSourceHelperIfAbsent(bytes -> Okio.source(new ByteArrayInputStream("bar".getBytes())));
 
         // Verify overwrite failed
-        assertThat(response.body(), is("foo"));
+        assertThat(new String(response.body()), is("foo"));
     }
 
     @Test

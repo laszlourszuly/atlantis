@@ -280,16 +280,16 @@ public class MockResponse {
     /**
      * Tries to return the body as a string.
      *
-     * @return The response body string or null.
+     * @return The response body as a byte array. May be empty, never null.
      */
-    public String body() {
+    public byte[] body() {
         BufferedSource bufferedSource = null;
         try {
             bufferedSource = Okio.buffer(sourceHelper.open(source));
-            return bufferedSource.readUtf8();
+            return bufferedSource.readByteArray();
         } catch (NullPointerException | IOException e) {
             info(e, "Couldn't deliver mock response body: %s", new String(source));
-            return "";
+            return new byte[0];
         } finally {
             closeSilently(bufferedSource);
         }

@@ -335,7 +335,7 @@ class MockWebServer {
         try {
             // Maybe buffer response body.
             HeaderManager headerManager = response.headerManager();
-            byte[] bytes = response.body().getBytes();
+            byte[] bytes = response.body();
 
             // We can't really check the "isExpectedToHaveBody()" here as the
             // content length isn't necessarily set yet.
