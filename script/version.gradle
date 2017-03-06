@@ -161,8 +161,8 @@ private def deleteTag(String tagName) {
  * @param newVersionName Used for creating the new tag.
  */
 private def createNewTag(String oldVersionName, String newVersionName) {
-    def body = "git log --pretty=format:'* %s' v${oldVersionName}...HEAD".bash()
-    "git tag -a v${newVersionName} -m 'Version ${newVersionName}\n\n${body}'".bash()
+    def body = "git log --pretty=format:'* %s' v${oldVersionName}..HEAD".bash()
+    "git tag -a v${newVersionName} -m \"Version ${newVersionName}\n\n${body}\"".bash()
     presentResult(newVersionName)
 }
 
@@ -188,7 +188,7 @@ private def presentResult(String versionName) {
  * @param versionName The verson name of the new tag.
  */
 private def handleUserInput(String versionName) {
-    println("Pick an option [1..4] or q to quit")
+    println("Pick an option [1-4] or q to quit")
     
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
     def choice = br.readLine()
