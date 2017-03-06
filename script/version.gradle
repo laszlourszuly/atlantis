@@ -54,7 +54,14 @@ task prepareMinorRelease(dependsOn: ':library:testReleaseUnitTest') << {
 task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
     def oldVersionName = getVersionFromLatestTag()
     def (major, minor, patch) = oldVersionName.tokenize('.')
-    def newVersionName = [major, minor, patch.toInteger() + 1].join('.')
+
+    if (patch.endsWith("-SNAPSHOT")) {
+        patch = patch.substring(0, patch.indexOf("-SNAPSHOT")).toInteger() + 1
+    } else {
+        patch = patch.toInteger() + 1
+    }
+    
+    def newVersionName = [major, minor, patch].join('.')
     createNewTag(oldVersionName, newVersionName)
 }
 
