@@ -429,8 +429,9 @@ public class Atlantis {
         text = new String(content, 0, "asset://".getBytes().length);
         if (text.startsWith("asset://"))
             try {
-                String asset = text.substring(8);
-                InputStream inputStream = context.getAssets().open(asset);
+                String assetUri = new String(content);
+                String assetPath = assetUri.substring(8);
+                InputStream inputStream = context.getAssets().open(assetPath);
                 return Okio.source(inputStream);
             } catch (IOException e) {
                 info(e, "Couldn't open asset: %s", text);
@@ -441,8 +442,9 @@ public class Atlantis {
         text = new String(content, 0, "file://".getBytes().length);
         if (text.startsWith("file://"))
             try {
-                String file = text.substring(7);
-                return Okio.source(new File(file));
+                String fileUri = new String(content);
+                String filePath = fileUri.substring(7);
+                return Okio.source(new File(filePath));
             } catch (FileNotFoundException e) {
                 info(e, "Couldn't open file: %s", text);
                 return null;
