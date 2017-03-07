@@ -1,3 +1,4 @@
+
 /**
  * This task will trigger a new major release. An exception will be thrown if the desired version
  * name segment or the version code couldn't be incremented properly. This task will trigger the
@@ -12,10 +13,12 @@
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task prepareMajorRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def oldVersionName = getVersionFromLatestTag()
-    def segments = oldVersionName.tokenize('.')
-    def newVersionName = [segments[0].toInteger() + 1, 0, 0].join('.')
-    createNewTag(oldVersionName, newVersionName)
+    def version = getVersionFromLatestTag()
+    def (major, minor, patch, build) = version.tokenize()
+    def nextMajor = (major.toInteger() + 1).toString()
+    def newVersionName = "${nextMajor}.0.0"
+    def oldVersionName = getLatestReleaseTagName()
+    createNewTag(oldVersionName, newVersionName, nextMajor, "0", "0", build)
 }
 
 /**
@@ -32,10 +35,12 @@ task prepareMajorRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task prepareMinorRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def oldVersionName = getVersionFromLatestTag()
-    def (major, minor) = oldVersionName.tokenize('.')
-    def newVersionName = [major, minor.toInteger() + 1, 0].join('.')
-    createNewTag(oldVersionName, newVersionName)
+    def version = getVersionFromLatestTag()
+    def (major, minor, patch, build) = version.tokenize()
+    def nextMinor = (minor.toInteger() + 1).toString()
+    def newVersionName = "${major}.${nextMinor}.0"
+    def oldVersionName = getLatestReleaseTagName()
+    createNewTag(oldVersionName, newVersionName, major, nextMinor, "0", build)
 }
 
 /**
@@ -52,17 +57,12 @@ task prepareMinorRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def oldVersionName = getVersionFromLatestTag()
-    def (major, minor, patch) = oldVersionName.tokenize('.')
-
-    if (patch.endsWith("-SNAPSHOT")) {
-        patch = patch.substring(0, patch.indexOf("-SNAPSHOT")).toInteger() + 1
-    } else {
-        patch = patch.toInteger() + 1
-    }
-    
-    def newVersionName = [major, minor, patch].join('.')
-    createNewTag(oldVersionName, newVersionName)
+    def version = getVersionFromLatestTag()
+    def (major, minor, patch, build) = version.tokenize()
+    def nextPatch = (patch.toInteger() + 1).toString()
+    def newVersionName = "${major}.${minor}.${nextPatch}"
+    def oldVersionName = getLatestReleaseTagName()
+    createNewTag(oldVersionName, newVersionName, major, minor, nextPatch, build)
 }
 
 /**
@@ -79,17 +79,12 @@ task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 4. Create a new annotated tag and push it to the remote repository.
  */
 task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def oldVersionName = getVersionFromLatestTag()
-    def (major, minor, patch) = oldVersionName.tokenize('.')
-
-    if (patch.endsWith("-SNAPSHOT")) {
-        patch = patch.substring(0, patch.indexOf("-SNAPSHOT")).toInteger() + 1
-    } else {
-        patch = patch.toInteger() + 1
-    }
-    
-    def newVersionName = [major, minor, patch + "-SNAPSHOT"].join('.')
-    createNewTag(oldVersionName, newVersionName)
+    def version = getVersionFromLatestTag()
+    def (major, minor, patch, build) = version.tokenize()
+    def nextBuild = (build.toInteger() + 1).toString()
+    def newVersionName = "${major}.${minor}.${patch}-${nextBuild}-SNAPSHOT"
+    def oldVersionName = getLatestReleaseTagName()
+    createNewTag(oldVersionName, newVersionName, major, minor, patch, nextBuild)
 }
 
 /**
@@ -121,7 +116,9 @@ task updateRemoteJavaDoc(dependsOn: ':library:javadocRelease') << {
  * @return The version name or an empty string
  */
 ext.prepareVersionName = {
-    def versionName = getVersionFromLatestTag()
+    def version = getVersionFromLatestTag()
+    def (major, minor, patch, build) = version.tokenize()
+    def versionName = "${major}.${minor}.${patch}"
     println(versionName)
     return versionName
 }
@@ -130,35 +127,53 @@ ext.prepareVersionName = {
  * Returns the official version code for this library.
  */
 ext.prepareVersionCode = {
-    return Integer.parseInt(System.getenv('CIRCLE_BUILD_NUM') ?: '0')
+    def version = getVersionFromLatestTag()
+    def (major, minor, patch, build) = version.tokenize()
+    return build.toInteger()
 }
 
 /**
- * Fetches all tags from the remote repository and extracts the version name and version code from
- * the latest release tag. If there is a numeric system property set for a build number, then that
- * value will override any version code found in the tag.
+ * Returns the latest version tag
+ */
+private def getLatestReleaseTagName() {
+    // Fetch all tags from remote
+    "git fetch origin 'refs/tags/*:refs/tags/*'".bash()
+    
+    // Get the latest tag that looks something like "v1.2.3".
+    // --count=1 is for getting one match
+    // --sort=-taggerdate is for sorting on descending (the '-') tag created date
+    // 'refs/tags/...' is the pattern of the tag name to match
+    return "git for-each-ref --count=1 --sort=-taggerdate --format='%(tag)' 'refs/tags/v[0-9]*.[0-9]*.[0-9]*'".bash().trim()
+}
+
+/**
+ * Fetches all tags from the remote repository and extracts the version name and
+ * build number from the latest release tag.
  *
- * @return The version notation as a string: "${major}.${minor}.${path} ${versionCode}
+ * @return The full version string: "${major} ${minor} ${path} ${build}"
  */
 private def getVersionFromLatestTag() {
+    // Fetch all tags from remote
     "git fetch origin 'refs/tags/*:refs/tags/*'".bash()
+    
+    // Get the subject line from the latest version tag
+    def tag = "git for-each-ref --count=1 --sort=-taggerdate --format='%(subject)' 'refs/tags/v[0-9]*.[0-9]*.[0-9]*'".bash() // "Version x.y.z (n)"
+    def filter = "s/Version\\s\\([0-9]\\{1,\\}\\).\\([0-9]\\{1,\\}\\).\\([0-9]\\{1,\\}\\)\\(.*\\)/\\1 \\2 \\3 \\4/p" // "x y z"  and maybe "(n)"
+    def version = "echo '${tag}' | sed -n '${filter}'".bash().trim()
+    def segments = version.tokenize()
+    
+    if (segments.isEmpty())
+        return '0 0 0 0'
+    
+    if (segments.size() == 3)
+        return version + ' 0'
+        
+    if (segments.size() == 4) {
+        segments[3] = segments[3].replaceAll("[^\\d]", "")
+        return segments.join(" ")
+    }
 
-    def tag = "git for-each-ref --count=1 --sort=-taggerdate --format='%(tag)' 'refs/tags/v[0-9]*.[0-9]*.[0-9]*'".bash()
-    def filter = "s/v\\([0-9]\\{1,\\}.[0-9]\\{1,\\}.[0-9]\\{1,\\}\\)/\\1/p"
-    def versions = "echo '${tag}' | sed -n '${filter}'".bash().trim()
-    if (versions.isEmpty())
-        return '0.0.0'
-
-    return versions
-}
-
-/**
- * Deletes a tag with a given version name, both locally as remotely.
- *
- * @param tagName The name of the tag to delete.
- */
-private def deleteTag(String tagName) {
-    "git tag -d $tagName && git push origin :$tagName".bash();
+    throw new IllegalArgumentException("Unexpected version format in tag: ${tag}")
 }
 
 /**
@@ -167,9 +182,15 @@ private def deleteTag(String tagName) {
  * @param oldVersionName Used for collecting all commits pushed since.
  * @param newVersionName Used for creating the new tag.
  */
-private def createNewTag(String oldVersionName, String newVersionName) {
-    def body = "git log --pretty=format:'* %s' v${oldVersionName}..HEAD".bash()
-    "git tag -a v${newVersionName} -m \"Version ${newVersionName}\n\n${body}\"".bash()
+private def createNewTag(String oldVersionName,
+        String newVersionName,
+        String major,
+        String minor,
+        String patch,
+        String build) {
+
+    def body = "git log --pretty=format:'* %s' ${oldVersionName}..HEAD".bash()
+    "git tag -a v${newVersionName} -m \"Version ${major}.${minor}.${patch} (${build})\n\n${body}\"".bash()
     presentResult(newVersionName)
 }
 
@@ -181,10 +202,10 @@ private def createNewTag(String oldVersionName, String newVersionName) {
 private def presentResult(String versionName) {
     println("\n\nSuccessfully created tag: v${versionName}")
     println("\nYou can now:")
-    println("  1. Show the tag details:     git show v${versionName}")
-    println("  2. Edit the tag message:     git tag -a -f v${versionName}")
-    println("  3. Delete the new tag:       git tag -d v${versionName}")
-    println("  4. Push the tag to remote:   git push --tags")
+    println("  s - git show v${versionName}")
+    println("  d - git tag -d v${versionName}")
+    println("  p - git push --tags")
+    println("  q - quit)
     
     handleUserInput(versionName)
 }
@@ -201,17 +222,14 @@ private def handleUserInput(String versionName) {
     def choice = br.readLine()
     
     switch (choice) {
-        case "1":
-            "git show v${versionName}".bash()
+        case "s":
+            println("git show v${versionName}".bash())
             break
-        case "2":
-            "git tag -a -f v${versionName}".bash()
+        case "d":
+            println("git tag -d v${versionName}".bash())
             break
-        case "3":
-            "git tag -d v${versionName}".bash()
-            break
-        case "4":
-            "git push --tags".bash()
+        case "p":
+            println("git push --tags".bash())
             break
         case "q":
             // Just close your eyes and let it happen
@@ -221,5 +239,7 @@ private def handleUserInput(String versionName) {
             handleUserInput(versionName)
             break;
     }
+
+    // edit: git tag -a -f v${versionName}
 }
 
