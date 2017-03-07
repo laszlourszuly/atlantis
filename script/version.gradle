@@ -200,12 +200,13 @@ private def createNewTag(String oldVersionName,
  * @param versionName The verson name of the new tag.
  */
 private def presentResult(String versionName) {
-    println("\n\nSuccessfully created tag: v${versionName}")
     println("\nYou can now:")
-    println("  s - git show v${versionName}")
-    println("  d - git tag -d v${versionName}")
-    println("  p - git push --tags")
-    println("  q - quit)
+    println("  (s)how   - git show v${versionName}")
+    println("  (d)elete - git tag -d v${versionName}")
+    println("  (p)ush   - git push --tags")
+    println("  (q)uit   - quit")
+    println("\nTo edit a tag you\'ll have to manually do:")
+    println('      git tag -a -f ${version}\n')
     
     handleUserInput(versionName)
 }
@@ -216,30 +217,31 @@ private def presentResult(String versionName) {
  * @param versionName The verson name of the new tag.
  */
 private def handleUserInput(String versionName) {
-    println("Pick an option [1-4] or q to quit")
-    
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
     def choice = br.readLine()
     
     switch (choice) {
         case "s":
+        case "show":
             println("git show v${versionName}".bash())
             break
         case "d":
+        case "delete":
             println("git tag -d v${versionName}".bash())
             break
         case "p":
+        case "push":
             println("git push --tags".bash())
             break
         case "q":
+        case "quit":
             // Just close your eyes and let it happen
             break
         default:
-            println("\nHuh?!")
+            println('\nHuh?!')
             handleUserInput(versionName)
             break;
     }
 
-    // edit: git tag -a -f v${versionName}
 }
 
