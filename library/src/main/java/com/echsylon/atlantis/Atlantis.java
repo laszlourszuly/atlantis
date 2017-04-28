@@ -416,7 +416,7 @@ public class Atlantis {
      * @return A data source or null if no data described.
      */
     private Source open(final byte[] content) {
-        if (isEmpty(content))
+        if (isEmpty(content) || (content.length == 1 && content[0] == (byte) 0))
             return Okio.source(new ByteArrayInputStream(new byte[0]));
 
         // Don't transform the entire content to a string only to test if it
@@ -424,9 +424,11 @@ public class Atlantis {
         // the beginning of the content array to a string and then test for the
         // scheme.
         String text;
+        int schemeByteLength;
 
-        // Check if "asset" scheme
-        text = new String(content, 0, "asset://".getBytes().length);
+        // Check if "asset" scheme.
+        schemeByteLength = "asset://".getBytes().length;
+        text = content.length > schemeByteLength ? new String(content, 0, schemeByteLength) : "";
         if (text.startsWith("asset://"))
             try {
                 String assetUri = new String(content);
@@ -439,7 +441,8 @@ public class Atlantis {
             }
 
         // Check if "file" scheme.
-        text = new String(content, 0, "file://".getBytes().length);
+        schemeByteLength = "file://".getBytes().length;
+        text = content.length > schemeByteLength ? new String(content, 0, schemeByteLength) : "";
         if (text.startsWith("file://"))
             try {
                 String fileUri = new String(content);
