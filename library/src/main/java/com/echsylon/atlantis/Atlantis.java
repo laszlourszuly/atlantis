@@ -362,30 +362,56 @@ public class Atlantis {
                 getContinueTemplate(meta);
 
         if (mockRequest == null) {
+            // There is no mock request configuration for this URL. Maybe try to
+            // fetch one from the real world.
+
             info("Couldn't find request template: %s", meta.url());
             String realBaseUrl = configuration.fallbackBaseUrl();
-            if (notEmpty(realBaseUrl)) {
-                info("Falling back to real world: %s", realBaseUrl);
-                mockRequest = getRealWorldTemplate(meta, realBaseUrl, source);
-            }
+            if (isEmpty(realBaseUrl))
+                return NOT_FOUND;
+
+            info("Falling back to real world: %s", realBaseUrl);
+            mockRequest = getRealWorldTemplate(meta, realBaseUrl, source);
+            if (mockRequest == null || mockRequest.responses().size() == 0)
+                return NOT_FOUND;
         }
 
-        if (mockRequest == null)
-            return NOT_FOUND;
-
         MockResponse mockResponse = mockRequest.response();
-        if (mockResponse == null)
-            return NOT_FOUND;
+        if (mockResponse == null) {
+            // There is a mock request for this URL, but there is no mocked
+            // response configured for it. Maybe try to fetch one from the
+            // real world.
 
+            info("Couldn't find a mock response for: %s", meta.url());
+            String realBaseUrl = mockRequest.fallbackBaseUrl();
+            if (isEmpty(realBaseUrl))
+                realBaseUrl = configuration.fallbackBaseUrl();
+
+            if (isEmpty(realBaseUrl))
+                return NOT_FOUND;
+
+            info("Falling back to real world: %s", realBaseUrl);
+            MockRequest request = getRealWorldTemplate(meta, realBaseUrl, source);
+            if (request == null)
+                return NOT_FOUND;
+
+            mockResponse = request.response();
+            if (mockResponse == null)
+                return NOT_FOUND;
+        }
+
+        // We have a mock response! Decorate it with default headers and apply
+        // any post processing mechanisms on it.
         mockResponse.setSourceHelperIfAbsent(this::open);
         mockResponse.headerManager()
-                .addIfKeyAbsent(configuration.defaultResponseHeaderManager()
+                .addIfKeyAbsent(configuration
+                        .defaultResponseHeaderManager()
                         .getAllAsMultiMap());
 
         TokenHelper tokenHelper = configuration.tokenHelper();
         if (tokenHelper != null) {
-            // Don't expose the internal mock request object, create a copy
-            // of it and pass that one instead.
+            // Don't expose the internal mock request object to the post
+            // processing infrastructure but pass a copy of it instead.
             MockRequest requestBeingMocked = new MockRequest.Builder(meta).build();
             mockResponse = tokenHelper.parse(requestBeingMocked, mockResponse);
         }
@@ -400,8 +426,8 @@ public class Atlantis {
             }
 
         // There is no guarantee that the custom token helper delivered a mock
-        // response with the source helper intact. Hence we'll make sure there
-        // is one before the response is finally served.
+        // response with an intact source helper. Hence we need to make sure
+        // there is one before the response is finally served.
         mockResponse.setSourceHelperIfAbsent(this::open);
         return mockResponse;
     }

@@ -298,8 +298,11 @@ class JsonSerializers {
 
             JsonObject jsonObject = json.getAsJsonObject();
             MockRequest.Builder builder = new MockRequest.Builder();
-            builder.setMethod(jsonObject.get("method").getAsString());
             builder.setUrl(jsonObject.get("url").getAsString());
+            builder.setMethod(jsonObject.get("method").getAsString());
+
+            if (jsonObject.has("fallbackBaseUrl"))
+                builder.setFallbackBaseUrl(jsonObject.get("fallbackBaseUrl").getAsString());
 
             if (jsonObject.has("responseFilter"))
                 try {
@@ -344,8 +347,9 @@ class JsonSerializers {
                 return null;
 
             JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("method", request.method());
             jsonObject.addProperty("url", request.url());
+            jsonObject.addProperty("method", request.method());
+            jsonObject.addProperty("fallbackBaseUrl", request.fallbackBaseUrl());
 
             MockResponse.Filter filter = request.responseFilter();
             if (filter != null)
