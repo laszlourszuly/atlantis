@@ -179,7 +179,8 @@ public class Configuration implements Serializable {
         }
 
         /**
-         * Sets the fallback base url to hit when no mocked request was found.
+         * Sets the fallback base url to hit when no mocked request was found
+         * and Atlantis is configured to fall back to real world responses.
          *
          * @param realBaseUrl The real-world base URL, including scheme.
          * @return This builder object, allowing chaining of method calls.
@@ -254,8 +255,9 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Returns the fallback base url for this configuration. If given, this is
-     * the suggested real world base URL to target (replacing "localhost") if no
+     * Returns the fallback base url for this configuration. If given and
+     * Atlantis is configured to fall back to real world responses, this is the
+     * suggested real world base URL to target (replacing "localhost") if no
      * configuration was found for a request.
      *
      * @return The fallback base url or null.

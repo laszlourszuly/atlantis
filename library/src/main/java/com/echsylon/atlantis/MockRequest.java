@@ -195,6 +195,19 @@ public class MockRequest {
         }
 
         /**
+         * Sets the fallback base url to hit when no mocked response was found
+         * for this request and Atlantis is configured to fall back to real
+         * world responses.
+         *
+         * @param realBaseUrl The real-world base URL, including scheme.
+         * @return This builder object, allowing chaining of method calls.
+         */
+        public Builder setFallbackBaseUrl(final String realBaseUrl) {
+            mockRequest.fallbackBaseUrl = realBaseUrl;
+            return this;
+        }
+
+        /**
          * Sets the response filter logic of the request template being built.
          * This filter can be used when deciding which mock response to serve.
          *
@@ -220,6 +233,7 @@ public class MockRequest {
 
     private String url = null;
     private String method = null;
+    private String fallbackBaseUrl = null;
     private List<MockResponse> responses = null;
     private transient HeaderManager headerManager = null;
     private transient MockResponse.Filter responseFilter = null;
@@ -228,6 +242,15 @@ public class MockRequest {
     MockRequest() {
         headerManager = new HeaderManager();
         responses = new ArrayList<>();
+    }
+
+    /**
+     * Returns the request url.
+     *
+     * @return The request url.
+     */
+    public String url() {
+        return getNonNull(url, "");
     }
 
     /**
@@ -240,12 +263,15 @@ public class MockRequest {
     }
 
     /**
-     * Returns the request url.
+     * Returns the fallback base url for this request. If given and Atlantis is
+     * configured to fall back to real world responses, this is the suggested
+     * real world base URL to target (replacing "localhost") if no response was
+     * found for a request.
      *
-     * @return The request url.
+     * @return The fallback base url or null.
      */
-    public String url() {
-        return getNonNull(url, "");
+    public String fallbackBaseUrl() {
+        return fallbackBaseUrl;
     }
 
     /**
