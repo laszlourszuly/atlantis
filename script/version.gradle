@@ -203,10 +203,10 @@ private def presentResult(String versionName) {
     println("\nYou can now:")
     println("  (s)how   - git show v${versionName}")
     println("  (d)elete - git tag -d v${versionName}")
-    println("  (p)ush   - git push --tags")
+    println("  (p)ush   - git push && git push --tags")
     println("  (q)uit   - quit")
     println("\nTo edit a tag you\'ll have to manually do:")
-    println('      git tag -a -f ${version}\n')
+    println('      git tag -a -f ${version}\n ')
     
     handleUserInput(versionName)
 }
@@ -231,7 +231,7 @@ private def handleUserInput(String versionName) {
             break
         case "p":
         case "push":
-            println("git push --tags".bash())
+            println("git push && git push --tags".bash())
             break
         case "q":
         case "quit":
