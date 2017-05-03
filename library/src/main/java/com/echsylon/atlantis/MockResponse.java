@@ -249,9 +249,9 @@ public class MockResponse {
     private Integer code = null;
     private String phrase = null;
     private byte[] source = null;
+    private HeaderManager headerManager = null;
+    private SettingsManager settingsManager = null;
     private transient SourceHelper sourceHelper = null;
-    private transient HeaderManager headerManager = null;
-    private transient SettingsManager settingsManager = null;
 
 
     MockResponse() {
@@ -312,16 +312,6 @@ public class MockResponse {
     }
 
     /**
-     * Sets the source reader if not already set.
-     *
-     * @param helper The source helper used to open the data source with.
-     */
-    void setSourceHelperIfAbsent(final SourceHelper helper) {
-        if (sourceHelper == null)
-            sourceHelper = helper;
-    }
-
-    /**
      * Returns the content body description.
      *
      * @return The content body description.
@@ -337,5 +327,25 @@ public class MockResponse {
      */
     SettingsManager settingsManager() {
         return settingsManager;
+    }
+
+    /**
+     * Sets the source reader if not already set.
+     *
+     * @param helper The source helper used to open the data source with.
+     */
+    void setSourceHelperIfAbsent(final SourceHelper helper) {
+        if (sourceHelper == null)
+            sourceHelper = helper;
+    }
+
+    /**
+     * Sets the settings manager if not already set.
+     *
+     * @param manager The header manager for this response.
+     */
+    void setSettingsManagerIfAbsent(final SettingsManager manager) {
+        if (settingsManager == null)
+            settingsManager = manager;
     }
 }

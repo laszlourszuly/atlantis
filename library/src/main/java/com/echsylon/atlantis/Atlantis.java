@@ -413,7 +413,9 @@ public class Atlantis {
             // Don't expose the internal mock request object to the post
             // processing infrastructure but pass a copy of it instead.
             MockRequest requestBeingMocked = new MockRequest.Builder(meta).build();
+            SettingsManager settingsManager = mockResponse.settingsManager();
             mockResponse = tokenHelper.parse(requestBeingMocked, mockResponse);
+            mockResponse.setSettingsManagerIfAbsent(settingsManager);
         }
 
         if (recordServedRequests)
