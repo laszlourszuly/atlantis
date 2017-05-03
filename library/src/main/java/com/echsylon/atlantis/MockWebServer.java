@@ -427,6 +427,10 @@ class MockWebServer {
                 byteCount :
                 chunk;
 
+        if (remaining <= 0)
+            if (delay > 0L)
+                sleepSilently(delay);
+
         Buffer buffer = new Buffer();
         while (remaining > 0) {
             long progress = 0;
