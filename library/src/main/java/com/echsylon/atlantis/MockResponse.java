@@ -339,13 +339,4 @@ public class MockResponse {
             sourceHelper = helper;
     }
 
-    /**
-     * Sets the settings manager if not already set.
-     *
-     * @param manager The header manager for this response.
-     */
-    void setSettingsManagerIfAbsent(final SettingsManager manager) {
-        if (settingsManager == null)
-            settingsManager = manager;
-    }
 }

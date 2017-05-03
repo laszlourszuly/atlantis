@@ -415,7 +415,7 @@ public class Atlantis {
             MockRequest requestBeingMocked = new MockRequest.Builder(meta).build();
             SettingsManager settingsManager = mockResponse.settingsManager();
             mockResponse = tokenHelper.parse(requestBeingMocked, mockResponse);
-            mockResponse.setSettingsManagerIfAbsent(settingsManager);
+            mockResponse.settingsManager().setIfAbsent(settingsManager.getAllAsMap());
         }
 
         if (recordServedRequests)
