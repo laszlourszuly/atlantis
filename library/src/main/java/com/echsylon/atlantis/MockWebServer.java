@@ -391,6 +391,12 @@ class MockWebServer {
             if (buffer != null) {
                 SettingsManager throttle = settingsProvider.getSettingsManager(response);
                 transfer(buffer.size(), buffer, target, throttle);
+            } else {
+                // Honor delay, even for empty response body
+                SettingsManager throttle = settingsProvider.getSettingsManager(response);
+                long delay = throttle.throttleDelayMillis();
+                if (delay > 0L)
+                    sleepSilently(delay);
             }
         } finally {
             closeSilently(source);
