@@ -58,8 +58,25 @@ class MockWebServer {
         MockResponse getMockResponse(final Meta meta, final Source source);
     }
 
+    /**
+     * This interface describes the API through which a {@code SettingsManager}
+     * object is injected into the {@code MockWebServer}
+     */
+    interface SettingsProvider {
+
+        /**
+         * Returns a {@code SettingsManager} for a given mock response. It's
+         * considered the privilege of the implementing class do decide if and
+         * when to fall back and deliver a default settings manager.
+         *
+         * @return A settings manager object or null.
+         */
+        SettingsManager getSettingsManager(final MockResponse mockResponse);
+    }
+
 
     private final ResponseHandler responseHandler;
+    private final SettingsProvider settingsProvider;
     private final Set<Socket> openClientSockets;
 
     private ExecutorService executorService;
@@ -74,8 +91,9 @@ class MockWebServer {
      *                        given request and find a suitable mocked response
      *                        for it.
      */
-    MockWebServer(final ResponseHandler responseHandler) {
+    MockWebServer(final ResponseHandler responseHandler, final SettingsProvider settingsProvider) {
         this.openClientSockets = Collections.newSetFromMap(new ConcurrentHashMap<Socket, Boolean>());
+        this.settingsProvider = settingsProvider;
         this.responseHandler = responseHandler;
     }
 
@@ -371,7 +389,7 @@ class MockWebServer {
 
             // ...and maybe also send a response body
             if (buffer != null) {
-                SettingsManager throttle = response.settingsManager();
+                SettingsManager throttle = settingsProvider.getSettingsManager(response);
                 transfer(buffer.size(), buffer, target, throttle);
             }
         } finally {

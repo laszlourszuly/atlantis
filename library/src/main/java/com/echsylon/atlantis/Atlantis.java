@@ -340,7 +340,7 @@ public class Atlantis {
         this.context = context;
         this.configuration = configuration;
         this.proxy = new Proxy();
-        this.mockServer = new MockWebServer(this::serve);
+        this.mockServer = new MockWebServer(this::serve, this::getSettings);
         this.servedRequests = new ConcurrentLinkedQueue<>();
         this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
 
@@ -430,6 +430,29 @@ public class Atlantis {
         // there is one before the response is finally served.
         mockResponse.setSourceHelperIfAbsent(this::open);
         return mockResponse;
+    }
+
+    /**
+     * Delivers a {@code SettingsManager}. First attempt is to get one for the
+     * given mock response. Falls back to the default settings manager if the
+     * response doesn't have one.
+     *
+     * @param mockResponse The mock response to get a settings manager for.
+     * @return A settings manager. Never null.
+     */
+    private SettingsManager getSettings(final MockResponse mockResponse) {
+        SettingsManager result = null;
+
+        if (mockResponse != null)
+            result = mockResponse.settingsManager();
+
+        if (result == null)
+            result = configuration.defaultResponseSettingsManager();
+
+        if (result == null)
+            result = new SettingsManager();
+
+        return result;
     }
 
     /**
@@ -552,7 +575,7 @@ public class Atlantis {
                 atlantisDir,
                 recordMissingRequests,
                 recordMissingFailures,
-                configuration.defaultResponseSettingsManager().followRedirects());
+                getSettings(null).followRedirects());
 
         if (mockResponse == null)
             return null;
