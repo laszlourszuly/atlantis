@@ -380,6 +380,12 @@ class MockWebServer {
                 }
             }
 
+            // Honor any configured delay
+            SettingsManager throttle = settingsProvider.getSettingsManager(response);
+            long delay = throttle.throttleDelayMillis();
+            if (delay > 0L)
+                sleepSilently(delay);
+
             // Now actually send the response meta data
             builder.append("\r\n");
             String string = builder.toString();
@@ -387,17 +393,9 @@ class MockWebServer {
             target.flush();
             info("Response: %s", string);
 
-            // ...and maybe also send a response body
-            if (buffer != null) {
-                SettingsManager throttle = settingsProvider.getSettingsManager(response);
+            // Maybe also send a response body
+            if (buffer != null)
                 transfer(buffer.size(), buffer, target, throttle);
-            } else {
-                // Honor delay, even for empty response body
-                SettingsManager throttle = settingsProvider.getSettingsManager(response);
-                long delay = throttle.throttleDelayMillis();
-                if (delay > 0L)
-                    sleepSilently(delay);
-            }
         } finally {
             closeSilently(source);
             closeSilently(buffer);
