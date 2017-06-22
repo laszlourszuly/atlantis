@@ -43,7 +43,7 @@ public class MockRequestTest {
         assertThat(request.headerManager().getMostRecent("k2"), is("v2"));
         assertThat(request.responses().size(), is(1));
         assertThat(request.responses().get(0), is(response));
-        assertThat(request.responseFilter(), is(filter));
+        assertThat(request.responseFilter(), is(not(nullValue())));
     }
 
     @Test
