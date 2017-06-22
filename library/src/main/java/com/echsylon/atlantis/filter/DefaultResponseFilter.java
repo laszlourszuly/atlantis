@@ -11,7 +11,8 @@ public class DefaultResponseFilter implements MockResponse.Filter {
      *
      * @param mockResponses All available mockResponse to pick a candidate from.
      *                      Null and empty lists are handled gracefully.
-     * @return The first mock response or null if the list is null or empty.
+     * @return The first mock response or null if the list itself is null or
+     * empty.
      */
     @Override
     public MockResponse findResponse(List<MockResponse> mockResponses) {

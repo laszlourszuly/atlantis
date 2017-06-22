@@ -55,7 +55,7 @@ public class MockRequest {
          * object.
          */
         public Builder() {
-            this(new MockRequest());
+            mockRequest = new MockRequest();
         }
 
         /**
@@ -64,20 +64,29 @@ public class MockRequest {
          * @param source The mock request to initialize this builder with.
          */
         public Builder(final MockRequest source) {
-            mockRequest = source != null ? source : new MockRequest();
+            mockRequest = new MockRequest();
+            if (source != null) {
+                mockRequest.url = source.url;
+                mockRequest.method = source.method;
+                mockRequest.responseFilter = source.responseFilter;
+
+                mockRequest.responses.addAll(source.responses);
+                mockRequest.headerManager.add(source.headerManager.getAllAsMultiMap());
+                mockRequest.settingsManager.set(source.settingsManager.getAllAsMap());
+            }
         }
 
         /**
          * Offers (internal) help to easily create a mock request from a meta.
          *
-         * @param meta The request meta data. Null is handled gracefully.
+         * @param meta The request meta data.
          */
         Builder(final Meta meta) {
             mockRequest = new MockRequest();
             if (meta != null) {
                 mockRequest.url = meta.url();
                 mockRequest.method = meta.method();
-                mockRequest.headerManager = meta.headerManager();
+                mockRequest.headerManager.add(meta.headerManager().getAllAsMultiMap());
             }
         }
 
@@ -85,8 +94,7 @@ public class MockRequest {
          * Sets the header manager of the mock request being built. This method
          * is meant for internal use only.
          *
-         * @param headerManager The new header manager. Null will reset any
-         *                      existing headers.
+         * @param headerManager The new header manager.
          * @return This builder instance, allowing chaining of method calls.
          */
         Builder setHeaderManager(final HeaderManager headerManager) {
@@ -100,8 +108,7 @@ public class MockRequest {
          * Sets the settings manager of the mock request being built. This
          * method is meant for internal use only.
          *
-         * @param settingsManager The new settings manager. Null will reset any
-         *                        existing settings.
+         * @param settingsManager The new settings manager.
          * @return This builder instance, allowing chaining of method calls.
          */
         Builder setSettingsManager(final SettingsManager settingsManager) {
@@ -262,8 +269,8 @@ public class MockRequest {
     private String method = null;
     private List<MockResponse> responses = null;
     private SettingsManager settingsManager = null;
-    private transient HeaderManager headerManager = null;
-    private transient MockResponse.Filter responseFilter = null;
+    private HeaderManager headerManager = null;
+    private MockResponse.Filter responseFilter = null;
 
 
     MockRequest() {

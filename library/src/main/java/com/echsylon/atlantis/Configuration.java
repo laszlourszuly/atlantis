@@ -37,7 +37,16 @@ public class Configuration implements Serializable {
          * @param source The configuration to initialize this builder with.
          */
         public Builder(Configuration source) {
-            configuration = source != null ? source : new Configuration();
+            configuration = new Configuration();
+            if (source != null) {
+                configuration.tokenHelper = source.tokenHelper;
+                configuration.requestFilter = source.requestFilter;
+                configuration.transformationHelper = source.transformationHelper;
+
+                configuration.requests.addAll(source.requests);
+                configuration.headerManager.add(source.headerManager.getAllAsMultiMap());
+                configuration.settingsManager.set(source.settingsManager.getAllAsMap());
+            }
         }
 
         /**
@@ -266,11 +275,11 @@ public class Configuration implements Serializable {
 
 
     private List<MockRequest> requests = null;
-    private transient HeaderManager headerManager = null;
-    private transient SettingsManager settingsManager = null;
-    private transient MockRequest.Filter requestFilter = null;
-    private transient Atlantis.TokenHelper tokenHelper = null;
-    private transient Atlantis.TransformationHelper transformationHelper = null;
+    private HeaderManager headerManager = null;
+    private SettingsManager settingsManager = null;
+    private MockRequest.Filter requestFilter = null;
+    private Atlantis.TokenHelper tokenHelper = null;
+    private Atlantis.TransformationHelper transformationHelper = null;
 
 
     Configuration() {

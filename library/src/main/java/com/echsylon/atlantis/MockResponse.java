@@ -66,7 +66,7 @@ public class MockResponse {
          * Creates a new builder based on an empty mock response object.
          */
         public Builder() {
-            this(new MockResponse());
+            mockResponse = new MockResponse();
         }
 
         /**
@@ -75,15 +75,25 @@ public class MockResponse {
          * @param source The mock response to initialize this builder with.
          */
         public Builder(final MockResponse source) {
-            mockResponse = source != null ? source : new MockResponse();
+            mockResponse = new MockResponse();
+            if (source != null) {
+                mockResponse.code = source.code;
+                mockResponse.phrase = source.phrase;
+                mockResponse.sourceHelper = source.sourceHelper;
+
+                mockResponse.headerManager.add(source.headerManager.getAllAsMultiMap());
+                mockResponse.settingsManager.set(source.settingsManager.getAllAsMap());
+                if (source.source != null) {
+                    mockResponse.source = Arrays.copyOf(source.source, source.source.length);
+                }
+            }
         }
 
         /**
          * Sets the header manager of the mock response being built. This method
          * is meant for internal use only.
          *
-         * @param headerManager The new header manager. Null is handled
-         *                      gracefully.
+         * @param headerManager The new header manager.
          * @return This builder instance, allowing chaining of method calls.
          */
         Builder setHeaderManager(final HeaderManager headerManager) {
@@ -97,8 +107,7 @@ public class MockResponse {
          * Sets the settings manager of the mock response being built. This
          * method is meant for internal use only.
          *
-         * @param settingsManager The new settings manager. Null is handled
-         *                        gracefully.
+         * @param settingsManager The new settings manager.
          * @return This builder instance, allowing chaining of method calls.
          */
         Builder setSettingsManager(final SettingsManager settingsManager) {
@@ -278,7 +287,7 @@ public class MockResponse {
     private byte[] source = null;
     private HeaderManager headerManager = null;
     private SettingsManager settingsManager = null;
-    private transient SourceHelper sourceHelper = null;
+    private SourceHelper sourceHelper = null;
 
 
     MockResponse() {
