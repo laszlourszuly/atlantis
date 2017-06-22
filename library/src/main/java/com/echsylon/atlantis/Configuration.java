@@ -294,7 +294,7 @@ public class Configuration implements Serializable {
      * configuration was found for a request.
      *
      * @return The fallback base url or null.
-     * @deprecated Use {@link #defaultSettingsManager()} instead. Planned to be
+     * @deprecated Use {@link #settingsManager()} instead. Planned to be
      * removed in Atlantis 3.0
      */
     public String fallbackBaseUrl() {
@@ -331,23 +331,12 @@ public class Configuration implements Serializable {
     }
 
     /**
-     * Returns the default response behavior settings manager.
-     *
-     * @return The default response settings manager. Never null.
-     * @deprecated Use {@link #defaultSettingsManager()} instead. Planned to be
-     * removed in Atlantis 3.0
-     */
-    SettingsManager defaultResponseSettingsManager() {
-        return settingsManager;
-    }
-
-    /**
      * Returns the default settings manager that constrain mock request and
      * response behavior.
      *
      * @return The default settings manager. Never null.
      */
-    SettingsManager defaultSettingsManager() {
+    SettingsManager settingsManager() {
         return settingsManager;
     }
 

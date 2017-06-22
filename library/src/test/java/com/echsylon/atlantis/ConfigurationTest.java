@@ -25,7 +25,7 @@ public class ConfigurationTest {
                 .addRequest(request)
                 .build();
 
-        assertThat(configuration.defaultSettingsManager().fallbackBaseUrl(), is("url"));
+        assertThat(configuration.settingsManager().fallbackBaseUrl(), is("url"));
         assertThat(configuration.requestFilter(), is(not(nullValue())));
         assertThat(configuration.requests().size(), is(1));
         assertThat(configuration.requests().get(0), is(request));

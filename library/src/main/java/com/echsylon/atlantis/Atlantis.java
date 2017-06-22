@@ -364,6 +364,9 @@ public class Atlantis {
      * @return The suggested mock response.
      */
     private MockResponse serve(final Meta meta, final Source source) {
+        SettingsManager settings = new SettingsManager();
+        settings.set(configuration.settingsManager().getAllAsMap());
+
         MockRequest mockRequest = !meta.headerManager().isExpectedToContinue() ?
                 configuration.findRequest(meta) :
                 getContinueTemplate(meta);
@@ -372,33 +375,34 @@ public class Atlantis {
             // There is no mock request configuration for this URL. Maybe try to
             // fetch one from the real world.
 
-            info("Couldn't find request template: %s", meta.url());
-            String realBaseUrl = configuration.fallbackBaseUrl();
+            info("Couldn't find request template for url: %s", meta.url());
+            String realBaseUrl = settings.fallbackBaseUrl();
             if (isEmpty(realBaseUrl))
                 return NOT_FOUND;
 
             info("Falling back to real world: %s", realBaseUrl);
-            mockRequest = getRealWorldTemplate(meta, realBaseUrl, source);
+            mockRequest = getRealWorldTemplate(meta, source, realBaseUrl, settings);
+
             if (mockRequest == null || mockRequest.responses().size() == 0)
                 return NOT_FOUND;
         }
 
+        settings.set(mockRequest.settingsManager().getAllAsMap());
         MockResponse mockResponse = mockRequest.response();
+
         if (mockResponse == null) {
             // There is a mock request for this URL, but there is no mocked
             // response configured for it. Maybe try to fetch one from the
             // real world.
 
-            info("Couldn't find a mock response for: %s", meta.url());
-            String realBaseUrl = mockRequest.settingsManager().fallbackBaseUrl();
-            if (isEmpty(realBaseUrl))
-                realBaseUrl = configuration.defaultSettingsManager().fallbackBaseUrl();
-
+            info("Couldn't find a mock response for url: %s", meta.url());
+            String realBaseUrl = settings.fallbackBaseUrl();
             if (isEmpty(realBaseUrl))
                 return NOT_FOUND;
 
             info("Falling back to real world: %s", realBaseUrl);
-            MockRequest request = getRealWorldTemplate(meta, realBaseUrl, source);
+            MockRequest request = getRealWorldTemplate(meta, source, realBaseUrl, settings);
+
             if (request == null)
                 return NOT_FOUND;
 
@@ -407,47 +411,25 @@ public class Atlantis {
                 return NOT_FOUND;
         }
 
+        settings.set(mockResponse.settingsManager().getAllAsMap());
+
         // Don't expose the internal mock request and mock response objects
         // to any post processing infrastructures but rather pass copies.
-        MockResponse responseBeingMocked = new MockResponse.Builder(mockResponse).build();
+        MockResponse responseBeingMocked = new MockResponse.Builder(mockResponse)
+                .addHeaders(configuration.defaultResponseHeaderManager().getAllAsMultiMap())
+                .build();
+
         MockRequest requestBeingMocked = new MockRequest.Builder(meta)
                 .addResponse(responseBeingMocked)
                 .build();
 
-        // We have a mock response! Decorate it with default headers and settings
-        // and apply any post processing mechanisms on it.
-        responseBeingMocked.setSourceHelperIfAbsent(this::open);
-        responseBeingMocked.headerManager()
-                .addIfKeyAbsent(configuration
-                        .defaultResponseHeaderManager()
-                        .getAllAsMultiMap());
-
-        // Collect all default settings
-        SettingsManager mergedSettings = new SettingsManager();
-        mergedSettings.set(configuration
-                .defaultSettingsManager()
-                .getAllAsMap());
-
-        // Add/replace any settings from the request configuration.
-        mergedSettings.set(mockRequest
-                .settingsManager()
-                .getAllAsMap());
-
-        // Finally add/replace all response specific settings.
-        mergedSettings.set(mockResponse
-                .settingsManager()
-                .getAllAsMap());
-
-        responseBeingMocked
-                .settingsManager()
-                .set(mergedSettings.getAllAsMap());
-
-        TokenHelper tokenHelper = configuration.tokenHelper();
+        TokenHelper tokenHelper = settings.tokenHelper();
         if (tokenHelper != null) {
+            // Ensure any token helper implementation can read the response body
+            // and has access to the collected settings.
+            responseBeingMocked.setSourceHelperIfAbsent(this::open);
+            responseBeingMocked.settingsManager().set(settings.getAllAsMap());
             responseBeingMocked = tokenHelper.parse(requestBeingMocked, responseBeingMocked);
-            responseBeingMocked
-                    .settingsManager()
-                    .setIfAbsent(mergedSettings.getAllAsMap());
         }
 
         if (recordServedRequests)
@@ -463,28 +445,25 @@ public class Atlantis {
         // response with an intact source helper. Hence we need to make sure
         // there is one before the response is finally served.
         responseBeingMocked.setSourceHelperIfAbsent(this::open);
+        responseBeingMocked.settingsManager().setIfAbsent(settings.getAllAsMap());
         return responseBeingMocked;
     }
 
     /**
-     * Delivers a {@code SettingsManager}. First attempt is to get one for the
-     * given mock response. Falls back to the default settings manager if the
-     * response doesn't have one.
+     * Delivers a {@code SettingsManager} containing the merged settings from
+     * all provided, non-null entities.
      *
-     * @param mockResponse The mock response to get a settings manager for.
-     * @return A settings manager. Never null.
+     * @param mockResponse The child mock response object.
+     * @return A settings manager. May be empty but never null.
      */
     private SettingsManager getSettings(final MockResponse mockResponse) {
-        SettingsManager result = null;
+        SettingsManager result = new SettingsManager();
+
+        if (configuration != null)
+            result.set(configuration.settingsManager().getAllAsMap());
 
         if (mockResponse != null)
-            result = mockResponse.settingsManager();
-
-        if (result == null)
-            result = configuration.defaultResponseSettingsManager();
-
-        if (result == null)
-            result = new SettingsManager();
+            result.set(mockResponse.settingsManager().getAllAsMap());
 
         return result;
     }
@@ -587,18 +566,21 @@ public class Atlantis {
      * Returns a new request template based on a real world response.
      *
      * @param meta        The meta data describing the request.
-     * @param realBaseUrl The real world base url, e.g. "http://www.google.com".
      * @param source      The request body source. May be null.
+     * @param realBaseUrl The real world base url, e.g. "http://www.google.com".
+     * @param settings    The settings that can provide an optional
+     *                    transformation helper and other request behavior.
      * @return A request template holding a mock of a real world response.
      */
     private MockRequest getRealWorldTemplate(final Meta meta,
+                                             final Source source,
                                              final String realBaseUrl,
-                                             final Source source) {
+                                             final SettingsManager settings) {
         // Prepare a new mock request
         MockRequest mockRequest = new MockRequest.Builder(meta).build();
 
         // Possibly allow the caller to transform some request metrics.
-        TransformationHelper transformationHelper = configuration.transformationHelper();
+        TransformationHelper transformationHelper = settings.transformationHelper();
         if (transformationHelper != null)
             mockRequest = transformationHelper.prepareForRealWorld(realBaseUrl, mockRequest);
 
@@ -609,7 +591,7 @@ public class Atlantis {
                 atlantisDir,
                 recordMissingRequests,
                 recordMissingFailures,
-                getSettings(null).followRedirects());
+                settings.followRedirects());
 
         if (mockResponse == null)
             return null;

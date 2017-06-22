@@ -259,7 +259,7 @@ class JsonSerializers {
             if (defaultResponseHeaderManager.keyCount() > 0)
                 jsonObject.add("defaultResponseHeaders", context.serialize(defaultResponseHeaderManager));
 
-            SettingsManager settingsManager = configuration.defaultSettingsManager();
+            SettingsManager settingsManager = configuration.settingsManager();
             if (settingsManager.entryCount() > 0)
                 jsonObject.add("settings", context.serialize(settingsManager));
 
