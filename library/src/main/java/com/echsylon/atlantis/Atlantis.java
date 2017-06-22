@@ -294,6 +294,13 @@ public class Atlantis {
     }
 
     /**
+     * Clears the list of served request templates.
+     */
+    public void clearServedRequestsRecords() {
+        servedRequests.clear();
+    }
+
+    /**
      * Returns the configuration of this {@code Atlantis} instance. The caller
      * can use this object to inspect the request templates and any associated
      * mock responses that {@code Atlantis} can serve.
