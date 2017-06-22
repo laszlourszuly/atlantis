@@ -19,7 +19,7 @@ public class ConfigurationTest {
         MockRequest request = mock(MockRequest.class);
 
         Configuration configuration = new Configuration.Builder()
-                .setFallbackBaseUrl("url")
+                .setSetting(SettingsManager.FALLBACK_BASE_URL, "url")
                 .setRequestFilter(filter)
                 .addRequest(request)
                 .build();

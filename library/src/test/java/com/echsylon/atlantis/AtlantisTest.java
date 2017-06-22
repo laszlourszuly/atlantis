@@ -37,16 +37,19 @@ public class AtlantisTest {
     public void before() {
         response = new MockResponse.Builder()
                 .setStatus(1, "phrase")
+                .setSetting("key1", "value1")
                 .build();
 
         request = new MockRequest.Builder()
                 .setMethod("GET")
                 .setUrl("/url")
+                .setSetting("key2", "value2")
                 .addResponse(response)
                 .build();
 
         configuration = new Configuration.Builder()
-                .setFallbackBaseUrl("host")
+                .setSetting(SettingsManager.FALLBACK_BASE_URL, "host")
+                .setSetting("key3", "value3")
                 .addRequest(request)
                 .build();
 
@@ -56,8 +59,43 @@ public class AtlantisTest {
     }
 
     @Test
+    public void internal_willMergeSettingsForResponse() throws Exception {
+        atlantis = new Atlantis(context, new Configuration.Builder()
+                .setSetting("key1", "value1")
+                .addRequest(new MockRequest.Builder()
+                        .setMethod("GET")
+                        .setUrl("/url")
+                        .setSetting("key2", "value2")
+                        .addResponse(new MockResponse.Builder()
+                                .setStatus(1, "phrase")
+                                .setSetting("key3", "value3")
+                                .build())
+                        .build())
+                .build());
+
+        atlantis.start();
+        atlantis.setRecordServedRequestsEnabled(true);
+
+        // Make request (Atlantis should catch up on this).
+        URL url = new URL("http://localhost:8080/url");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.getResponseCode();
+
+        List<MockRequest> servedRequests = atlantis.servedRequests();
+        SettingsManager settingsManager = servedRequests.get(0).response().settingsManager();
+        assertThat(settingsManager.entryCount(), is(3));
+        assertThat(settingsManager.get("key1"), is("value1"));
+        assertThat(settingsManager.get("key2"), is("value2"));
+        assertThat(settingsManager.get("key3"), is("value3"));
+    }
+
+    @Test
     public void public_canStartWithConfigurationInputStream() {
-        String json = "{'fallbackBaseUrl': 'host'}";
+        String json = "{" +
+                "\"fallbackBaseUrl\": \"host\"" +
+                "}";
+
         ByteArrayInputStream inputStream = new ByteArrayInputStream(json.getBytes());
         atlantis = new Atlantis(context, inputStream);
         atlantis.start();

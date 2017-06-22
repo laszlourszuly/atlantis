@@ -28,7 +28,7 @@ public class Configuration implements Serializable {
          * object.
          */
         public Builder() {
-            this(new Configuration());
+            configuration = new Configuration();
         }
 
         /**
@@ -55,32 +55,27 @@ public class Configuration implements Serializable {
         }
 
         /**
-         * Sets the default response header manager of the configuration being
-         * built. This method is meant for internal use only.
+         * Adds any default response headers with an absent key to the
+         * configuration being built. This method is meant for internal use
+         * only.
          *
-         * @param headerManager The new header manager. Null is handled
-         *                      gracefully.
+         * @param headers The headers.
          * @return This builder instance, allowing chaining of method calls.
          */
-        Builder setDefaultResponseHeaderManager(final HeaderManager headerManager) {
-            configuration.headerManager = headerManager == null ?
-                    new HeaderManager() :
-                    headerManager;
+        Builder addDefaultResponseHeadersIfKeyAbsent(final Map<String, List<String>> headers) {
+            configuration.headerManager.addIfKeyAbsent(headers);
             return this;
         }
 
         /**
-         * Sets the default response settings manager of the configuration being
-         * built. This method is meant for internal use only.
+         * Adds any default settings with an absent key to the configuration
+         * being built. This method is meant for internal use only.
          *
-         * @param settingsManager The new settings manager. Null is handled
-         *                        gracefully.
+         * @param settings The new settings manager. Null is ignored
          * @return This builder instance, allowing chaining of method calls.
          */
-        Builder setDefaultResponseSettingsManager(final SettingsManager settingsManager) {
-            configuration.settingsManager = settingsManager == null ?
-                    new SettingsManager() :
-                    settingsManager;
+        Builder addSettingsIfKeyAbsent(final Map<String, String> settings) {
+            configuration.settingsManager.setIfAbsent(settings);
             return this;
         }
 
@@ -159,8 +154,51 @@ public class Configuration implements Serializable {
          * @param key   The setting key.
          * @param value The setting value.
          * @return This builder instance, allowing chaining of method calls.
+         * @deprecated Use {@link #setSetting(String, String)} instead.
+         * Planned to be removed in Atlantis 3.0
          */
         public Builder addDefaultResponseSetting(final String key, final String value) {
+            return setSetting(key, value);
+        }
+
+        /**
+         * Adds all default response settings to the configuration being built
+         * where neither the key nor the value is empty or null. Any existing
+         * keys will be overwritten.
+         *
+         * @param settings The settings to add.
+         * @return This builder instance, allowing chaining of method calls.
+         * @deprecated Use {@link #setSettings(Map)} instead. Planned to
+         * be removed in Atlantis 3.0
+         */
+        public Builder addDefaultResponseSettings(final Map<String, String> settings) {
+            return setSettings(settings);
+        }
+
+        /**
+         * Sets the fallback base url to hit when no mocked request was found
+         * and Atlantis is configured to fall back to real world responses.
+         *
+         * @param realBaseUrl The real-world base URL, including scheme.
+         * @return This builder object, allowing chaining of method calls.
+         * @deprecated Use {@link #setSetting(String, String)} with
+         * {@link SettingsManager#FALLBACK_BASE_URL} as key instead. Planned to
+         * be removed in Atlantis 3.0
+         */
+        public Builder setFallbackBaseUrl(final String realBaseUrl) {
+            configuration.settingsManager.set(SettingsManager.FALLBACK_BASE_URL, realBaseUrl);
+            return this;
+        }
+
+        /**
+         * Adds a default response setting to the configuration being built. Any
+         * existing keys will be overwritten.
+         *
+         * @param key   The setting key.
+         * @param value The setting value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setSetting(final String key, final String value) {
             configuration.settingsManager.set(key, value);
             return this;
         }
@@ -173,20 +211,8 @@ public class Configuration implements Serializable {
          * @param settings The settings to add.
          * @return This builder instance, allowing chaining of method calls.
          */
-        public Builder addDefaultResponseSettings(final Map<String, String> settings) {
+        public Builder setSettings(final Map<String, String> settings) {
             configuration.settingsManager.set(settings);
-            return this;
-        }
-
-        /**
-         * Sets the fallback base url to hit when no mocked request was found
-         * and Atlantis is configured to fall back to real world responses.
-         *
-         * @param realBaseUrl The real-world base URL, including scheme.
-         * @return This builder object, allowing chaining of method calls.
-         */
-        public Builder setFallbackBaseUrl(final String realBaseUrl) {
-            configuration.fallbackBaseUrl = realBaseUrl;
             return this;
         }
 
@@ -239,7 +265,6 @@ public class Configuration implements Serializable {
     }
 
 
-    private String fallbackBaseUrl = null;
     private List<MockRequest> requests = null;
     private transient HeaderManager headerManager = null;
     private transient SettingsManager settingsManager = null;
@@ -261,9 +286,11 @@ public class Configuration implements Serializable {
      * configuration was found for a request.
      *
      * @return The fallback base url or null.
+     * @deprecated Use {@link #defaultSettingsManager()} instead. Planned to be
+     * removed in Atlantis 3.0
      */
     public String fallbackBaseUrl() {
-        return fallbackBaseUrl;
+        return settingsManager.fallbackBaseUrl();
     }
 
     /**
@@ -299,8 +326,20 @@ public class Configuration implements Serializable {
      * Returns the default response behavior settings manager.
      *
      * @return The default response settings manager. Never null.
+     * @deprecated Use {@link #defaultSettingsManager()} instead. Planned to be
+     * removed in Atlantis 3.0
      */
     SettingsManager defaultResponseSettingsManager() {
+        return settingsManager;
+    }
+
+    /**
+     * Returns the default settings manager that constrain mock request and
+     * response behavior.
+     *
+     * @return The default settings manager. Never null.
+     */
+    SettingsManager defaultSettingsManager() {
         return settingsManager;
     }
 

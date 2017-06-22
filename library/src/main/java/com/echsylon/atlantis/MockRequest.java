@@ -82,17 +82,32 @@ public class MockRequest {
         }
 
         /**
-         * Sets the header manager of the mock response being built. This method
+         * Sets the header manager of the mock request being built. This method
          * is meant for internal use only.
          *
-         * @param headerManager The new header manager. Null is handled
-         *                      gracefully.
+         * @param headerManager The new header manager. Null will reset any
+         *                      existing headers.
          * @return This builder instance, allowing chaining of method calls.
          */
         Builder setHeaderManager(final HeaderManager headerManager) {
             mockRequest.headerManager = headerManager == null ?
                     new HeaderManager() :
                     headerManager;
+            return this;
+        }
+
+        /**
+         * Sets the settings manager of the mock request being built. This
+         * method is meant for internal use only.
+         *
+         * @param settingsManager The new settings manager. Null will reset any
+         *                        existing settings.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        Builder setSettingsManager(final SettingsManager settingsManager) {
+            mockRequest.settingsManager = settingsManager == null ?
+                    new SettingsManager() :
+                    settingsManager;
             return this;
         }
 
@@ -161,6 +176,31 @@ public class MockRequest {
         }
 
         /**
+         * Adds a setting to the mock request being built. Any existing value
+         * with the same key will be overwritten.
+         *
+         * @param key   The setting key.
+         * @param value The setting value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setSetting(final String key, final String value) {
+            mockRequest.settingsManager.set(key, value);
+            return this;
+        }
+
+        /**
+         * Adds all non-empty settings to the mock response being built. Any
+         * existing values with the same keys will be overwritten.
+         *
+         * @param settings The settings to add.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setSettings(final Map<String, String> settings) {
+            mockRequest.settingsManager.set(settings);
+            return this;
+        }
+
+        /**
          * Adds a mock mockResponse to the request template being built.
          *
          * @param mockResponse The mockResponse to add.
@@ -195,19 +235,6 @@ public class MockRequest {
         }
 
         /**
-         * Sets the fallback base url to hit when no mocked response was found
-         * for this request and Atlantis is configured to fall back to real
-         * world responses.
-         *
-         * @param realBaseUrl The real-world base URL, including scheme.
-         * @return This builder object, allowing chaining of method calls.
-         */
-        public Builder setFallbackBaseUrl(final String realBaseUrl) {
-            mockRequest.fallbackBaseUrl = realBaseUrl;
-            return this;
-        }
-
-        /**
          * Sets the response filter logic of the request template being built.
          * This filter can be used when deciding which mock response to serve.
          *
@@ -233,15 +260,16 @@ public class MockRequest {
 
     private String url = null;
     private String method = null;
-    private String fallbackBaseUrl = null;
     private List<MockResponse> responses = null;
+    private SettingsManager settingsManager = null;
     private transient HeaderManager headerManager = null;
     private transient MockResponse.Filter responseFilter = null;
 
 
     MockRequest() {
-        headerManager = new HeaderManager();
         responses = new ArrayList<>();
+        headerManager = new HeaderManager();
+        settingsManager = new SettingsManager();
     }
 
     /**
@@ -260,18 +288,6 @@ public class MockRequest {
      */
     public String method() {
         return getNonNull(method, "");
-    }
-
-    /**
-     * Returns the fallback base url for this request. If given and Atlantis is
-     * configured to fall back to real world responses, this is the suggested
-     * real world base URL to target (replacing "localhost") if no response was
-     * found for a request.
-     *
-     * @return The fallback base url or null.
-     */
-    public String fallbackBaseUrl() {
-        return fallbackBaseUrl;
     }
 
     /**
@@ -301,6 +317,15 @@ public class MockRequest {
      */
     public HeaderManager headerManager() {
         return headerManager;
+    }
+
+    /**
+     * Returns the settings manager.
+     *
+     * @return The request settings manager. Never null.
+     */
+    SettingsManager settingsManager() {
+        return settingsManager;
     }
 
     /**

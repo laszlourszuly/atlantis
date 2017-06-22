@@ -17,11 +17,12 @@ import static com.echsylon.atlantis.Utils.parseLong;
  * physical characteristics of a remote server.
  */
 @SuppressWarnings("WeakerAccess")
-class SettingsManager {
-    static final String FOLLOW_REDIRECTS = "followRedirects";
-    static final String THROTTLE_BYTE_COUNT = "throttleByteCount";
-    static final String THROTTLE_MIN_DELAY_MILLIS = "throttleMinDelayMillis";
-    static final String THROTTLE_MAX_DELAY_MILLIS = "throttleMaxDelayMillis";
+public class SettingsManager {
+    public static final String FOLLOW_REDIRECTS = "followRedirects";
+    public static final String FALLBACK_BASE_URL = "fallbackBaseUrl";
+    public static final String THROTTLE_BYTE_COUNT = "throttleByteCount";
+    public static final String THROTTLE_MIN_DELAY_MILLIS = "throttleMinDelayMillis";
+    public static final String THROTTLE_MAX_DELAY_MILLIS = "throttleMaxDelayMillis";
 
     private transient final Map<String, String> settings = new LinkedHashMap<>();
 
@@ -126,5 +127,27 @@ class SettingsManager {
         return max > min ?
                 new Random().nextInt((max - min)) + min :
                 min;
+    }
+
+    /**
+     * Returns the fallback base url for the entity holding this manager. If
+     * given and Atlantis is configured to fall back to real world responses,
+     * this will be a suggested real world base URL candidate (replacing the
+     * mock "localhost").
+     *
+     * @return The fallback base url or null.
+     */
+    String fallbackBaseUrl() {
+        return settings.get(FALLBACK_BASE_URL);
+    }
+
+    /**
+     * Returns any custom setting with the provided key.
+     *
+     * @param key The key of the setting to fetch.
+     * @return The settings value or null if the provided key doesn't exist.
+     */
+    String get(String key) {
+        return settings.get(key);
     }
 }

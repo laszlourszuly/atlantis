@@ -183,7 +183,9 @@ class JsonSerializers {
             Configuration.Builder builder = new Configuration.Builder();
 
             if (jsonObject.has("fallbackBaseUrl"))
-                builder.setFallbackBaseUrl(jsonObject.get("fallbackBaseUrl").getAsString());
+                builder.setDefaultSetting(
+                        SettingsManager.FALLBACK_BASE_URL,
+                        jsonObject.get("fallbackBaseUrl").getAsString());
 
             if (jsonObject.has("requestFilter"))
                 try {
@@ -216,7 +218,7 @@ class JsonSerializers {
                 try {
                     JsonElement headers = jsonObject.get("defaultResponseHeaders");
                     HeaderManager headerManager = context.deserialize(headers, HeaderManager.class);
-                    builder.setDefaultResponseHeaderManager(headerManager);
+                    builder.addDefaultResponseHeadersIfKeyAbsent(headerManager.getAllAsMultiMap());
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize default response headers");
                 }
@@ -225,7 +227,16 @@ class JsonSerializers {
                 try {
                     JsonElement settings = jsonObject.get("defaultResponseSettings");
                     SettingsManager settingsManager = context.deserialize(settings, SettingsManager.class);
-                    builder.setDefaultResponseSettingsManager(settingsManager);
+                    builder.setSettings(settingsManager.getAllAsMap());
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize default response settings");
+                }
+
+            if (jsonObject.has("defaultSettings"))
+                try {
+                    JsonElement settings = jsonObject.get("defaultSettings");
+                    SettingsManager settingsManager = context.deserialize(settings, SettingsManager.class);
+                    builder.setSettings(settingsManager.getAllAsMap());
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize default response settings");
                 }
@@ -273,9 +284,9 @@ class JsonSerializers {
             if (defaultResponseHeaderManager.keyCount() > 0)
                 jsonObject.add("defaultResponseHeaders", context.serialize(defaultResponseHeaderManager));
 
-            SettingsManager defaultResponseSettingsManager = configuration.defaultResponseSettingsManager();
-            if (defaultResponseSettingsManager.entryCount() > 0)
-                jsonObject.add("defaultResponseSettings", context.serialize(defaultResponseSettingsManager));
+            SettingsManager defaultSettingsManager = configuration.defaultSettingsManager();
+            if (defaultSettingsManager.entryCount() > 0)
+                jsonObject.add("defaultSettings", context.serialize(defaultSettingsManager));
 
             List<MockRequest> requests = configuration.requests();
             if (requests.size() > 0)
@@ -301,9 +312,6 @@ class JsonSerializers {
             builder.setUrl(jsonObject.get("url").getAsString());
             builder.setMethod(jsonObject.get("method").getAsString());
 
-            if (jsonObject.has("fallbackBaseUrl"))
-                builder.setFallbackBaseUrl(jsonObject.get("fallbackBaseUrl").getAsString());
-
             if (jsonObject.has("responseFilter"))
                 try {
                     String filterClassName = jsonObject.get("responseFilter").getAsString();
@@ -320,6 +328,15 @@ class JsonSerializers {
                     builder.setHeaderManager(headerManager);
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize headers");
+                }
+
+            if (jsonObject.has("settings"))
+                try {
+                    JsonElement settings = jsonObject.get("settings");
+                    SettingsManager settingsManager = context.deserialize(settings, SettingsManager.class);
+                    builder.setSettingsManager(settingsManager);
+                } catch (Exception e) {
+                    info(e, "Couldn't deserialize responses");
                 }
 
             if (jsonObject.has("responses"))
@@ -349,7 +366,6 @@ class JsonSerializers {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("url", request.url());
             jsonObject.addProperty("method", request.method());
-            jsonObject.addProperty("fallbackBaseUrl", request.fallbackBaseUrl());
 
             MockResponse.Filter filter = request.responseFilter();
             if (filter != null)
@@ -358,6 +374,10 @@ class JsonSerializers {
             HeaderManager headerManager = request.headerManager();
             if (headerManager.keyCount() > 0)
                 jsonObject.add("headers", context.serialize(headerManager));
+
+            SettingsManager settingsManager = request.settingsManager();
+            if (settingsManager.entryCount() > 0)
+                jsonObject.add("settings", context.serialize(settingsManager));
 
             List<MockResponse> responses = request.responses();
             if (notEmpty(responses))

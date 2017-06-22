@@ -178,8 +178,35 @@ public class MockResponse {
          * @param key   The setting key.
          * @param value The setting value.
          * @return This builder instance, allowing chaining of method calls.
+         * @deprecated Use {@link #setSetting(String, String)} instead. Planned
+         * to be removed in Atlantis 3.0
          */
         public Builder addSetting(final String key, final String value) {
+            return setSetting(key, value);
+        }
+
+        /**
+         * Adds all non-empty settings to the mock response being built. Any
+         * existing values with the same keys will be overwritten.
+         *
+         * @param settings The settings to add.
+         * @return This builder instance, allowing chaining of method calls.
+         * @deprecated Use {@link #setSettings(Map)} instead. Planned to be
+         * removed in Atlantis 3.0
+         */
+        public Builder addSettings(final Map<String, String> settings) {
+            return setSettings(settings);
+        }
+
+        /**
+         * Adds a setting to the mock response being built. Any existing value
+         * with the same key will be overwritten.
+         *
+         * @param key   The setting key.
+         * @param value The setting value.
+         * @return This builder instance, allowing chaining of method calls.
+         */
+        public Builder setSetting(final String key, final String value) {
             mockResponse.settingsManager.set(key, value);
             return this;
         }
@@ -191,7 +218,7 @@ public class MockResponse {
          * @param settings The settings to add.
          * @return This builder instance, allowing chaining of method calls.
          */
-        public Builder addSettings(final Map<String, String> settings) {
+        public Builder setSettings(final Map<String, String> settings) {
             mockResponse.settingsManager.set(settings);
             return this;
         }

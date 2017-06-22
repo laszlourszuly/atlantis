@@ -383,9 +383,9 @@ public class Atlantis {
             // real world.
 
             info("Couldn't find a mock response for: %s", meta.url());
-            String realBaseUrl = mockRequest.fallbackBaseUrl();
+            String realBaseUrl = mockRequest.settingsManager().fallbackBaseUrl();
             if (isEmpty(realBaseUrl))
-                realBaseUrl = configuration.fallbackBaseUrl();
+                realBaseUrl = configuration.defaultSettingsManager().fallbackBaseUrl();
 
             if (isEmpty(realBaseUrl))
                 return NOT_FOUND;
@@ -400,29 +400,54 @@ public class Atlantis {
                 return NOT_FOUND;
         }
 
-        // We have a mock response! Decorate it with default headers and apply
-        // any post processing mechanisms on it.
-        mockResponse.setSourceHelperIfAbsent(this::open);
-        mockResponse.headerManager()
+        // Don't expose the internal mock request and mock response objects
+        // to any post processing infrastructures but rather pass copies.
+        MockResponse responseBeingMocked = new MockResponse.Builder(mockResponse).build();
+        MockRequest requestBeingMocked = new MockRequest.Builder(meta)
+                .addResponse(responseBeingMocked)
+                .build();
+
+        // We have a mock response! Decorate it with default headers and settings
+        // and apply any post processing mechanisms on it.
+        responseBeingMocked.setSourceHelperIfAbsent(this::open);
+        responseBeingMocked.headerManager()
                 .addIfKeyAbsent(configuration
                         .defaultResponseHeaderManager()
                         .getAllAsMultiMap());
 
+        // Collect all default settings
+        SettingsManager mergedSettings = new SettingsManager();
+        mergedSettings.set(configuration
+                .defaultSettingsManager()
+                .getAllAsMap());
+
+        // Add/replace any settings from the request configuration.
+        mergedSettings.set(mockRequest
+                .settingsManager()
+                .getAllAsMap());
+
+        // Finally add/replace all response specific settings.
+        mergedSettings.set(mockResponse
+                .settingsManager()
+                .getAllAsMap());
+
+        responseBeingMocked
+                .settingsManager()
+                .set(mergedSettings.getAllAsMap());
+
         TokenHelper tokenHelper = configuration.tokenHelper();
         if (tokenHelper != null) {
-            // Don't expose the internal mock request object to the post
-            // processing infrastructure but pass a copy of it instead.
-            MockRequest requestBeingMocked = new MockRequest.Builder(meta).build();
-            SettingsManager settingsManager = mockResponse.settingsManager();
-            mockResponse = tokenHelper.parse(requestBeingMocked, mockResponse);
-            mockResponse.settingsManager().setIfAbsent(settingsManager.getAllAsMap());
+            responseBeingMocked = tokenHelper.parse(requestBeingMocked, responseBeingMocked);
+            responseBeingMocked
+                    .settingsManager()
+                    .setIfAbsent(mergedSettings.getAllAsMap());
         }
 
         if (recordServedRequests)
-            servedRequests.add(mockRequest);
+            servedRequests.add(requestBeingMocked);
 
         if (recordMissingRequests)
-            if (mockResponse.code() < 400 || recordMissingFailures) {
+            if (responseBeingMocked.code() < 400 || recordMissingFailures) {
                 configuration.addRequest(mockRequest);
                 writeConfigurationToFile(configuration, atlantisDir);
             }
@@ -430,8 +455,8 @@ public class Atlantis {
         // There is no guarantee that the custom token helper delivered a mock
         // response with an intact source helper. Hence we need to make sure
         // there is one before the response is finally served.
-        mockResponse.setSourceHelperIfAbsent(this::open);
-        return mockResponse;
+        responseBeingMocked.setSourceHelperIfAbsent(this::open);
+        return responseBeingMocked;
     }
 
     /**
