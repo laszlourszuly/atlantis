@@ -39,10 +39,6 @@ public class Configuration implements Serializable {
         public Builder(Configuration source) {
             configuration = new Configuration();
             if (source != null) {
-                configuration.tokenHelper = source.tokenHelper;
-                configuration.requestFilter = source.requestFilter;
-                configuration.transformationHelper = source.transformationHelper;
-
                 configuration.requests.addAll(source.requests);
                 configuration.headerManager.add(source.headerManager.getAllAsMultiMap());
                 configuration.settingsManager.set(source.settingsManager.getAllAsMap());
@@ -233,7 +229,9 @@ public class Configuration implements Serializable {
          * @return This builder object, allowing chaining of method calls.
          */
         public Builder setRequestFilter(final MockRequest.Filter filter) {
-            configuration.requestFilter = filter;
+            configuration.settingsManager.set(
+                    SettingsManager.REQUEST_FILTER,
+                    filter.getClass().getCanonicalName());
             return this;
         }
 
@@ -245,7 +243,9 @@ public class Configuration implements Serializable {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setTokenHelper(final Atlantis.TokenHelper tokenHelper) {
-            configuration.tokenHelper = tokenHelper;
+            configuration.settingsManager.set(
+                    SettingsManager.TOKEN_HELPER,
+                    tokenHelper.getClass().getCanonicalName());
             return this;
         }
 
@@ -258,7 +258,9 @@ public class Configuration implements Serializable {
          * @return This builder object, allowing chaining of method calls.
          */
         public Builder setTransformationHelper(final Atlantis.TransformationHelper helper) {
-            configuration.transformationHelper = helper;
+            configuration.settingsManager.set(
+                    SettingsManager.TRANSFORMATION_HELPER,
+                    helper.getClass().getCanonicalName());
             return this;
         }
 
@@ -277,9 +279,6 @@ public class Configuration implements Serializable {
     private List<MockRequest> requests = null;
     private HeaderManager headerManager = null;
     private SettingsManager settingsManager = null;
-    private MockRequest.Filter requestFilter = null;
-    private Atlantis.TokenHelper tokenHelper = null;
-    private Atlantis.TransformationHelper transformationHelper = null;
 
 
     Configuration() {
@@ -308,7 +307,7 @@ public class Configuration implements Serializable {
      * @return The request filter or null.
      */
     public MockRequest.Filter requestFilter() {
-        return requestFilter;
+        return settingsManager.requestFilter();
     }
 
     /**
@@ -359,7 +358,7 @@ public class Configuration implements Serializable {
      * @return The token helper.
      */
     Atlantis.TokenHelper tokenHelper() {
-        return tokenHelper;
+        return settingsManager.tokenHelper();
     }
 
     /**
@@ -369,7 +368,7 @@ public class Configuration implements Serializable {
      * transformation helper has been defined.
      */
     Atlantis.TransformationHelper transformationHelper() {
-        return transformationHelper;
+        return settingsManager.transformationHelper();
     }
 
     /**
@@ -378,20 +377,11 @@ public class Configuration implements Serializable {
      * @return The request filter. May be null.
      */
     MockRequest findRequest(final Meta meta) {
-        MockRequest.Filter filter = requestFilter == null ?
-                new DefaultRequestFilter() :
-                requestFilter;
+        MockRequest.Filter filter = requestFilter();
+        if (filter == null)
+            filter = new DefaultRequestFilter();
 
         return filter.findRequest(meta.method(), meta.url(), meta.headerManager().getAllAsMap(), requests);
-    }
-
-    /**
-     * Overrides forcefully the request filter of this configuration.
-     *
-     * @param requestFilter The new request filter.
-     */
-    void setRequestFilter(MockRequest.Filter requestFilter) {
-        this.requestFilter = requestFilter;
     }
 
     /**

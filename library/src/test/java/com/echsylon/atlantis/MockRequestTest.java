@@ -78,22 +78,6 @@ public class MockRequestTest {
         assertThat(request.url(), is(""));
     }
 
-    /**
-     * This feature is used when inflating a MockRequest object from a JSON
-     * string and there is a response filter stated.
-     */
-    @Test
-    public void internal_canOverrideResponseFilter() {
-        MockResponse.Filter filter = mock(MockResponse.Filter.class);
-        MockRequest request = new MockRequest.Builder()
-                .setResponseFilter(mock(MockResponse.Filter.class))
-                .build();
-        assertThat(request.responseFilter(), is(not(filter)));
-
-        request.setResponseFilter(filter);
-        assertThat(request.responseFilter(), is(filter));
-    }
-
     @Test
     public void internal_canGetResponseWhenNoFilterSpecified() {
         MockResponse response = mock(MockResponse.class);

@@ -7,6 +7,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,26 +25,10 @@ public class ConfigurationTest {
                 .addRequest(request)
                 .build();
 
-        assertThat(configuration.fallbackBaseUrl(), is("url"));
-        assertThat(configuration.requestFilter(), is(filter));
+        assertThat(configuration.defaultSettingsManager().fallbackBaseUrl(), is("url"));
+        assertThat(configuration.requestFilter(), is(not(nullValue())));
         assertThat(configuration.requests().size(), is(1));
         assertThat(configuration.requests().get(0), is(request));
-    }
-
-    /**
-     * This feature is used when inflating a Configuration object from a JSON
-     * string and there is a request filter stated.
-     */
-    @Test
-    public void internal_canOverrideRequestFilter() {
-        MockRequest.Filter filter = mock(MockRequest.Filter.class);
-        Configuration configuration = new Configuration.Builder()
-                .setRequestFilter(mock(MockRequest.Filter.class))
-                .build();
-        assertThat(configuration.requestFilter(), is(not(filter)));
-
-        configuration.setRequestFilter(filter);
-        assertThat(configuration.requestFilter(), is(filter));
     }
 
     /**

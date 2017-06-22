@@ -182,38 +182,6 @@ class JsonSerializers {
             JsonObject jsonObject = json.getAsJsonObject();
             Configuration.Builder builder = new Configuration.Builder();
 
-            if (jsonObject.has("fallbackBaseUrl"))
-                builder.setDefaultSetting(
-                        SettingsManager.FALLBACK_BASE_URL,
-                        jsonObject.get("fallbackBaseUrl").getAsString());
-
-            if (jsonObject.has("requestFilter"))
-                try {
-                    String filterClassName = jsonObject.get("requestFilter").getAsString();
-                    MockRequest.Filter filter = (MockRequest.Filter) Class.forName(filterClassName).newInstance();
-                    builder.setRequestFilter(filter);
-                } catch (Exception e) {
-                    info(e, "Couldn't deserialize request filter");
-                }
-
-            if (jsonObject.has("tokenHelper"))
-                try {
-                    String helperClassName = jsonObject.get("tokenHelper").getAsString();
-                    Atlantis.TokenHelper helper = (Atlantis.TokenHelper) Class.forName(helperClassName).newInstance();
-                    builder.setTokenHelper(helper);
-                } catch (Exception e) {
-                    info(e, "Couldn't deserialize token helper");
-                }
-
-            if (jsonObject.has("transformationHelper"))
-                try {
-                    String helperClassName = jsonObject.get("transformationHelper").getAsString();
-                    Atlantis.TransformationHelper helper = (Atlantis.TransformationHelper) Class.forName(helperClassName).newInstance();
-                    builder.setTransformationHelper(helper);
-                } catch (Exception e) {
-                    info(e, "Couldn't deserialize transformation helper");
-                }
-
             if (jsonObject.has("defaultResponseHeaders"))
                 try {
                     JsonElement headers = jsonObject.get("defaultResponseHeaders");
@@ -232,9 +200,9 @@ class JsonSerializers {
                     info(e, "Couldn't deserialize default response settings");
                 }
 
-            if (jsonObject.has("defaultSettings"))
+            if (jsonObject.has("settings"))
                 try {
-                    JsonElement settings = jsonObject.get("defaultSettings");
+                    JsonElement settings = jsonObject.get("settings");
                     SettingsManager settingsManager = context.deserialize(settings, SettingsManager.class);
                     builder.setSettings(settingsManager.getAllAsMap());
                 } catch (Exception e) {
@@ -249,6 +217,26 @@ class JsonSerializers {
                 } catch (Exception e) {
                     info(e, "Couldn't deserialize requests");
                 }
+
+            if (jsonObject.has("fallbackBaseUrl"))
+                builder.setSetting(
+                        SettingsManager.FALLBACK_BASE_URL,
+                        jsonObject.get("fallbackBaseUrl").getAsString());
+
+            if (jsonObject.has("requestFilter"))
+                builder.setSetting(
+                        SettingsManager.REQUEST_FILTER,
+                        jsonObject.get("requestFilter").getAsString());
+
+            if (jsonObject.has("tokenHelper"))
+                builder.setSetting(
+                        SettingsManager.TOKEN_HELPER,
+                        jsonObject.get("tokenHelper").getAsString());
+
+            if (jsonObject.has("transformationHelper"))
+                builder.setSetting(
+                        SettingsManager.TRANSFORMATION_HELPER,
+                        jsonObject.get("transformationHelper").getAsString());
 
             return builder.build();
         };
@@ -266,27 +254,14 @@ class JsonSerializers {
                 return null;
 
             JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("fallbackBaseUrl", configuration.fallbackBaseUrl());
-
-            MockRequest.Filter filter = configuration.requestFilter();
-            if (filter != null)
-                jsonObject.addProperty("requestFilter", filter.getClass().getCanonicalName());
-
-            Atlantis.TokenHelper tokenHelper = configuration.tokenHelper();
-            if (tokenHelper != null)
-                jsonObject.addProperty("tokenHelper", tokenHelper.getClass().getCanonicalName());
-
-            Atlantis.TransformationHelper transformationHelper = configuration.transformationHelper();
-            if (transformationHelper != null)
-                jsonObject.addProperty("transformationHelper", transformationHelper.getClass().getCanonicalName());
 
             HeaderManager defaultResponseHeaderManager = configuration.defaultResponseHeaderManager();
             if (defaultResponseHeaderManager.keyCount() > 0)
                 jsonObject.add("defaultResponseHeaders", context.serialize(defaultResponseHeaderManager));
 
-            SettingsManager defaultSettingsManager = configuration.defaultSettingsManager();
-            if (defaultSettingsManager.entryCount() > 0)
-                jsonObject.add("defaultSettings", context.serialize(defaultSettingsManager));
+            SettingsManager settingsManager = configuration.defaultSettingsManager();
+            if (settingsManager.entryCount() > 0)
+                jsonObject.add("settings", context.serialize(settingsManager));
 
             List<MockRequest> requests = configuration.requests();
             if (requests.size() > 0)
@@ -311,15 +286,6 @@ class JsonSerializers {
             MockRequest.Builder builder = new MockRequest.Builder();
             builder.setUrl(jsonObject.get("url").getAsString());
             builder.setMethod(jsonObject.get("method").getAsString());
-
-            if (jsonObject.has("responseFilter"))
-                try {
-                    String filterClassName = jsonObject.get("responseFilter").getAsString();
-                    MockResponse.Filter filter = (MockResponse.Filter) Class.forName(filterClassName).newInstance();
-                    builder.setResponseFilter(filter);
-                } catch (Exception e) {
-                    info(e, "Couldn't deserialize response filter");
-                }
 
             if (jsonObject.has("headers"))
                 try {
@@ -348,6 +314,11 @@ class JsonSerializers {
                     info(e, "Couldn't deserialize responses");
                 }
 
+            if (jsonObject.has("responseFilter"))
+                builder.setSetting(
+                        SettingsManager.RESPONSE_FILTER,
+                        jsonObject.get("responseFilter").getAsString());
+
             return builder.build();
         };
     }
@@ -366,10 +337,6 @@ class JsonSerializers {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("url", request.url());
             jsonObject.addProperty("method", request.method());
-
-            MockResponse.Filter filter = request.responseFilter();
-            if (filter != null)
-                jsonObject.addProperty("responseFilter", filter.getClass().getCanonicalName());
 
             HeaderManager headerManager = request.headerManager();
             if (headerManager.keyCount() > 0)

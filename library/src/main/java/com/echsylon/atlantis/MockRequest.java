@@ -68,7 +68,6 @@ public class MockRequest {
             if (source != null) {
                 mockRequest.url = source.url;
                 mockRequest.method = source.method;
-                mockRequest.responseFilter = source.responseFilter;
 
                 mockRequest.responses.addAll(source.responses);
                 mockRequest.headerManager.add(source.headerManager.getAllAsMultiMap());
@@ -249,7 +248,9 @@ public class MockRequest {
          * @return This builder instance, allowing chaining of method calls.
          */
         public Builder setResponseFilter(final MockResponse.Filter responseFilter) {
-            mockRequest.responseFilter = responseFilter;
+            mockRequest.settingsManager.set(
+                    SettingsManager.RESPONSE_FILTER,
+                    responseFilter.getClass().getCanonicalName());
             return this;
         }
 
@@ -267,10 +268,9 @@ public class MockRequest {
 
     private String url = null;
     private String method = null;
+    private HeaderManager headerManager = null;
     private List<MockResponse> responses = null;
     private SettingsManager settingsManager = null;
-    private HeaderManager headerManager = null;
-    private MockResponse.Filter responseFilter = null;
 
 
     MockRequest() {
@@ -314,7 +314,7 @@ public class MockRequest {
      * @return The response filter or null.
      */
     public MockResponse.Filter responseFilter() {
-        return responseFilter;
+        return settingsManager.responseFilter();
     }
 
     /**
@@ -341,17 +341,10 @@ public class MockRequest {
      * @return The response to server, may be null.
      */
     MockResponse response() {
-        return responseFilter == null ?
-                new DefaultResponseFilter().findResponse(responses) :
-                responseFilter.findResponse(responses);
-    }
+        MockResponse.Filter filter = settingsManager.responseFilter();
+        if (filter == null)
+            filter = new DefaultResponseFilter();
 
-    /**
-     * Forcefully overrides the response filter of this request template.
-     *
-     * @param responseFilter The new response filter.
-     */
-    void setResponseFilter(final MockResponse.Filter responseFilter) {
-        this.responseFilter = responseFilter;
+        return filter.findResponse(responses);
     }
 }

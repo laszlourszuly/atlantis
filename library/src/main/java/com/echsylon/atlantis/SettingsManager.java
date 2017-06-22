@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
+import static com.echsylon.atlantis.LogUtils.info;
+import static com.echsylon.atlantis.Utils.isEmpty;
 import static com.echsylon.atlantis.Utils.notAnyEmpty;
 import static com.echsylon.atlantis.Utils.notEmpty;
 import static com.echsylon.atlantis.Utils.parseBoolean;
@@ -23,6 +25,10 @@ public class SettingsManager {
     public static final String THROTTLE_BYTE_COUNT = "throttleByteCount";
     public static final String THROTTLE_MIN_DELAY_MILLIS = "throttleMinDelayMillis";
     public static final String THROTTLE_MAX_DELAY_MILLIS = "throttleMaxDelayMillis";
+    public static final String TOKEN_HELPER = "tokenHelper";
+    public static final String TRANSFORMATION_HELPER = "transformationHelper";
+    public static final String REQUEST_FILTER = "requestFilter";
+    public static final String RESPONSE_FILTER = "responseFilter";
 
     private transient final Map<String, String> settings = new LinkedHashMap<>();
 
@@ -100,7 +106,7 @@ public class SettingsManager {
      * @return Boolean true if a redirect should be followed, false otherwise.
      */
     boolean followRedirects() {
-        return parseBoolean(settings.get(FOLLOW_REDIRECTS), true);
+        return parseBoolean(get(FOLLOW_REDIRECTS), true);
     }
 
     /**
@@ -110,7 +116,7 @@ public class SettingsManager {
      * @return The desired response body package size.
      */
     long throttleByteCount() {
-        return parseLong(settings.get(THROTTLE_BYTE_COUNT), Long.MAX_VALUE);
+        return parseLong(get(THROTTLE_BYTE_COUNT), Long.MAX_VALUE);
     }
 
     /**
@@ -121,8 +127,8 @@ public class SettingsManager {
      * @return A random delay in milliseconds.
      */
     long throttleDelayMillis() {
-        int min = Math.max(0, parseInt(settings.get(THROTTLE_MIN_DELAY_MILLIS), 0));
-        int max = Math.max(0, parseInt(settings.get(THROTTLE_MAX_DELAY_MILLIS), 0));
+        int min = Math.max(0, parseInt(get(THROTTLE_MIN_DELAY_MILLIS), 0));
+        int max = Math.max(0, parseInt(get(THROTTLE_MAX_DELAY_MILLIS), 0));
 
         return max > min ?
                 new Random().nextInt((max - min)) + min :
@@ -139,6 +145,83 @@ public class SettingsManager {
      */
     String fallbackBaseUrl() {
         return settings.get(FALLBACK_BASE_URL);
+    }
+
+    /**
+     * Tries to return a token helper instance from the configured absolute
+     * class name.
+     *
+     * @return A token helper instance or null if couldn't instantiate one.
+     */
+    Atlantis.TokenHelper tokenHelper() {
+        String className = get(TOKEN_HELPER);
+        if (isEmpty(className))
+            return null;
+
+        try {
+            return (Atlantis.TokenHelper) Class.forName(className).newInstance();
+        } catch (Exception e) {
+            info(e, "Couldn't deserialize token helper");
+            return null;
+        }
+    }
+
+    /**
+     * Tries to return a transformation helper instance from the configured
+     * absolute class name.
+     *
+     * @return A transformation helper instance or null if couldn't instantiate
+     * one.
+     */
+    Atlantis.TransformationHelper transformationHelper() {
+        String className = get(TRANSFORMATION_HELPER);
+        if (isEmpty(className))
+            return null;
+
+        try {
+            return (Atlantis.TransformationHelper) Class.forName(className).newInstance();
+        } catch (Exception e) {
+            info(e, "Couldn't deserialize transformation helper");
+            return null;
+        }
+    }
+
+    /**
+     * Tries to return a request filter instance from the configured absolute
+     * class name.
+     *
+     * @return A request filter instance or null if couldn't instantiate one.
+     */
+    MockRequest.Filter requestFilter() {
+        String className = get(REQUEST_FILTER);
+        if (isEmpty(className))
+            return null;
+
+        try {
+            return (MockRequest.Filter) Class.forName(className).newInstance();
+        } catch (Exception e) {
+            info(e, "Couldn't deserialize request filter");
+            return null;
+        }
+    }
+
+    /**
+     * Tries to return a response filter instance from the configured absolute
+     * class name.
+     *
+     * @return A response filter instance or null if couldn't instantiate one.
+     */
+    MockResponse.Filter responseFilter() {
+        String className = get(RESPONSE_FILTER);
+        if (isEmpty(className))
+            return null;
+
+        try {
+            return (MockResponse.Filter) Class.forName(className).newInstance();
+        } catch (Exception e) {
+            info(e, "Couldn't deserialize response filter");
+            return null;
+        }
     }
 
     /**
