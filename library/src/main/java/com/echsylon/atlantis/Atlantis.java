@@ -470,7 +470,8 @@ public class Atlantis {
 
     /**
      * Returns a data source through which the mocked response content body can
-     * be read.
+     * be read. It's the responsibility of the caller to close the returned
+     * {@code Source} when finished reading from it.
      *
      * @param content The text describing the resource. Interpreted as an asset
      *                path if starting with "asset://", or a file path if

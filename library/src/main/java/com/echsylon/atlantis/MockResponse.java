@@ -314,7 +314,8 @@ public class MockResponse {
     }
 
     /**
-     * Tries to return the body as a string.
+     * Tries to return the actual body content as a byte array. This method will
+     * follow any file or asset paths and try to read the content of the file.
      *
      * @return The response body as a byte array. May be empty, never null.
      */
@@ -332,6 +333,9 @@ public class MockResponse {
     }
 
     /**
+     * Returns the raw body byte array. Note that this may very well a path to
+     * the actual body content.
+     *
      * @return The body as a byte array.
      */
     public byte[] bodyAsByteArray() {
