@@ -12,9 +12,13 @@ import org.robolectric.annotation.Config;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -88,6 +92,37 @@ public class AtlantisTest {
         assertThat(settingsManager.get("key1"), is("value1"));
         assertThat(settingsManager.get("key2"), is("value2"));
         assertThat(settingsManager.get("key3"), is("value3"));
+    }
+
+    @Test
+    public void public_willNotBlockOnReadingEmptyBody() throws Exception {
+        atlantis = new Atlantis(context, new Configuration.Builder()
+                .addRequest(new MockRequest.Builder()
+                        .setMethod("GET")
+                        .setUrl("/url")
+                        .addResponse(new MockResponse.Builder()
+                                .setStatus(1, "phrase")
+                                .build())
+                        .build())
+                .build());
+
+        atlantis.start();
+
+        // Make request (Atlantis should catch up on this).
+        URL url = new URL("http://localhost:8080/url");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.getResponseCode();
+
+        final InputStream inputStream = connection.getInputStream();
+        int result = Executors
+                .newFixedThreadPool(1)
+                .submit((Callable<Integer>) inputStream::read)
+                .get(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(-1)); // -1 = End-of-stream
+        assertThat(connection.getResponseCode(), is(1));
+        assertThat(connection.getResponseMessage(), is("phrase"));
     }
 
     @Test

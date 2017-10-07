@@ -479,7 +479,7 @@ public class Atlantis {
      * @return A data source or null if no data described.
      */
     private Source open(final byte[] content) {
-        if (isEmpty(content) || (content.length == 1 && content[0] == (byte) 0))
+        if (isEmpty(content) || content.length == 1 && content[0] == (byte) 0)
             return Okio.source(new ByteArrayInputStream(new byte[0]));
 
         // Don't transform the entire content to a string only to test if it

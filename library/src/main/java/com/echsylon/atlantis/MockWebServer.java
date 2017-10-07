@@ -357,7 +357,7 @@ class MockWebServer {
 
             // We can't really check the "isExpectedToHaveBody()" here as the
             // content length isn't necessarily set yet.
-            if (bytes.length > 0) {
+            if (bytes != null && bytes.length > 0) {
                 source = Okio.source(new ByteArrayInputStream(bytes));
                 buffer = new Buffer();
                 transfer(-1, source, buffer, null);
@@ -396,6 +396,8 @@ class MockWebServer {
             // Maybe also send a response body
             if (buffer != null)
                 transfer(buffer.size(), buffer, target, throttle);
+            else
+                target.close();
         } finally {
             closeSilently(source);
             closeSilently(buffer);
