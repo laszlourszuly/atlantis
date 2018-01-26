@@ -252,6 +252,9 @@ public class Atlantis {
     public void setRecordMissingRequestsEnabled(boolean enabled) {
         recordMissingRequests = enabled && notEmpty(configuration.fallbackBaseUrl());
         info("Record missing requests: %s", enabled ? "enabled" : "disabled");
+        if (recordMissingRequests && atlantisDir == null) {
+            this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
+        }
     }
 
     /**
@@ -268,6 +271,9 @@ public class Atlantis {
     public void setRecordMissingFailuresEnabled(boolean enabled) {
         recordMissingFailures = enabled && recordMissingRequests;
         info("Record missing requests if failed: %s", enabled ? "enabled" : "disabled");
+        if (recordMissingRequests && atlantisDir == null) {
+            this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
+        }
     }
 
     /**
@@ -349,7 +355,6 @@ public class Atlantis {
         this.proxy = new Proxy();
         this.mockServer = new MockWebServer(this::serve, this::getSettings);
         this.servedRequests = new ConcurrentLinkedQueue<>();
-        this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
 
         NOT_FOUND.setSourceHelperIfAbsent(this::open);
         CONTINUE.setSourceHelperIfAbsent(this::open);
