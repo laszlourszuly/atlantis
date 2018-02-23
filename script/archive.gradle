@@ -5,9 +5,9 @@ android.libraryVariants.all { variant ->
 
 
     // Force AAR archives to have the same naming conventions as the JAR's.
-    variant.outputs.each { output ->
-        if (output.outputFile.name.endsWith('.aar')) {
-            output.outputFile = file("${output.outputFile.parent}/${subfolder}/${template}.aar")
+    variant.outputs.all { output ->
+        if (outputFileName.endsWith('.aar')) {
+            outputFileName = file("${buildDir}/outputs/aar/${subfolder}/${template}.aar")
         }
     }
     

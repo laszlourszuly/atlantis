@@ -1,0 +1,54 @@
+version: 2
+jobs:
+  build-job:
+    working_directory: ~/work
+    docker:
+      - image: circleci/android:api-27-alpha
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+      - restore_cache:
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum "library/build.gradle" }}
+      - run:
+          name: Download dependencies
+          command: ./gradlew androidDependencies
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum "library/build.gradle" }}
+      - run:
+          name: Run tests
+          command: ./gradlew lintRelease testRelease coveralls
+      - store_test_results:
+          path: library/build/test-results
+
+  deploy-job:
+    working_directory: ~/work
+    docker:
+      - image: circleci/android:api-27-alpha
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+      - restore_cache:
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum "library/build.gradle" }}
+      - run:
+          name: Deploy binaries
+          command: ./gradlew assembleRelease bintrayUpload
+
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build-job
+      - deploy-job:
+          requires:
+            - build-job
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /v[0-9]+\.[0-9]+\.[0-9]+/
+
