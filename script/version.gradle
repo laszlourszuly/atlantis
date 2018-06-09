@@ -12,13 +12,15 @@
  * 3. Increase the ${major} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task prepareMajorRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def version = getVersionFromLatestTag()
-    def (major, minor, patch, build) = version.tokenize()
-    def nextMajor = (major.toInteger() + 1).toString()
-    def newVersionName = "${nextMajor}.0.0"
-    def oldVersionName = getLatestReleaseTagName()
-    createNewTag(oldVersionName, newVersionName, nextMajor, "0", "0", build)
+task prepareMajorRelease(dependsOn: ':library:testReleaseUnitTest') {
+    doLast {
+        def version = getVersionFromLatestTag()
+        def (major, minor, patch, build) = version.tokenize()
+        def nextMajor = (major.toInteger() + 1).toString()
+        def newVersionName = "${nextMajor}.0.0"
+        def oldVersionName = getLatestReleaseTagName()
+        createNewTag(oldVersionName, newVersionName, nextMajor, "0", "0", build)
+    }
 }
 
 /**
@@ -34,13 +36,15 @@ task prepareMajorRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 3. Increase the ${minor} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task prepareMinorRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def version = getVersionFromLatestTag()
-    def (major, minor, patch, build) = version.tokenize()
-    def nextMinor = (minor.toInteger() + 1).toString()
-    def newVersionName = "${major}.${nextMinor}.0"
-    def oldVersionName = getLatestReleaseTagName()
-    createNewTag(oldVersionName, newVersionName, major, nextMinor, "0", build)
+task prepareMinorRelease(dependsOn: ':library:testReleaseUnitTest') {
+    doLast {
+        def version = getVersionFromLatestTag()
+        def (major, minor, patch, build) = version.tokenize()
+        def nextMinor = (minor.toInteger() + 1).toString()
+        def newVersionName = "${major}.${nextMinor}.0"
+        def oldVersionName = getLatestReleaseTagName()
+        createNewTag(oldVersionName, newVersionName, major, nextMinor, "0", build)
+    }
 }
 
 /**
@@ -56,13 +60,15 @@ task prepareMinorRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 3. Increase the ${patch} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def version = getVersionFromLatestTag()
-    def (major, minor, patch, build) = version.tokenize()
-    def nextPatch = (patch.toInteger() + 1).toString()
-    def newVersionName = "${major}.${minor}.${nextPatch}"
-    def oldVersionName = getLatestReleaseTagName()
-    createNewTag(oldVersionName, newVersionName, major, minor, nextPatch, build)
+task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') {
+    doLast {
+        def version = getVersionFromLatestTag()
+        def (major, minor, patch, build) = version.tokenize()
+        def nextPatch = (patch.toInteger() + 1).toString()
+        def newVersionName = "${major}.${minor}.${nextPatch}"
+        def oldVersionName = getLatestReleaseTagName()
+        createNewTag(oldVersionName, newVersionName, major, minor, nextPatch, build)
+    }
 }
 
 /**
@@ -78,13 +84,15 @@ task preparePatchRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 3. Increase the ${patch} segment and the version code by one.
  * 4. Create a new annotated tag and push it to the remote repository.
  */
-task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') << {
-    def version = getVersionFromLatestTag()
-    def (major, minor, patch, build) = version.tokenize()
-    def nextBuild = (build.toInteger() + 1).toString()
-    def newVersionName = "${major}.${minor}.${patch}-${nextBuild}-SNAPSHOT"
-    def oldVersionName = getLatestReleaseTagName()
-    createNewTag(oldVersionName, newVersionName, major, minor, patch, nextBuild)
+task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') {
+    doLast {
+        def version = getVersionFromLatestTag()
+        def (major, minor, patch, build) = version.tokenize()
+        def nextBuild = (build.toInteger() + 1).toString()
+        def newVersionName = "${major}.${minor}.${patch}-${nextBuild}-SNAPSHOT"
+        def oldVersionName = getLatestReleaseTagName()
+        createNewTag(oldVersionName, newVersionName, major, minor, patch, nextBuild)
+    }
 }
 
 /**
@@ -98,13 +106,15 @@ task prepareSnapshotRelease(dependsOn: ':library:testReleaseUnitTest') << {
  * 4. Delete the local gh-pages branch.
  * 5. Delete the temporary commit.
  */
-task updateRemoteJavaDoc(dependsOn: ':library:javadocRelease') << {
-    "git add docs".bash()
-    "git commit --message 'javadoc'".bash()
-    "git subtree split --prefix docs -b gh-pages".bash()
-    "git push -f origin gh-pages:gh-pages".bash()
-    "git branch -D gh-pages".bash()
-    "git reset HEAD~1 --hard".bash()
+task updateRemoteJavaDoc(dependsOn: ':library:javadocRelease') {
+    doLast {
+        "git add docs".bash()
+        "git commit --message 'javadoc'".bash()
+        "git subtree split --prefix docs -b gh-pages".bash()
+        "git push -f origin gh-pages:gh-pages".bash()
+        "git branch -D gh-pages".bash()
+        "git reset HEAD~1 --hard".bash()
+    }
 }
 
 /**
