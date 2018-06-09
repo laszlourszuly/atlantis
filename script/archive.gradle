@@ -16,7 +16,6 @@ android.libraryVariants.all { variant ->
         source = variant.javaCompile.source
         ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
         classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
-        destinationDir = file("${rootProject.rootDir}/docs")
 
         exclude '**/BuildConfig.java'
         exclude '**/R.java'
@@ -25,6 +24,8 @@ android.libraryVariants.all { variant ->
             links 'http://docs.oracle.com/javase/8/docs/api/'
             links 'http://developer.android.com/reference/'
         }
+
+        destinationDir = file("${buildDir}/outputs/docs/${subfolder}")
     }
 
     // Build the javadoc Jar
@@ -41,21 +42,11 @@ android.libraryVariants.all { variant ->
         destinationDir = file("${buildDir}/outputs/jar/${subfolder}")
     }
 
-    // Build the plain Jar
-    task("jarSlim${name}", type: Jar) {
-        from("${buildDir}/intermediates/transforms/retrolambda/release/folders/1/1/retrolambda") {
-            exclude '**/BuildConfig.class'
-            exclude '**/R$*.class'
-            exclude '**/R.class'
-        }
-        destinationDir = file("${buildDir}/outputs/jar/${subfolder}")
-    }
-
     // Build the fat Jar (including all dependencies)
     task("jarFat${name}", type: Jar) {
         classifier 'fat'
         // Add external dependency classes
-        from configurations.compile.findAll {
+        from configurations.archives.each {
             !it.getName().equals('android.jar') &&
             !it.getName().startsWith('junit') &&
             !it.getName().startsWith('atlantis') &&
@@ -64,7 +55,17 @@ android.libraryVariants.all { variant ->
             it.isDirectory() ? it : zipTree(it)
         }
         // Add Atlantis classes
-        from("${buildDir}/intermediates/transforms/retrolambda/release/folders/1/1/retrolambda") {
+        from("${buildDir}/intermediates/transforms/retrolambda/release/0") {
+            exclude '**/BuildConfig.class'
+            exclude '**/R$*.class'
+            exclude '**/R.class'
+        }
+        destinationDir = file("${buildDir}/outputs/jar/${subfolder}")
+    }
+
+    // Build the plain Jar
+    task("jarSlim${name}", type: Jar) {
+        from("${buildDir}/intermediates/transforms/retrolambda/release/0") {
             exclude '**/BuildConfig.class'
             exclude '**/R$*.class'
             exclude '**/R.class'
