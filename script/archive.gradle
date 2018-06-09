@@ -13,20 +13,24 @@ android.libraryVariants.all { variant ->
     
     // Compile javadoc output (HTML file tree)
     task("javadoc${name}", type: Javadoc) {
-        source = android.sourceSets.main.java.srcDirs
-        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-        classpath += configurations.compile
+        source = variant.javaCompile.source
+        ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+        classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
+        destinationDir = file("${rootProject.rootDir}/docs")
+
+        exclude '**/BuildConfig.java'
+        exclude '**/R.java'
+
         options {
             links 'http://docs.oracle.com/javase/8/docs/api/'
-            linksOffline 'http://d.android.com/reference', "${android.sdkDirectory}/docs/reference"
+            links 'http://developer.android.com/reference/'
         }
-        destinationDir = file("${rootProject.rootDir}/docs")
     }
 
     // Build the javadoc Jar
     task("jarJavadoc${name}", type: Jar, dependsOn: "javadoc${name}") {
         classifier 'javadoc'
-        from tasks["javadoc${name}"].destinationDir
+        from file("${buildDir}/outputs/docs/${subfolder}")
         destinationDir = file("${buildDir}/outputs/jar/${subfolder}")
     }
 
