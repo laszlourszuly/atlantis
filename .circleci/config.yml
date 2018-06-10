@@ -35,7 +35,7 @@ jobs:
           key: jars-{{ checksum "build.gradle" }}-{{ checksum "library/build.gradle" }}
       - run:
           name: Deploy binaries
-          command: ./gradlew clean assembleRelease bintrayUpload
+          command: ./gradlew clean javadocRelease assembleRelease bintrayUpload
 
 
 workflows:

@@ -31,7 +31,7 @@ android.libraryVariants.all { variant ->
     // Build the javadoc Jar
     task("jarJavadoc${name}", type: Jar, dependsOn: "javadoc${name}") {
         classifier 'javadoc'
-        from file("${buildDir}/outputs/docs/${subfolder}")
+        from tasks["javadoc${name}"].destinationDir
         destinationDir = file("${buildDir}/outputs/jar/${subfolder}")
     }
 
