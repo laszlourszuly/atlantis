@@ -37,6 +37,12 @@ publishing {
             }
 
             // The actual library from task defined in 'archive.gradle'
+            artifact("${buildDir}/outputs/jar/release/${fileName}-fat.jar") {
+                classifier 'fat'
+                extension 'jar'
+            }
+
+            // The actual library from task defined in 'archive.gradle'
             artifact("${buildDir}/outputs/jar/release/${fileName}.jar") {
                 extension 'jar'
             }

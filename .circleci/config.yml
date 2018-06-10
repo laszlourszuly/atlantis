@@ -19,7 +19,7 @@ jobs:
           key: jars-{{ checksum "build.gradle" }}-{{ checksum "library/build.gradle" }}
       - run:
           name: Run tests
-          command: ./gradlew lintRelease testRelease coveralls
+          command: ./gradlew clean lintRelease testRelease coveralls
       - store_test_results:
           path: library/build/test-results
 
@@ -35,7 +35,7 @@ jobs:
           key: jars-{{ checksum "build.gradle" }}-{{ checksum "library/build.gradle" }}
       - run:
           name: Deploy binaries
-          command: ./gradlew assembleRelease bintrayUpload
+          command: ./gradlew clean assembleRelease bintrayUpload
 
 
 workflows:
