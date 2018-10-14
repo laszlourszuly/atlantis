@@ -1,13 +1,8 @@
 package com.echsylon.atlantis;
 
-import android.content.Context;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -27,15 +22,12 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 16)
 public class AtlantisTest {
     private Proxy proxy;
     private Configuration configuration;
     private MockResponse response;
     private MockRequest request;
     private Atlantis atlantis;
-    private Context context;
 
     @Before
     public void before() {
@@ -57,14 +49,13 @@ public class AtlantisTest {
                 .addRequest(request)
                 .build();
 
-        context = mock(Context.class);
         proxy = mock(Proxy.class);
         when(proxy.getMockResponse(any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(response);
     }
 
     @Test
     public void internal_willMergeSettingsForResponse() throws Exception {
-        atlantis = new Atlantis(context, new Configuration.Builder()
+        atlantis = new Atlantis(new Configuration.Builder()
                 .setSetting("key1", "value1")
                 .addRequest(new MockRequest.Builder()
                         .setMethod("GET")
@@ -96,7 +87,7 @@ public class AtlantisTest {
 
     @Test
     public void public_willNotBlockOnReadingEmptyBody() throws Exception {
-        atlantis = new Atlantis(context, new Configuration.Builder()
+        atlantis = new Atlantis(new Configuration.Builder()
                 .addRequest(new MockRequest.Builder()
                         .setMethod("GET")
                         .setUrl("/url")
@@ -132,14 +123,14 @@ public class AtlantisTest {
                 "}";
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(json.getBytes());
-        atlantis = new Atlantis(context, inputStream);
+        atlantis = new Atlantis(inputStream);
         atlantis.start();
         assertThat(atlantis.isRunning(), is(true));
     }
 
     @Test
     public void public_canStartWithConfigurationObject() {
-        atlantis = new Atlantis(context, configuration);
+        atlantis = new Atlantis(configuration);
         atlantis.start();
         assertThat(atlantis.isRunning(), is(true));
     }
@@ -147,7 +138,7 @@ public class AtlantisTest {
     @Test
     public void public_canRecordServedRequests() throws IOException {
         // Verify possible to start recording.
-        atlantis = new Atlantis(context, configuration);
+        atlantis = new Atlantis(configuration);
         atlantis.start();
         atlantis.setRecordServedRequestsEnabled(true);
         assertThat(atlantis.isRecordingServedRequests(), is(true));
@@ -170,7 +161,7 @@ public class AtlantisTest {
     @Test
     public void public_canRecordMissingRequests() throws IOException {
         // Verify possible to start recording.
-        atlantis = new Atlantis(context, proxy, configuration);
+        atlantis = new Atlantis(proxy, configuration);
         atlantis.start();
         atlantis.setRecordMissingRequestsEnabled(true);
         assertThat(atlantis.isRecordingMissingRequests(), is(true));
@@ -178,16 +169,14 @@ public class AtlantisTest {
 
     @Test
     public void public_canNotRecordMissingRequestsWithoutFallbackBaseUrl() {
-        atlantis = new Atlantis(context, new Configuration.Builder().build());
+        atlantis = new Atlantis(new Configuration.Builder().build());
         atlantis.start();
         atlantis.setRecordMissingRequestsEnabled(true);
         assertThat(atlantis.isRecordingMissingRequests(), is(false));
     }
 
     @After
-    @SuppressWarnings("ResultOfMethodCallIgnored") // Ignore file.delete()
     public void after() {
-        context = null;
         configuration = null;
         if (atlantis != null) {
             deleteRecursively(atlantis.workingDirectory());

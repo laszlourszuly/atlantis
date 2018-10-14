@@ -1,13 +1,16 @@
 package com.echsylon.atlantis;
 
 
-import android.content.Context;
+import okio.BufferedSink;
+import okio.BufferedSource;
+import okio.Okio;
+import okio.Source;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException; 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,15 +18,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.Okio;
-import okio.Source;
-
 import static com.echsylon.atlantis.LogUtils.info;
-import static com.echsylon.atlantis.Utils.closeSilently;
-import static com.echsylon.atlantis.Utils.isEmpty;
-import static com.echsylon.atlantis.Utils.notEmpty;
+import static com.echsylon.atlantis.Utils.*;
 
 /**
  * This is the top level orchestration layer, on top of the mock web mockServer,
@@ -44,97 +40,28 @@ public class Atlantis {
             .addHeader("Content-Length", "0")
             .build();
 
-
-    /**
-     * This interface describes the API offering means for preparing a request
-     * either for the real world or the mock environment. Atlantis will make
-     * sure any injected implementation of this interface is called when needed
-     * and possible, e.g. there needs to be "fallbackBaseUrl" defined in the
-     * configuration for this transformation to take place.
-     */
-    public interface TransformationHelper {
-
-        /**
-         * Returns a new mock request which doesn't reference any features in
-         * the mock environment. This indirectly requires any implementing
-         * classes to know of the "real world".
-         *
-         * @param realBaseUrl The base url of the real server.
-         * @param mockRequest The unchanged mock request as Atlantis knows it.
-         * @return A modified mock request which has all internal URL's and mock
-         * references replaced with corresponding real world values. Since the
-         * {@code MockRequest} is immutable (-ish), implementing classes must
-         * create and return a new instance, preferably by using a {@link
-         * MockRequest.Builder}).
-         */
-        MockRequest prepareForRealWorld(final String realBaseUrl, final MockRequest mockRequest);
-
-        /**
-         * Returns a new mock response which doesn't reference any real life
-         * resources, but targets internal, mocked, alternatives only.
-         *
-         * @param realBaseUrl      The base url of the real server.
-         * @param recordedResponse The mock response as recorded from the real
-         *                         world response.
-         * @return A modified mock response which has all external URL's and
-         * mock references replaced with corresponding mock values. Since the
-         * {@code MockResponse} is immutable (-ish), implementing classes must
-         * create and return a new instance, preferably by using a {@link
-         * MockResponse.Builder}).
-         */
-        MockResponse prepareForMockedWorld(final String realBaseUrl, final MockResponse recordedResponse);
-    }
-
-    /**
-     * This interface describes the token helper feature set. A token helpers
-     * main responsibility is to evaluate tokens and replace them with the
-     * corresponding evaluated values.
-     */
-    public interface TokenHelper {
-
-        /**
-         * Performs the actual token replacement activities and delivers a new,
-         * ready-to-serve mock response.
-         *
-         * @param requestBeingMocked The request that is about to be served.
-         * @param rawMockResponse    The configured or recorded mock response
-         *                           (with the yet un-parsed tokens).
-         * @return A new, modified mock response that can be served to a waiting
-         * client. Note that {@code MockResponse}'s are immutable from the users
-         * perspective. Implementing classes will have to create a new {@code
-         * MockResponse} instance to return, preferably  by using a {@code
-         * MockResponse.Builder} instance.
-         */
-        MockResponse parse(final MockRequest requestBeingMocked, final MockResponse rawMockResponse);
-    }
-
-
-    private Context context;
     private File atlantisDir;
     private MockWebServer mockServer;
     private Proxy proxy;
     private Configuration configuration;
     private Queue<MockRequest> servedRequests;
-
     private boolean recordServedRequests;
     private boolean recordMissingRequests;
     private boolean recordMissingFailures;
-
 
     /**
      * Creates an {@code Atlantis} instance and initializes it with a
      * configuration read from an input stream.
      *
-     * @param context     The context used when reading mock responses.
      * @param inputStream The input stream to read the {@code Atlantis}
      *                    configuration from.
      */
-    public Atlantis(final Context context, final InputStream inputStream) {
+    public Atlantis(final InputStream inputStream) {
         try {
             BufferedSource bufferedSource = Okio.buffer(Okio.source(inputStream));
             String json = bufferedSource.readString(Charset.forName("UTF-8"));
             Configuration configuration = JsonParser.fromJson(json, Configuration.class);
-            init(context, configuration);
+            init(configuration);
         } catch (IOException e) {
             info(e, "Couldn't read configuration from InputStream");
             throw new RuntimeException(e);
@@ -145,12 +72,12 @@ public class Atlantis {
      * Creates an {@code Atlantis} instance and initializes it with a provided
      * configuration object.
      *
-     * @param context       The context used when reading mock responses.
      * @param configuration The {@code Atlantis} configuration object.
      */
-    public Atlantis(final Context context, final Configuration configuration) {
-        init(context, configuration);
+    public Atlantis(final Configuration configuration) {
+        init(configuration);
     }
+
 
     /**
      * Creates an {@code Atlantis} instance and initializes it with a provided
@@ -159,14 +86,12 @@ public class Atlantis {
      * <p>
      * This constructor is only intended for testing purposes.
      *
-     * @param context       The context used when reading mock responses.
      * @param proxy         An alternative real web server implementation.
      * @param configuration The {@code Atlantis} configuration object.
      */
-    Atlantis(final Context context, final Proxy proxy,
-             final Configuration configuration) {
+    Atlantis(final Proxy proxy, final Configuration configuration) {
 
-        this(context, configuration);
+        this(configuration);
         if (proxy != null)
             this.proxy = proxy;
     }
@@ -262,7 +187,7 @@ public class Atlantis {
         recordMissingRequests = enabled && notEmpty(configuration.fallbackBaseUrl());
         info("Record missing requests: %s", enabled ? "enabled" : "disabled");
         if (recordMissingRequests && atlantisDir == null) {
-            this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
+            atlantisDir = new File("atlantis");
         }
     }
 
@@ -281,7 +206,7 @@ public class Atlantis {
         recordMissingFailures = enabled && recordMissingRequests;
         info("Record missing requests if failed: %s", enabled ? "enabled" : "disabled");
         if (recordMissingRequests && atlantisDir == null) {
-            this.atlantisDir = new File(context.getExternalFilesDir(null), "atlantis");
+            atlantisDir = new File("atlantis");
         }
     }
 
@@ -304,8 +229,9 @@ public class Atlantis {
     public void setRecordServedRequestsEnabled(boolean enabled) {
         recordServedRequests = enabled;
         info("Record served requests: %s", enabled ? "enabled" : "disabled");
-        if (enabled)
+        if (enabled) {
             servedRequests.clear();
+        }
     }
 
     /**
@@ -350,16 +276,12 @@ public class Atlantis {
         return atlantisDir;
     }
 
-
     /**
      * Initializes the internal state.
      *
-     * @param context       The context used when reading mock response
-     *                      resources.
      * @param configuration The {@code Atlantis} configuration object.
      */
-    private void init(final Context context, final Configuration configuration) {
-        this.context = context;
+    private void init(final Configuration configuration) {
         this.configuration = configuration;
         this.proxy = new Proxy();
         this.mockServer = new MockWebServer(this::serve, this::getSettings);
@@ -496,30 +418,9 @@ public class Atlantis {
         if (isEmpty(content) || content.length == 1 && content[0] == (byte) 0)
             return Okio.source(new ByteArrayInputStream(new byte[0]));
 
-        // Don't transform the entire content to a string only to test if it
-        // start with the corresponding "asset://" bytes. Instead only convert
-        // the beginning of the content array to a string and then test for the
-        // scheme.
-        String text;
-        int schemeByteLength;
-
-        // Check if "asset" scheme.
-        schemeByteLength = "asset://".getBytes().length;
-        text = content.length > schemeByteLength ? new String(content, 0, schemeByteLength) : "";
-        if (text.startsWith("asset://"))
-            try {
-                String assetUri = new String(content);
-                String assetPath = assetUri.substring(8);
-                InputStream inputStream = context.getAssets().open(assetPath);
-                return Okio.source(inputStream);
-            } catch (IOException e) {
-                info(e, "Couldn't open asset: %s", text);
-                return null;
-            }
-
         // Check if "file" scheme.
-        schemeByteLength = "file://".getBytes().length;
-        text = content.length > schemeByteLength ? new String(content, 0, schemeByteLength) : "";
+        int schemeByteLength = "file://".getBytes().length;
+        String text = content.length > schemeByteLength ? new String(content, 0, schemeByteLength) : "";
         if (text.startsWith("file://"))
             try {
                 String fileUri = new String(content);
@@ -626,5 +527,68 @@ public class Atlantis {
         return new MockRequest.Builder(meta)
                 .addResponse(mockResponse)
                 .build();
+    }
+
+    /**
+     * This interface describes the API offering means for preparing a request
+     * either for the real world or the mock environment. Atlantis will make
+     * sure any injected implementation of this interface is called when needed
+     * and possible, e.g. there needs to be "fallbackBaseUrl" defined in the
+     * configuration for this transformation to take place.
+     */
+    public interface TransformationHelper {
+
+        /**
+         * Returns a new mock request which doesn't reference any features in
+         * the mock environment. This indirectly requires any implementing
+         * classes to know of the "real world".
+         *
+         * @param realBaseUrl The base url of the real server.
+         * @param mockRequest The unchanged mock request as Atlantis knows it.
+         * @return A modified mock request which has all internal URL's and mock
+         * references replaced with corresponding real world values. Since the
+         * {@code MockRequest} is immutable (-ish), implementing classes must
+         * create and return a new instance, preferably by using a {@link
+         * MockRequest.Builder}).
+         */
+        MockRequest prepareForRealWorld(final String realBaseUrl, final MockRequest mockRequest);
+
+        /**
+         * Returns a new mock response which doesn't reference any real life
+         * resources, but targets internal, mocked, alternatives only.
+         *
+         * @param realBaseUrl      The base url of the real server.
+         * @param recordedResponse The mock response as recorded from the real
+         *                         world response.
+         * @return A modified mock response which has all external URL's and
+         * mock references replaced with corresponding mock values. Since the
+         * {@code MockResponse} is immutable (-ish), implementing classes must
+         * create and return a new instance, preferably by using a {@link
+         * MockResponse.Builder}).
+         */
+        MockResponse prepareForMockedWorld(final String realBaseUrl, final MockResponse recordedResponse);
+    }
+
+    /**
+     * This interface describes the token helper feature set. A token helpers
+     * main responsibility is to evaluate tokens and replace them with the
+     * corresponding evaluated values.
+     */
+    public interface TokenHelper {
+
+        /**
+         * Performs the actual token replacement activities and delivers a new,
+         * ready-to-serve mock response.
+         *
+         * @param requestBeingMocked The request that is about to be served.
+         * @param rawMockResponse    The configured or recorded mock response
+         *                           (with the yet un-parsed tokens).
+         * @return A new, modified mock response that can be served to a waiting
+         * client. Note that {@code MockResponse}'s are immutable from the users
+         * perspective. Implementing classes will have to create a new {@code
+         * MockResponse} instance to return, preferably  by using a {@code
+         * MockResponse.Builder} instance.
+         */
+        MockResponse parse(final MockRequest requestBeingMocked, final MockResponse rawMockResponse);
     }
 }
