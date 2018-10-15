@@ -1,11 +1,9 @@
 version: 2
 jobs:
-  build-job:
+  build:
     working_directory: ~/work
     docker:
       - image: circleci/openjdk:8-jdk-browsers
-    environment:
-      JVM_OPTS: -Xmx3200m
     steps:
       - checkout
       - run:
@@ -14,12 +12,10 @@ jobs:
       - store_test_results:
           path: build/test-results/test
 
-  deploy-job:
+  deploy:
     working_directory: ~/work
     docker:
       - image: circleci/openjdk:8-jdk-browsers
-    environment:
-      JVM_OPTS: -Xmx3200m
     steps:
       - checkout
       - run:
@@ -29,12 +25,12 @@ jobs:
 
 workflows:
   version: 2
-  build-deploy:
+  build-and-deploy:
     jobs:
-      - build-job
-      - deploy-job:
+      - build
+      - deploy:
           requires:
-            - build-job
+            - build
           filters:
             branches:
               only: master
