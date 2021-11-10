@@ -1,0 +1,87 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'com.adarshr.test-logger' version '3.0.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.0'
+    id 'org.jetbrains.dokka' version '1.5.30'
+}
+archivesBaseName = 'atlantis'
+version = '4.0.0'
+group = 'com.echsylon.atlantis'
+repositories {
+    mavenCentral()
+}
+dependencies {
+    implementation 'com.squareup.okio:okio:3.0.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    testImplementation 'io.mockk:mockk:1.12.0'
+    testImplementation 'org.amshove.kluent:kluent:1.65'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
+    dokkaHtmlPlugin 'org.jetbrains.dokka:kotlin-as-java-plugin:1.5.30'
+}
+testlogger {
+    theme 'mocha'
+    showStandardStreams false
+}
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': archivesBaseName,
+            'Implementation-Version': archiveVersion,
+            'Implementation-Vendor': 'Echsylon Digital Solutions AB'
+        )
+    }
+}
+task javadocJar(type: Jar) {
+    archiveClassifier = 'javadoc'
+    from dokkaHtml
+}
+task sourcesJar(type: Jar) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+artifacts {
+    archives javadocJar, sourcesJar
+}
+publishing {
+    publications {
+        atlantis(MavenPublication) {
+            from components.kotlin
+            artifact sourcesJar
+            artifact javadocJar
+            pom {
+                name = 'Atlantis'
+                packaging = 'jar'
+                artifactId = 'atlantis'
+                description = 'A mock server implementation for Kotlin.'
+                url = 'https://github.com/laszlourszuly/atlantis'
+                scm {
+                    connection = 'scm:git:git://github.com/laszlourszuly/atlantis.git'
+                    developerConnection = 'scm:git:ssh://github.com:laszlourszuly/atlantis.git'
+                    url = 'https://github.com/laszlourszuly/atlantis/tree/master'
+                }
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'laszlourszuly'
+                        name = 'Laszlo Urszuly'
+                        email = 'hello@echsylon.com'
+                    }
+                }
+            }
+            repositories {
+                maven {
+                    def releasesRepoUrl = layout.buildDirectory.dir('repositories/release')
+                    def snapshotsRepoUrl = layout.buildDirectory.dir('repositories/snapshot')
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                }
+            }
+        }
+    }
+}
