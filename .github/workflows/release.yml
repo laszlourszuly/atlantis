@@ -19,7 +19,7 @@ jobs:
 
       # Run all tests
       - name: 'Run all tests'
-        run: ./gradlew clean test
+        run: pwd && ./gradlew clean test
 
       # Publish artifacts
       - name: 'Publish artifacts'
