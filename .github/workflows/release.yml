@@ -13,13 +13,9 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref }}
           
-      # Enter library directory
-      - name: 'Goto library'
-        run: cd library
-
       # Run all tests
       - name: 'Run all tests'
-        run: pwd && ./gradlew clean test
+        run: cd library && pwd && ./gradlew clean test
 
       # Publish artifacts
       - name: 'Publish artifacts'
