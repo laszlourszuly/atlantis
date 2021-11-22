@@ -12,6 +12,10 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
+          
+      # Enter library directory
+      - name: 'Goto library'
+        run: cd library
 
       # Run all tests
       - name: 'Run all tests'
