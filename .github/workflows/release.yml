@@ -1,0 +1,27 @@
+name: Release
+on:
+  workflow_dispatch:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    
+      # Get the latest version of the source code
+      - name: 'Check out source code'
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      # Run all tests
+      - name: 'Run all tests'
+        run: ./gradlew clean test
+
+      # Publish artifacts
+      - name: 'Publish artifacts'
+        run: ./gradlew clean test
+        env:
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          SIGNINGKEY: ${{ secrets.SIGNINGKEY }}
+          PASSPHRASE: ${{ secrets.PASSPHRASE }}
