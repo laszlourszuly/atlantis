@@ -15,11 +15,11 @@ jobs:
           
       # Run all tests
       - name: 'Run all tests'
-        run: cd library && pwd && ./gradlew clean test
+        run: cd library && ./gradlew clean test
 
       # Publish artifacts
       - name: 'Publish artifacts'
-        run: ./gradlew clean test
+        run: cd library && ./gradlew clean publish
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
