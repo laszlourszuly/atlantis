@@ -5,7 +5,7 @@ Atlantis aims to help Kotlin developers to mock an API server without having any
 Start by adding below dependency to your gradle build file replacing "{version}" with the version of your liking. This documentation applies to version 4.0.0 and higher (the library is available through the Maven central repository):
 
 ```groovy
-implementation 'com.github.laszlourszuly:atlantis:{version}'
+implementation 'com.github.echsylon:atlantis:{version}'
 ```
 
 In code you can then configure and start your Atlantis server like so:
