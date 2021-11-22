@@ -58,7 +58,7 @@ The easiest way to configure Atlantis is by writing a JSON configuration file. F
 ```
 
 **Requests**
-You configure each request pattern you want Atlantis to serve a mock response for in terms of "verb", "path", "protocol" and "headers". You can use regular expressions for both the request "verb" and "path". The protocol must be an exact match. The "headers" list defines the required subset of headers in the request in order to consider it a match.
+You configure each request pattern you want Atlantis to serve a mock response for in terms of "verb", "path", "protocol" and "headers". You can use regular expressions for both the request "verb" and "path". The protocol, while optional, must be an exact match. If omitted it will default to "HTTP/1.1". The "headers" list defines the required subset of headers in the request in order to consider it a match.
 
 Atlantis will check each incoming request on the configured port against your configuration and pick the first pattern that gives a full match.
 
@@ -70,4 +70,4 @@ You can also configure basic behavior for each mocked response in terms of "chun
 Furthermore you can choose to automatically calculate and set the "Content-Length" header based on the mocked response body.
 
 ### The domain object API
-The root configuration is represented by the `com.echsylon.atlantis.Configuration` class. You can then define a request pattern as an instance of `com.echsylon.atlantis.request.Pattern` and corresponding mock response objects as `com.echsylon.atlantis.response.Response` and add them to the configuration object (the pattern is the key and the mock response is a value, yes, they will form a multi-map internally).
+The root configuration is represented by the `com.echsylon.atlantis.Configuration` class. You can then define a request pattern as an instance of `com.echsylon.atlantis.request.Pattern` and corresponding mock response objects as `com.echsylon.atlantis.response.Response` and add them to the configuration object (the pattern is the key and the mock response is a value, and yes, they will form a multi-map internally).
