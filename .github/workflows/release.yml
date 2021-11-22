@@ -21,6 +21,8 @@ jobs:
       - name: 'Publish artifacts'
         run: cd library && ./gradlew clean publish
         env:
+          STAGING: ${{ secrets.STAGING }}
+          SNAPSHOT: ${{ secrets.SNAPSHOT }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
           SIGNINGKEY: ${{ secrets.SIGNINGKEY }}
