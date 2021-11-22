@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
+    id 'signing'
     id 'com.adarshr.test-logger' version '3.0.0'
     id 'org.jetbrains.kotlin.jvm' version '1.5.0'
     id 'org.jetbrains.dokka' version '1.5.30'
@@ -78,12 +79,22 @@ publishing {
             }
             repositories {
                 maven {
-                    def releasesRepoUrl = layout.buildDirectory.dir('repositories/release')
-                    def snapshotsRepoUrl = layout.buildDirectory.dir('repositories/snapshot')
-                    name = 'OSSRH'
+                    def snapshotRepoUrl = System.getenv('SNAPSHOT')
+                    def stagingRepoUrl = System.getenv('STAGING')
+                    name = 'Repository'
                     url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                    credentials {
+                        username = System.getenv('USERNAME')
+                        password = System.getenv('PASSWORD')
+                    }
                 }
             }
         }
     }
+}
+signing {
+    def signingkey = System.getenv('SIGNINGKEY')
+    def passphrase = System.getenv('PASSPHRASE')
+    useInMemoryPgpKeys(signingkey, passphrase)
+    sign publishing.publications.atlantis
 }
