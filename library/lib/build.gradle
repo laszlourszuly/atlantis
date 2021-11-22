@@ -82,7 +82,7 @@ publishing {
                     def snapshotRepoUrl = System.getenv('SNAPSHOT')
                     def stagingRepoUrl = System.getenv('STAGING')
                     name = 'Repository'
-                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                    url = version.endsWith('SNAPSHOT') ? snapshotRepoUrl : stagingRepoUrl
                     credentials {
                         username = System.getenv('USERNAME')
                         password = System.getenv('PASSWORD')
