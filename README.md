@@ -2,7 +2,7 @@
 Atlantis aims to help Kotlin developers to mock an API server without having any footprint on the actual application code itself. It does this by monitoring a user selected port on a socket level and map any HTTP requests received on it to a set of user configured mock responses. In practice this means that the developer can write real application code without having to design for the mocking infrastructure.
 
 ## How do I use it?
-Start by adding below dependency to your gradle build file replacing "{version}" with the version of your liking. This documentation applies to version 4.0.0 and higher:
+Start by adding below dependency to your gradle build file replacing "{version}" with the version of your liking. This documentation applies to version 4.0.0 and higher (the library is available through the Maven central repository):
 
 ```groovy
 implementation 'com.github.laszlourszuly:atlantis:{version}'
