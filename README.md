@@ -58,7 +58,7 @@ The easiest way to configure Atlantis is by writing a JSON configuration file. F
 ```
 
 **Requests**
-You configure each request pattern you want Atlantis to serve a mock response for in terms of "verb", "path", "protocol" and "headers". You can use regular expressions for both the request "verb" and "path". The protocol, while optional, must be an exact match. If omitted it will default to "HTTP/1.1". The "headers" list defines the required subset of headers in the request in order to consider it a match.
+You configure each request pattern you want Atlantis to serve a mock response for in terms of "verb", "path", "protocol" and "headers". You can use regular expressions to describe the request "verb", "path" and "protocol". The "headers" list, on the other hand, defines the required subset of exact headers in the request in order to consider it a match.
 
 Atlantis will check each incoming request on the configured port against your configuration and pick the first pattern that gives a full match.
 
