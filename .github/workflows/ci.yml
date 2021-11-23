@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    
+      # Get the latest version of the source code
+      - name: 'Check out source code'
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+          
+      # Run all tests
+      - name: 'Run all tests'
+        run: cd library && ./gradlew clean test
