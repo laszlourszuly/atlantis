@@ -22,10 +22,10 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * This class represents the remote server and is the heart of Atlantis.
- * It listens for HTTP requests and serves corresponding HTTP responses
- * as defined in the current configuration. The default configuration
- * for this server will serve 404 Not found on all requests.
+ * Represents the remote server and acts as the heart of Atlantis. It listens
+ * for client HTTP requests and serves corresponding mock responses as defined
+ * in the current configuration. The default configuration for this server will
+ * serve "404 Not found" on all requests that won't match a configured pattern.
  */
 internal class Server {
     companion object {

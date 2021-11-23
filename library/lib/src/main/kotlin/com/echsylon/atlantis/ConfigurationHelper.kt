@@ -17,33 +17,36 @@ import java.io.InputStream
 import java.io.InputStreamReader
 
 /**
- * {
- *     "requests": [{
- *         "verb": "PUT",
- *         "path": "/path/.*",
- *         "protocol": "HTTP/1000",
- *         "headers": [
- *             "Accept: text/plain"
- *         ],
- *         "responseOrder": "RANDOM",
- *         "responses": [{
- *             "code": 201,
- *             "protocol": "HTTP/2000",
- *             "headers": [
- *                 "Content-Type: text/plain",
- *                 "Content-Length: 3"
- *             ],
- *             "content": "Hej",
- *             "behavior": {
- *                 "chunk": [1, 1600],
- *                 "delay": [10, 500],
- *                 "calculateContentLengthIfAbsent": false
- *             }
- *         }]
- *     }]
- * }
+ * Helps parsing a JSON configuration into a domain object.
  */
-class ConfigurationHelper {
+internal class ConfigurationHelper {
+    //   Reference JSON protocol
+    //  
+    //   {
+    //       "requests": [{
+    //           "verb": "PUT",
+    //           "path": "/path/.*",
+    //           "protocol": "HTTP/1000",
+    //           "headers": [
+    //               "Accept: text/plain"
+    //           ],
+    //           "responseOrder": "RANDOM",
+    //           "responses": [{
+    //               "code": 201,
+    //               "protocol": "HTTP/2000",
+    //               "headers": [
+    //                   "Content-Type: text/plain",
+    //                   "Content-Length: 3"
+    //               ],
+    //               "content": "Hej",
+    //               "behavior": {
+    //                   "chunk": [1, 1600],
+    //                   "delay": [10, 500],
+    //                   "calculateContentLengthIfAbsent": false
+    //               }
+    //           }]
+    //       }]
+    //    }
     companion object {
         private val BEHAVIOR_CHUNK = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.behavior\.chunk\[\d+]""")
         private val BEHAVIOR_DELAY = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.behavior\.delay\[\d+]""")
@@ -57,6 +60,14 @@ class ConfigurationHelper {
         private val RESPONSE_PROTOCOL = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.protocol""")
     }
 
+    /**
+     * Parses the given UTF-8 JSON data stream and adds the configuration
+     * details to the given Configuration instance.
+     *
+     * @param configuration The configuration object to add the new data to.
+     * @param jsonStream    The input stream serving the configuration JSON
+     *                      to parse.
+     */
     fun addFromJson(configuration: Configuration, jsonStream: InputStream) {
         val reader = JsonReader(InputStreamReader(jsonStream))
         lateinit var request: Pattern

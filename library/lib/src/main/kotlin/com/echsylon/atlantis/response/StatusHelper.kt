@@ -1,6 +1,17 @@
 package com.echsylon.atlantis.response
 
-class StatusHelper {
+/**
+ * Defines a set of statically configured response messages.
+ */
+internal class StatusHelper {
+
+    /**
+     * Maps a standard response message for a given HTTP status code.
+     *
+     * @param code The status code to get a message for.
+     * @return The corresponding status message for the given code. Defaults to
+     *         an empty string.
+     */
     fun getPhrase(code: Int): String {
         return when (code) {
             //1xx: Informational
