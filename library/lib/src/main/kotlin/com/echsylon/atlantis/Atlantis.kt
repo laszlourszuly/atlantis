@@ -71,8 +71,8 @@ class Atlantis {
      * @param trust The optional trust store byte array.
      * @param password The corresponding password, or null.
      */
-    fun start(port: Int = 0, trust: ByteArray? = null, password: String? = null) {
-        server.start(port, trust, password)
+    fun start(port: Int = 0, trust: InputStream? = null, password: String? = null) {
+        server.start(port, trust?.readBytes(), password)
     }
 
     /**
