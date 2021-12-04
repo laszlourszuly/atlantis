@@ -62,13 +62,17 @@ class Atlantis {
     }
 
     /**
-     * Starts the Atlantis mock server.
+     * Starts the Atlantis mock server. Optionally a PKCS12 trust store,
+     * containing one X509 certificate and one RSA key, can be provided. This
+     * will have Atlantis serve HTTPS responses using the provided certificate.
      *
      * @param port The port of the local host address to start listening on for
      *             any client HTTP requests.
+     * @param trust The optional trust store byte array.
+     * @param password The corresponding password, or null.
      */
-    fun start(port: Int = 0) {
-        server.start(port)
+    fun start(port: Int = 0, trust: ByteArray? = null, password: String? = null) {
+        server.start(port, trust, password)
     }
 
     /**
