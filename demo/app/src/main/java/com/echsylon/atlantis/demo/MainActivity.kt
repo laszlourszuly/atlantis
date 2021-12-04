@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private val binding by lazy { MainActivityBinding.inflate(LayoutInflater.from(this)) }
@@ -22,8 +21,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val configStream = assets.open("atlantis_config.json")
+        val trustStore = assets.open("mock_trust.p12")
         atlantis.addConfiguration(configStream)
-        atlantis.start(8080)
+        atlantis.start(8080, trustStore, "password")
 
         binding.actionJson.setOnClickListener { onJsonClick() }
         binding.actionSerial.setOnClickListener { onNextClick() }

@@ -8,7 +8,7 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">localhost</domain>
         <trust-anchors>
-            <certificates src="system" />
+            <certificates src="@raw/mock_cert" />
         </trust-anchors>
     </domain-config>
 </network-security-config>

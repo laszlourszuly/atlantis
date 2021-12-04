@@ -24,7 +24,7 @@ android {
     }
 }
 dependencies {
-    implementation 'com.echsylon.atlantis:atlantis:4.0.0'
+    implementation 'com.echsylon.atlantis:atlantis:4.1.0'
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
@@ -33,6 +33,6 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-scalars:2.1.0'
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.8.8'
     implementation 'com.google.android.material:material:1.4.0'
 }
