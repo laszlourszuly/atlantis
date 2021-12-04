@@ -3,9 +3,17 @@ package com.echsylon.atlantis
 import com.echsylon.atlantis.header.Headers
 import com.echsylon.atlantis.response.Behavior
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
+import io.mockk.verify
+import java.io.ByteArrayInputStream
+import java.lang.RuntimeException
+import org.amshove.kluent.AnyException
 import org.amshove.kluent.`should be equal to`
 import org.amshove.kluent.`should be`
+import org.amshove.kluent.`should not throw`
 import org.amshove.kluent.`should throw`
 import org.amshove.kluent.invoking
 import org.junit.After
@@ -13,10 +21,54 @@ import org.junit.Test
 import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import java.security.KeyStore
+import javax.net.ssl.SSLSession
+import org.junit.Before
 
+/*
+ * The test certificates used to validate the SSL features of the mock server
+ * were generated with OpenSSL, using attributes similar to below example:
+ *
+ * Creating a private key and a certificate:
+ * openssl req -newkey rsa:2048 -keyout secret.key -x509 -days 365000 -out cert.crt
+ *
+ * Creating an unprotected private key and a certificate:
+ * openssl req -newkey rsa:2048 -nodes -keyout secret.key -x509 -days 365000 -out cert.crt
+ *
+ * Creating the PKCS12 trust store:
+ * openssl pkcs12 -inkey secret.key -in cert.crt -export -out trust.p12 -name atlantis
+ */
 class ServerTest {
+    // This is a temporary work-around until the mockk framework releases
+    // a fix for mocking the real interfaces.
+    abstract class HostnameVerifier : javax.net.ssl.HostnameVerifier
+    abstract class X509TrustManager : javax.net.ssl.X509TrustManager
+
+    private val mockVerifier = mockk<HostnameVerifier> {
+        every { verify(any(), any()) } returns true
+    }
+
+    private val mockManager = mockk<X509TrustManager> {
+        every { checkClientTrusted(any(), any()) } just runs
+        every { checkServerTrusted(any(), any()) } just runs
+        every { acceptedIssuers } returns null
+    }
+
+    private val allAcceptingSocketFactory = SSLContext.getInstance("SSL")
+        .apply { init(null, arrayOf(mockManager), SecureRandom.getInstanceStrong()) }
+        .socketFactory
+
     private lateinit var server: Server
 
+    @Before
+    fun beforeEachTests() {
+        HttpsURLConnection.setDefaultHostnameVerifier(mockVerifier)
+        HttpsURLConnection.setDefaultSSLSocketFactory(allAcceptingSocketFactory)
+    }
 
     @After
     fun afterEachTest() {
@@ -147,5 +199,50 @@ class ServerTest {
         val conn = url.openConnection() as HttpURLConnection
         val length = conn.getHeaderField("Content-Length")
         length `should be equal to` "1"
+    }
+
+    @Test
+    fun `When supplying an unprotected trust store, its certificate is passed to the client hostname verifier`() {
+        val session = slot<SSLSession>()
+        val bytes = {}::class.java.getResource("/0_trust.p12").readBytes()
+        val publicKey = KeyStore.getInstance("PKCS12")
+            .apply { load(ByteArrayInputStream(bytes), charArrayOf()) }
+            .let { it.getCertificate("atlantis") as X509Certificate }
+            .publicKey
+
+        server = Server()
+        server.start(8080, bytes)
+        URL("https://localhost:8080/any").openConnection()
+            .let { it as HttpsURLConnection }
+            .apply { responseCode }
+
+        verify { mockVerifier.verify(any(), capture(session)) }
+        invoking { session.captured.peerCertificates.last().verify(publicKey) } `should not throw` AnyException
+    }
+
+    @Test
+    fun `When supplying a correct trust store, its certificate is passed to the client hostname verifier`() {
+        val session = slot<SSLSession>()
+        val bytes = {}::class.java.getResource("/1_trust.p12").readBytes()
+        val publicKey = KeyStore.getInstance("PKCS12")
+            .apply { load(ByteArrayInputStream(bytes), "password".toCharArray()) }
+            .let { it.getCertificate("atlantis") as X509Certificate }
+            .publicKey
+
+        server = Server()
+        server.start(8080, bytes, "password")
+        URL("https://localhost:8080/any").openConnection()
+            .let { it as HttpsURLConnection }
+            .apply { responseCode }
+
+        verify { mockVerifier.verify(any(), capture(session)) }
+        invoking { session.captured.peerCertificates.last().verify(publicKey) } `should not throw` AnyException
+    }
+
+    @Test
+    fun `When supplying a trust store with the wrong password, an exception is thrown`() {
+        val bytes = {}::class.java.getResource("/1_trust.p12").readBytes()
+        server = Server()
+        invoking { server.start(8080, bytes, "wrong_password") } `should throw` RuntimeException::class
     }
 }

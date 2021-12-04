@@ -3,8 +3,10 @@ package com.echsylon.atlantis
 import com.echsylon.atlantis.extension.closeSilently
 import com.echsylon.atlantis.request.Request
 import com.echsylon.atlantis.response.Response
+import java.io.ByteArrayInputStream
 import kotlin.text.split
 import java.io.IOException
+import java.io.InputStream
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
@@ -18,8 +20,19 @@ import okio.buffer
 import okio.sink
 import okio.source
 import java.net.SocketException
+import java.security.KeyManagementException
+import java.security.KeyStore
+import java.security.KeyStoreException
+import java.security.NoSuchAlgorithmException
+import java.security.SecureRandom
+import java.security.UnrecoverableKeyException
+import java.security.cert.CertificateException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLServerSocket
+import javax.net.ssl.TrustManagerFactory
 
 /**
  * Represents the remote server and acts as the heart of Atlantis. It listens
@@ -57,15 +70,22 @@ internal class Server {
     /**
      * Start listening for requests and serving mock responses for them.
      *
-     * @param port The corresponding port.
+     * The trust store is passed as-is, directly to the JVM trust store
+     * implementation. It is expected to be provided as a single keystore
+     * containing one X509 certificate and one PKCS12 secret key.
+     *
+     * @param port The port to serve mock data on.
+     * @param trust The trust store byte array.
+     * @param password The trust store password, or null.
+     * @throws RuntimeException if anything goes wrong.
      * @return True if the server was successfully started, else false.
      */
-    fun start(port: Int) {
+    fun start(port: Int, trust: ByteArray? = null, password: String? = null) {
         if (isRunning) return
-        server = runCatching { createServerSocket(port) }
-            .onFailure { it.printStackTrace() }
+        server = runCatching { createServerSocket(port, trust, password) }
             .onFailure { stop() }
             .getOrThrow()
+
         executor.execute {
             do {
                 server
@@ -87,15 +107,29 @@ internal class Server {
     }
 
     /**
-     * Creates a new server socket and tries to bind it to the given address
-     * and port.
+     * Tries to create a suitable server socket based on the given parameters.
      *
      * @param port The port to serve mock data on.
-     * @return The bound server socket.
-     *
-     * @throws RuntimeException if anything goes wrong.
+     * @param trust The trust store byte array.
+     * @param password The trust store password, or null.
+     * @return A default [ServerSocket] if no trust input stream is given. An
+     * [SSLServerSocket] otherwise.
      */
-    private fun createServerSocket(port: Int): ServerSocket {
+    private fun createServerSocket(port: Int, trust: ByteArray?, password: String?): ServerSocket {
+        return when (trust) {
+            null -> createDefaultServerSocket(port)
+            else -> createSecureServerSocket(port, trust, password)
+        }
+    }
+
+    /**
+     * Creates a new server socket and tries to bind it to the given port.
+     *
+     * @param port The port to serve mock data on.
+     * @throws RuntimeException if anything goes wrong.
+     * @return The bound server socket.
+     */
+    private fun createDefaultServerSocket(port: Int): ServerSocket {
         try {
             // Passing in a null pointer InetAddress will force the ServerSocket
             // to assume the "wildcard" address (ultimately "localhost") as host,
@@ -115,6 +149,121 @@ internal class Server {
             throw RuntimeException("Not allowed to connect to port $port", cause)
         } catch (cause: IllegalArgumentException) {
             throw RuntimeException("Could not connect to port $port", cause)
+        }
+    }
+
+    /**
+     * Creates a new server socket and tries to bind it to the given address
+     * and port.
+     *
+     * @param port The port to serve mock data on.
+     * @param trust The trust store byte array.
+     * @param password The trust store password, or null.
+     * @throws RuntimeException if anything goes wrong.
+     * @return The bound server socket.
+     */
+    private fun createSecureServerSocket(port: Int, trust: ByteArray, password: String?): SSLServerSocket {
+        try {
+            // Passing in a null pointer InetAddress will force the ServerSocket
+            // to assume the "wildcard" address (ultimately "localhost") as host,
+            // with the additional benefit of not attempting to resolve it on the
+            // network.
+            val inetAddress: InetAddress? = null
+            val inetSocketAddress = InetSocketAddress(inetAddress, port)
+            val secureContext = createSecureContext(trust, password)
+            return secureContext.serverSocketFactory
+                .createServerSocket()
+                .let { it as SSLServerSocket }
+                .apply { reuseAddress = inetSocketAddress.port != 0 }
+                .apply { bind(inetSocketAddress) }
+        } catch (cause: SocketException) {
+            throw RuntimeException("Could not determine address reuse strategy", cause)
+        } catch (cause: IOException) {
+            throw RuntimeException("Unexpected connection error", cause)
+        } catch (cause: SecurityException) {
+            throw RuntimeException("Not allowed to connect to port $port", cause)
+        } catch (cause: IllegalArgumentException) {
+            throw RuntimeException("Could not connect to port $port", cause)
+        }
+    }
+
+    /**
+     * Creates an instance of SSLContext with custom key and trust managers.
+     *
+     * @param trust The trust store byte array.
+     * @param password The trust store password, or null.
+     * @throws RuntimeException if anything goes wrong.
+     * @return The prepared SSL context.
+     */
+    private fun createSecureContext(trust: ByteArray, password: String?): SSLContext {
+        try {
+            val trustFactory = createTrustFactory(trust, password)
+            val keyFactory = createKeyFactory(trust, password)
+            val context = SSLContext.getInstance("TLS")
+            context.init(keyFactory.keyManagers, trustFactory.trustManagers, SecureRandom.getInstanceStrong())
+            return context
+        } catch (cause: NoSuchAlgorithmException) {
+            throw RuntimeException("Could not create secure context", cause)
+        } catch (cause: KeyManagementException) {
+            throw RuntimeException("Could not initialize secure context", cause)
+        }
+    }
+
+    /**
+     * Creates a custom trust factory.
+     *
+     * @param trust The trust store byte array.
+     * @param password The corresponding password.
+     * @throws RuntimeException if anything goes wrong.
+     * @return The trust factory that will provide the given certificate data.
+     */
+    private fun createTrustFactory(trust: ByteArray, password: String?): TrustManagerFactory {
+        try {
+            val trustFactory = TrustManagerFactory.getInstance("PKIX")
+            val keyStore = KeyStore.getInstance("PKCS12")
+            val input = ByteArrayInputStream(trust)
+            val pwd = password?.toCharArray() ?: charArrayOf()
+            keyStore.load(input, pwd)
+            trustFactory.init(keyStore)
+            return trustFactory
+        } catch (cause: NoSuchAlgorithmException) {
+            throw RuntimeException("Could not initialize trust factory", cause)
+        } catch (cause: KeyStoreException) {
+            throw RuntimeException("Could not initialize trust factory", cause)
+        } catch (cause: CertificateException) {
+            throw RuntimeException("Could not load certificate", cause)
+        } catch (cause: IOException) {
+            throw RuntimeException("Could not load certificate", cause)
+        }
+    }
+
+    /**
+     * Creates a custom key factory.
+     *
+     * @param key The secret key store byte array.
+     * @param password The trust store password, or null.
+     * @throws RuntimeException if anything goes wrong.
+     * @return The key factory that will provide the given secret key data.
+     */
+    private fun createKeyFactory(key: ByteArray, password: String?): KeyManagerFactory {
+        try {
+            val keyFactory = KeyManagerFactory.getInstance("PKIX")
+            val keyStore = KeyStore.getInstance("PKCS12")
+            val input = ByteArrayInputStream(key)
+            val pwd = password?.toCharArray() ?: charArrayOf()
+            keyStore.load(input, pwd)
+            keyFactory.init(keyStore, pwd)
+            return keyFactory
+        } catch (cause: NoSuchAlgorithmException) {
+            throw RuntimeException("Could not initialize trust factory", cause)
+        } catch (cause: KeyStoreException) {
+            throw RuntimeException("Could not initialize trust factory", cause)
+        } catch (cause: UnrecoverableKeyException) {
+            throw RuntimeException("Could not initialize trust factory", cause)
+        } catch (cause: CertificateException) {
+            throw RuntimeException("Could not load certificate", cause)
+        } catch (cause: IOException) {
+            throw RuntimeException("Could not load certificate", cause)
         }
     }
 
@@ -146,10 +295,9 @@ internal class Server {
                 writeResponseSignature(response, target)
                 writeResponseHeaders(response, target)
                 writeResponseContent(response, target)
-            }.onSuccess {
-                socket.closeSilently()
-            }.onFailure { error ->
-                error.printStackTrace()
+            }.onFailure {
+                it.printStackTrace()
+            }.also {
                 socket.closeSilently()
             }
         }
