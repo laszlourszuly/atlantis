@@ -1,5 +1,8 @@
 package com.echsylon.atlantis.request
 
+import com.echsylon.atlantis.Order
+import com.echsylon.atlantis.Order.SEQUENTIAL
+
 /**
  * Defines the configurable properties of a request pattern in the realm of
  * Atlantis. Each intercepted client HTTP request is matched against the
@@ -15,23 +18,6 @@ data class Pattern(
     var verb: String = "GET",
     var path: String = "/.*",
     var protocol: String = "HTTP/1.1",
-    var responseOrder: Order = Order.SEQUENTIAL,
+    var responseOrder: Order = SEQUENTIAL,
     val headers: MutableList<String> = mutableListOf()
-) {
-
-    /**
-     * Checks whether an intercepted HTTP request matches this configuraton
-     * pattern.
-     *
-     * @return True if the regular expressions match the corresping request
-     *         attributes and the request contains all pattern headers, false
-     *         otherwise.
-     */
-    // FIXME: Move this method to the Configuration implementation.
-    fun match(request: Request): Boolean {
-        return verb.toRegex().matches(request.verb) &&
-                path.toRegex().matches(request.path) &&
-                protocol.toRegex().matches(request.protocol) &&
-                request.headers.containsAll(headers)
-    }
-}
+)

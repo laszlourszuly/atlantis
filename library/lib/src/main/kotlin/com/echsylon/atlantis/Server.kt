@@ -1,38 +1,44 @@
 package com.echsylon.atlantis
 
 import com.echsylon.atlantis.extension.closeSilently
+import com.echsylon.atlantis.extension.contentLength
+import com.echsylon.atlantis.extension.expectChunkedContent
+import com.echsylon.atlantis.extension.expectSolidContent
+import com.echsylon.atlantis.extension.webSocketAccept
+import com.echsylon.atlantis.extension.webSocketKey
+import com.echsylon.atlantis.message.WebSocketHelper
 import com.echsylon.atlantis.request.Request
 import com.echsylon.atlantis.response.Response
-import java.io.ByteArrayInputStream
-import kotlin.text.split
-import java.io.IOException
-import java.io.InputStream
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.net.ServerSocket
-import java.net.Socket
-import javax.net.ServerSocketFactory
-import kotlin.IllegalArgumentException
 import okio.Buffer
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.buffer
 import okio.sink
 import okio.source
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.net.Socket
 import java.net.SocketException
 import java.security.KeyManagementException
 import java.security.KeyStore
 import java.security.KeyStoreException
+import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import java.security.UnrecoverableKeyException
 import java.security.cert.CertificateException
+import java.util.Base64
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import javax.net.ServerSocketFactory
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.TrustManagerFactory
+import kotlin.text.Charsets.UTF_8
 
 /**
  * Represents the remote server and acts as the heart of Atlantis. It listens
@@ -42,12 +48,16 @@ import javax.net.ssl.TrustManagerFactory
  */
 internal class Server {
     companion object {
+        private const val WS_ACCEPT_UUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
         internal val NOT_FOUND = Response(404)
     }
 
     private var server: ServerSocket? = null
     private var config: Configuration = Configuration()
-    private var executor: ExecutorService = Executors.newCachedThreadPool {
+    private val webSocket: WebSocketHelper = WebSocketHelper { key, bytes, isText ->
+        handleWebSocketMessage(key, bytes, isText)
+    }
+    private val executor: ExecutorService = Executors.newCachedThreadPool {
         Thread(it, "Atlantis Mock Server").apply { isDaemon = true }
     }
 
@@ -101,7 +111,8 @@ internal class Server {
      * @return True if the server was successfully stopped, else false.
      */
     fun stop() {
-        executor.shutdown()
+        webSocket.stopAll()
+        executor.shutdownNow()
         server?.closeSilently()
         server = null
     }
@@ -271,30 +282,47 @@ internal class Server {
      * Waits for a client to request a connection to the server socket and
      * serves a mocked response for any read requests.
      *
-     * @param socket The socket to wait for clients on.
+     * @param socket The socket associated with the client request. This socket
+     * will also be used to serve any websocket messages on, in which case it
+     * will be blocked until the websocket is closed.
      *
      * @throws RuntimeException if anything goes wrong.
      */
     private fun serveConnection(socket: Socket) {
         executor.execute {
-            lateinit var target: BufferedSink
-            lateinit var source: BufferedSource
             runCatching {
-                target = socket.sink().buffer()
-                source = socket.source().buffer()
-
+                val source = socket.source().buffer()
                 val request = readRequestSignature(source)
                 request.headers.addAll(readRequestHeaders(source))
                 request.content = readRequestContent(request, source)
                 println("Atlantis Request:\n\t$request")
 
                 val response = config.findResponse(request) ?: NOT_FOUND
-                if (response.behavior.calculateLength) ensureContentLength(response)
-                println("Atlantis Response:\n\t$response")
+                if (response.behavior.calculateLength)
+                    ensureContentLength(response)
 
-                writeResponseSignature(response, target)
-                writeResponseHeaders(response, target)
-                writeResponseContent(response, target)
+                val webSocketKey = request.headers.webSocketKey
+                if (response.behavior.calculateWsAccept)
+                    ensureSecWebSocketAccept(webSocketKey, response)
+
+                println("Atlantis Response:\n\t$response")
+                val sink = socket.sink().buffer()
+                writeResponseSignature(response, sink)
+                writeResponseHeaders(response, sink)
+                writeResponseContent(response, sink)
+
+                if (response.hasMessages) {
+                    config.findMessages(response)
+                        .groupBy { it.path }
+                        .forEach { (key, messages) ->
+                            webSocket.send(key, *messages.toTypedArray())
+                        }
+                }
+
+                if (response.isWebSocket) {
+                    socket.soTimeout = 0
+                    webSocket.start(request.path, source, sink)
+                }
             }.onFailure {
                 it.printStackTrace()
             }.also {
@@ -355,8 +383,7 @@ internal class Server {
      */
     private fun readRequestContent(request: Request, input: BufferedSource): ByteArray {
         return when {
-            request.headers.expectSolidContent ->
-                input.readByteArray()
+            request.headers.expectSolidContent -> input.readByteArray()
             request.headers.expectChunkedContent -> {
                 val buffer = Buffer()
                 var chunkSize = input.readUtf8LineStrict().toLong(16)
@@ -374,14 +401,31 @@ internal class Server {
     /**
      * Ensures that there is a Content-Length header when there should be one.
      * Exception is made for chunked content, where no header will be added.
-     * Furthermore an already existing header will NOT be overwritten.
+     * Furthermore, an already existing header will NOT be overwritten.
      *
      * @param response The response holding the headers to validate
      */
     private fun ensureContentLength(response: Response) {
-        if (!response.headers.expectSolidContent && !response.headers.expectChunkedContent) {
-            response.headers.add("Content-Length: ${response.content.size}")
-        }
+        response.headers
+            .takeIf { !it.expectSolidContent } // Content-Length already defined
+            ?.takeIf { !it.expectChunkedContent }
+            ?.takeIf { response.content.isNotEmpty() }
+            ?.also { it.contentLength = response.content.size }
+    }
+
+    /**
+     * Ensures that there is a Sec-WebSocket-Accept header in the response.
+     * The header is calculated based on the given Sec-WebSocket-Key header.
+     * Does nothing if the key is null or blank.
+     */
+    private fun ensureSecWebSocketAccept(webSocketKey: String?, response: Response) {
+        webSocketKey
+            ?.takeIf { it.isNotBlank() }
+            ?.takeIf { response.headers.webSocketAccept == null }
+            ?.let { it + WS_ACCEPT_UUID }
+            ?.let { MessageDigest.getInstance("SHA-1").digest(it.toByteArray(UTF_8)) }
+            ?.let { Base64.getEncoder().encode(it).toString(UTF_8) }
+            ?.also { response.headers.webSocketAccept = it }
     }
 
     /**
@@ -431,5 +475,16 @@ internal class Server {
             bytes = response.body
         }
         output.flush()
+    }
+
+    /**
+     * Default WebSocket callback implementation.
+     *
+     * @param path The source of the web socket message.
+     * @param message The message raw data.
+     * @param isText Whether the message is text or binary data.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    private fun handleWebSocketMessage(path: String, message: ByteArray, isText: Boolean) {
     }
 }
