@@ -2,9 +2,9 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id 'com.adarshr.test-logger' version '3.0.0'
-    id 'org.jetbrains.kotlin.jvm' version '1.5.31'
-    id 'org.jetbrains.dokka' version '1.5.30'
+    id 'com.adarshr.test-logger' version '3.2.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'org.jetbrains.dokka' version '1.7.10'
 }
 archivesBaseName = 'atlantis'
 version = '4.1.0'
@@ -13,13 +13,13 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    implementation 'com.squareup.okio:okio:3.0.0'
-    implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
-    testImplementation 'io.mockk:mockk:1.12.0'
-    testImplementation 'org.amshove.kluent:kluent:1.65'
+    implementation 'com.squareup.okio:okio:3.2.0'
+    implementation 'com.google.code.gson:gson:2.9.1'
+    testImplementation 'io.mockk:mockk:1.12.8'
+    testImplementation 'org.amshove.kluent:kluent:1.68'
+    testImplementation 'com.squareup.okhttp3:okhttp:4.10.0'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-    dokkaHtmlPlugin 'org.jetbrains.dokka:kotlin-as-java-plugin:1.5.30'
+    dokkaHtmlPlugin 'org.jetbrains.dokka:kotlin-as-java-plugin:1.7.10'
 }
 testlogger {
     theme 'mocha'

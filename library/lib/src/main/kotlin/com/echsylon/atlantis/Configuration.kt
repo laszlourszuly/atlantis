@@ -1,8 +1,9 @@
 package com.echsylon.atlantis
 
-import com.echsylon.atlantis.request.Order.RANDOM
+import com.echsylon.atlantis.Order.*
 import com.echsylon.atlantis.request.Pattern
 import com.echsylon.atlantis.request.Request
+import com.echsylon.atlantis.response.Message
 import com.echsylon.atlantis.response.Response
 
 /**
@@ -21,11 +22,35 @@ class Configuration {
      */
     fun findResponse(request: Request): Response? {
         return filters.entries
-            .firstOrNull { entry -> entry.key.match(request) }
-            ?.let { entry ->
-                if (entry.key.responseOrder == RANDOM) entry.value.random()
-                else entry.value.removeFirstOrNull()?.also { entry.value.add(it) }
+            .firstOrNull { (pattern, _) -> match(pattern, request) }
+            ?.let { (pattern, responses) ->
+                when (pattern.responseOrder) {
+                    SEQUENTIAL -> responses.removeFirstOrNull()?.also { responses.add(it) }
+                    RANDOM -> responses.randomOrNull()
+                    else -> null
+                }
             }
+    }
+
+    /**
+     * Selects WebSocket messages from the response based on the message order
+     * configured.
+     *
+     * @param response The response to pick a message from.
+     * @return The list of selected messages.
+     */
+    fun findMessages(response: Response): List<Message> {
+        return when (response.messageOrder) {
+            SEQUENTIAL -> response.messages.removeFirstOrNull()
+                ?.also { response.messages.add(it) }
+                ?.let { listOf(it) }
+                ?: emptyList()
+            RANDOM -> response.messages.randomOrNull()
+                ?.let { listOf(it) }
+                ?: emptyList()
+            BATCH -> response.messages
+                .toMutableList() // return a copy
+        }
     }
 
     /**
@@ -56,4 +81,19 @@ class Configuration {
     fun clear() {
         filters.clear()
     }
+
+    /**
+     * Checks whether an intercepted HTTP request matches the given pattern.
+     *
+     * @return True if the regular expressions match the corresponding request
+     *         attributes and the request contains all pattern headers, false
+     *         otherwise.
+     */
+    private fun match(pattern: Pattern, request: Request): Boolean {
+        return pattern.verb.toRegex().matches(request.verb) &&
+                pattern.path.toRegex().matches(request.path) &&
+                pattern.protocol.toRegex().matches(request.protocol) &&
+                request.headers.containsAll(pattern.headers)
+    }
+
 }
