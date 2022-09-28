@@ -24,8 +24,8 @@ class ResponseTest {
         val response = Response()
             .apply { headers.add("Content-Length: 3") }
             .apply { content = byteArrayOf(0, 1, 2) }
-            .apply { behavior.chunk = 1..1 }
-            .apply { behavior.delay = 0..0 }
+            .apply { chunk = 1..1 }
+            .apply { delay = 0..0 }
 
         response.body?.size `should be equal to` 1
         response.body?.size `should be equal to` 1
@@ -37,8 +37,8 @@ class ResponseTest {
         val response = Response()
             .apply { headers.add("Transfer-Encoding: chunked") }
             .apply { content = byteArrayOf(0, 1, 2) }
-            .apply { behavior.chunk = 1..1 }
-            .apply { behavior.delay = 0..0 }
+            .apply { chunk = 1..1 }
+            .apply { delay = 0..0 }
 
         // expected size is 4 because body="{chunk_size}\r\n{chunk}"
         response.body?.size `should be equal to` 4
@@ -51,8 +51,8 @@ class ResponseTest {
         val response = Response()
             .apply { headers.add("Content-Length: 1") }
             .apply { content = byteArrayOf(3) }
-            .apply { behavior.chunk = 2..2 }
-            .apply { behavior.delay = 0..0 }
+            .apply { chunk = 2..2 }
+            .apply { delay = 0..0 }
 
         response.body?.size `should be equal to` 1
     }
@@ -62,8 +62,8 @@ class ResponseTest {
         val response = Response()
             .apply { headers.add("Transfer-Encoding: chunked") }
             .apply { content = byteArrayOf(4, 5) }
-            .apply { behavior.chunk = 4..4 }
-            .apply { behavior.delay = 0..0 }
+            .apply { chunk = 4..4 }
+            .apply { delay = 0..0 }
 
         // expected size is 5 because "{chunk_size}\r\n{chunk}"
         response.body?.size `should be equal to` 5
@@ -74,8 +74,8 @@ class ResponseTest {
         val response = Response()
             .apply { headers.add("Content-Length: 3") }
             .apply { content = "Hej".encodeToByteArray() }
-            .apply { behavior.chunk = 1..1 }
-            .apply { behavior.delay = 50..50 }
+            .apply { chunk = 1..1 }
+            .apply { delay = 50..50 }
 
         val start = System.currentTimeMillis()
         response.body
@@ -88,8 +88,8 @@ class ResponseTest {
         val response = Response()
             .apply { headers.add("Transfer-Encoding: chunked") }
             .apply { content = "Hej".encodeToByteArray() }
-            .apply { behavior.chunk = 1..1 }
-            .apply { behavior.delay = 50..50 }
+            .apply { chunk = 1..1 }
+            .apply { delay = 50..50 }
 
         val start = System.currentTimeMillis()
         response.body

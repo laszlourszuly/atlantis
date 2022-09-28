@@ -116,8 +116,8 @@ class ConfigurationHelperTest {
         response.captured.protocol `should be equal to` "HTTP/2000"
         response.captured.headers `should contain same` listOf("Content-Type: text/plain", "Content-Length: 3")
         response.captured.content.toString(UTF_8) `should be equal to` "Hej"
-        response.captured.behavior.chunk `should be equal to` 1..1600
-        response.captured.behavior.delay `should be equal to` 10..500
+        response.captured.chunk `should be equal to` 1..1600
+        response.captured.delay `should be equal to` 10..500
         response.captured.behavior.calculateLength `should be equal to` true
         response.captured.behavior.calculateWsAccept `should be equal to` true
         response.captured.messages.size `should be equal to` 1

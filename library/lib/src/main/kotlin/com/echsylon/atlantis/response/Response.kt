@@ -40,11 +40,21 @@ data class Response(
      * or a part of it, all depending on how the behavior configuration is set.
      */
     val body: ByteArray?
-        get() = payload.getBlocking(
-            behavior.delay,
-            behavior.chunk,
-            headers.expectChunkedContent
-        )
+        get() = payload.getBlocking(delay, chunk, headers.expectChunkedContent)
+
+    /**
+     * The optional delay range before serving the response to the client.
+     */
+    var delay: IntRange
+        get() = behavior.delay
+        set(value) = run { behavior.delay = value }
+
+    /**
+     * The optional delay fragmentation range when serving the response body.
+     */
+    var chunk: IntRange
+        get() = behavior.chunk
+        set(value) = run { behavior.chunk = value }
 
     /**
      * The mock response status message. This is rendered based on the status

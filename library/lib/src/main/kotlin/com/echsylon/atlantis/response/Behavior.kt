@@ -15,7 +15,9 @@ package com.echsylon.atlantis.response
  *                          header based on the request headers.
  */
 data class Behavior(
+    @Deprecated("Use `Response.delay` instead. This field will be removed in the next version of Atlantis.")
     var delay: IntRange = 0..0,
+    @Deprecated("Use `Response.chunk` instead. This field will be removed in the next version of Atlantis.")
     var chunk: IntRange = 0..0,
     var calculateLength: Boolean = true,
     var calculateWsAccept: Boolean = true

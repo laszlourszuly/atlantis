@@ -38,9 +38,9 @@ internal class ConfigurationHelper {
     //                   "Content-Length: 3"
     //               ],
     //               "content": "Hej",
+    //               "chunk": [1, 1600],
+    //               "delay": [10, 500],
     //               "behavior": {
-    //                   "chunk": [1, 1600],
-    //                   "delay": [10, 500],
     //                   "calculateContentLengthIfAbsent": false,
     //                   "calculateSecWebSocketAcceptIfAbsent": false
     //               },
@@ -68,6 +68,8 @@ internal class ConfigurationHelper {
 
         private val RESPONSE = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.?""")
         private val RESPONSE_CODE = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.code""")
+        private val RESPONSE_DELAY = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.delay\[\d+]""")
+        private val RESPONSE_CHUNK = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.chunk\[\d+]""")
         private val RESPONSE_HEADER = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.headers\[\d+]""")
         private val RESPONSE_PROTOCOL = Regex("""\$\.requests\[\d+]\.responses\[\d+]\.protocol""")
 
@@ -123,13 +125,23 @@ internal class ConfigurationHelper {
                                 while (json.hasNext()) {
                                     response.headers.add(json.nextString())
                                 }
+                            RESPONSE_CHUNK.matches(json.path) ->
+                                response.chunk = IntRange(
+                                    json.nextInt(),
+                                    json.nextInt()
+                                ).also { json.endArray() }
+                            RESPONSE_DELAY.matches(json.path) ->
+                                response.delay = IntRange(
+                                    json.nextInt(),
+                                    json.nextInt()
+                                ).also { json.endArray() }
                             BEHAVIOR_CHUNK.matches(json.path) ->
-                                response.behavior.chunk = IntRange(
+                                response.chunk = IntRange(
                                     json.nextInt(),
                                     json.nextInt()
                                 ).also { json.endArray() }
                             BEHAVIOR_DELAY.matches(json.path) ->
-                                response.behavior.delay = IntRange(
+                                response.delay = IntRange(
                                     json.nextInt(),
                                     json.nextInt()
                                 ).also { json.endArray() }
