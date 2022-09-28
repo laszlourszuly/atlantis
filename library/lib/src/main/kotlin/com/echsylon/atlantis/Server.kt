@@ -468,7 +468,7 @@ internal class Server {
      */
     private fun writeResponseContent(response: Response, output: BufferedSink) {
         var bytes = response.body
-        if (bytes != null) output.writeUtf8("\r\n")
+        output.writeUtf8("\r\n")
         while (bytes != null) {
             output.write(bytes)
             bytes = response.body
