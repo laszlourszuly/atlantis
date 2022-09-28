@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+
     <TextView
         android:id="@+id/label_json"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="24dp"
         android:text="@string/get_json_content_from_server"
         android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        app:layout_constraintEnd_toStartOf="@id/action_json"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/response_json"
         android:layout_width="0dp"
@@ -26,25 +29,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/label_json"
         tools:text="{'json': 'string'}" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/action_json"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:text="@string/get"
-        app:layout_constraintBottom_toBottomOf="@id/response_json"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/response_json"
-        app:layout_constraintTop_toTopOf="@id/response_json" />
+        app:layout_constraintTop_toTopOf="@id/label_json" />
+
     <TextView
         android:id="@+id/label_serial"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="24dp"
         android:text="@string/get_next_response_from_server"
         android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        app:layout_constraintEnd_toStartOf="@id/action_serial"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/response_json" />
+
     <TextView
         android:id="@+id/response_serial"
         android:layout_width="0dp"
@@ -56,25 +63,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/label_serial"
         tools:text="First response" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/action_serial"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:text="@string/get"
-        app:layout_constraintBottom_toBottomOf="@id/response_serial"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/response_serial"
-        app:layout_constraintTop_toTopOf="@id/response_serial" />
+        app:layout_constraintTop_toTopOf="@id/label_serial" />
+
     <TextView
         android:id="@+id/label_random"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="24dp"
         android:text="@string/get_random_response_from_server"
         android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        app:layout_constraintEnd_toStartOf="@id/action_random"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/response_serial" />
+
     <TextView
         android:id="@+id/response_random"
         android:layout_width="0dp"
@@ -86,14 +97,48 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/label_random"
         tools:text="10" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/action_random"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:text="@string/get"
-        app:layout_constraintBottom_toBottomOf="@id/response_random"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/response_random"
-        app:layout_constraintTop_toTopOf="@id/response_random" />
+        app:layout_constraintTop_toTopOf="@id/label_random" />
+
+    <TextView
+        android:id="@+id/label_messaging"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/web_socket_messages"
+        android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        app:layout_constraintEnd_toStartOf="@id/action_messaging"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/response_random" />
+
+    <TextView
+        android:id="@+id/response_messaging"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        app:layout_constraintEnd_toStartOf="@id/action_messaging"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/label_messaging"
+        tools:text="First message" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/action_messaging"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="@string/start"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/response_messaging"
+        app:layout_constraintTop_toTopOf="@id/label_messaging" />
 </androidx.constraintlayout.widget.ConstraintLayout>

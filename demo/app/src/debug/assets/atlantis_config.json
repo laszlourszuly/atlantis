@@ -1,0 +1,96 @@
+{
+  "requests": [{
+    "verb": "GET",
+    "path": "/api/json",
+    "responses": [{
+      "code": 200,
+      "headers": [
+        "Content-Type: application/json",
+        "Content-Length: 21"
+      ],
+      "content": "{ \"content\": \"json\" }",
+      "chunk": [3,10],
+      "delay": [100,2000]
+    }]
+  },{
+    "verb": "GET",
+    "path": "/api/next",
+    "headers": ["Accept: text/plain"],
+    "responseOrder": "SEQUENTIAL",
+    "responses": [{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "first"
+    },{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "second"
+    },{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "last"
+    }]
+  },{
+    "verb": "GET",
+    "path": "/api/random",
+    "headers": ["Accept: text/plain"],
+    "responseOrder": "RANDOM",
+    "responses": [{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "1"
+    },{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "2"
+    },{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "3"
+    },{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "4"
+    },{
+      "code": 200,
+      "headers": ["Content-Type: text/plain"],
+      "content": "5"
+    }]
+  },{
+    "verb": "GET",
+    "path": "/ws/connect",
+    "headers": [
+      "Upgrade: websocket",
+      "Connection: Upgrade"
+    ],
+    "responses": [{
+      "code": 101,
+      "headers": [
+        "Upgrade: websocket",
+        "Connection: Upgrade"
+      ],
+      "messageOrder": "BATCH",
+      "messages": [{
+        "path": "/ws/connect",
+        "type": "TEXT",
+        "text": "Message No. 1",
+        "delay": [200, 400]
+      },{
+        "path": "/ws/connect",
+        "type": "TEXT",
+        "text": "Message No. 2",
+        "delay": [1200, 2000]
+      },{
+        "path": "/ws/connect",
+        "type": "TEXT",
+        "text": "Message No. 3",
+        "delay": [2200, 2400]
+      },{
+        "path": "/ws/connect",
+        "type": "CLOSE",
+        "code": 1001,
+        "delay": [2600, 2800]
+      }]
+    }]
+  }]
+}

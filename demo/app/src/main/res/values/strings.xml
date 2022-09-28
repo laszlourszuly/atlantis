@@ -4,4 +4,7 @@
     <string name="get_json_content_from_server">Get JSON content from server</string>
     <string name="get_next_response_from_server">Get next response from server</string>
     <string name="get_random_response_from_server">Get random response from server</string>
+    <string name="web_socket_messages">WebSocket messages</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
 </resources>
