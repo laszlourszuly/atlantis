@@ -28,18 +28,18 @@ You can change your configuration at any time, regardless of the current state o
 The easiest way to configure Atlantis is by writing a JSON configuration file. For smaller use cases, say unit tests, you can also create a configuration tree from regular POJO's as well exposed by Atlantis.
 
 ### The JSON API
-Below is a pseudo-configuration for Atlantis which presents all attributes with some values. This example only serves as some sort of exhaustive example, but not all fields make sense in combination with eachother. The example doesn't even pass standard JSON validation. 
+Below is a pseudo-configuration for Atlantis which presents all attributes with some values. This example only serves as some sort of exhaustive example, but not all fields make sense in combination with eachother.
 ```json
 {
     "requests": [{
         "verb": "(PUT|PATCH)",
-        "path": "/api/content\?.*",
+        "path": "/api/content\\?.*",
         "protocol": "HTTP/1.1",
         "headers": [
             "Content-Type: application/json",
  	    "Accept: text/plain"
         ],
-        "responseOrder": "SEQUENTIAL"|"RANDOM",
+        "responseOrder": "SEQUENTIAL|RANDOM",
         "responses": [{
             "code": 200,
             "protocol": "HTTP/1.1",
@@ -53,9 +53,9 @@ Below is a pseudo-configuration for Atlantis which presents all attributes with 
                 "calculateContentLengthIfAbsent": false,
                 "calculateSecWebSocketAcceptIfAbsent": false
             },
-            "messageOrder": "SEQUENTIAL"|"RANDOM"|"BATCH",
+            "messageOrder": "SEQUENTIAL|RANDOM|BATCH",
             "messages": [{
-                "type": "TEXT"|"DATA"|"CLOSE"|"PING"|"PONG",
+                "type": "TEXT|DATA|CLOSE|PING|PONG",
                 "path": "/ws/messages",
                 "text": "some text",
                 "data": "0xDEADBEEF",
@@ -68,24 +68,24 @@ Below is a pseudo-configuration for Atlantis which presents all attributes with 
 }
 ```
 
-**Requests**
-You configure each request pattern you want Atlantis to serve a mock response for in terms of "verb", "path", "protocol" and "headers". You can use regular expressions to describe the request "verb", "path" and "protocol". The "headers" list, on the other hand, defines the required subset of exact headers in the request in order to consider it a match.
+#### Requests
+You configure each request pattern you want Atlantis to serve a mock response for in terms of `verb`, `path`, `protocol` and `headers`. You can use regular expressions to describe the request `verb`, `path` and `protocol`. The `headers` list, on the other hand, defines the required subset of exact headers in the request in order to consider it a match.
 
 Atlantis will check each incoming request on the configured port against your configuration and pick the first pattern that gives a full match.
 
-**Responses**
+#### Responses
 You can configure multiple responses for each request pattern. By default these will be served in a wrapped sequential order, but you can also configure them to be served at random order.
 
-You can also configure basic behavior for each mocked response in terms of "chunk" size and delay. Atlantis will split the mock response body in random sized chunks within the configured range and delay each chunk by a random amount of milliseconds in the corresponding delay range. By default no chunking and no delay is applied.
+You can also configure basic behavior for each mocked response in terms of `chunk` size and `delay`. Atlantis will split the mock response body in random sized chunks within the configured range and delay each chunk by a random amount of milliseconds in the corresponding delay range. By default no chunking and no delay is applied.
 
 By default, Atlantis will calculate and set the "Content-Length" and "Sec-WebSocket-Accept" headers on relevant responses. You can turn this off if you have very peculiar cases by setting the "calculateContentLengthIfAbsent" and "calculateSecWebSocketAcceptIfAbsent" behaviour attributes respectively.
 
-**WebSocket**
-For each response you can also configure optional WebSocket messages. Every time that particular response is served for a request, one ("messageOrder" = SEQUENTIAL or RANDOM) or all ("messageOrder" = BATCH) configured messages will also be sent to a previously opened WebSocket.
+#### WebSocket
+For each response you can also configure optional WebSocket messages. Every time that particular response is served for a request, one (`messageOrder` = `"SEQUENTIAL"` or `"RANDOM"`) or all (`messageOrder` = `"BATCH"`) configured messages will also be sent to a previously opened WebSocket.
 
-You need to define a handshake request + response to enable WebSocket functionality. The handshake request MUST have the path set to whatever path your client uses when establishing the WebSocket connection, and it MUST have the "Connection: Upgrade" and "Upgrade: websocket" headers set. Similarly the handshake response MUST have a status code of 101 and MUST have the "Connection: Upgrade" and "Upgrade: websocket" headers set.
+You need to define a handshake request and response to enable WebSocket functionality. The handshake request MUST have the `path` set to whatever path your client uses when establishing the WebSocket connection, and it MUST have the "Connection: Upgrade" and "Upgrade: websocket" `headers` set. Similarly the handshake response MUST have a status `code` of 101 and MUST have the "Connection: Upgrade" and "Upgrade: websocket" `headers` set.
 
-### A Real Example
+#### A Real Example
 A more realistic example for a WebSocket configuration could look something like this:
 ```json
 {
