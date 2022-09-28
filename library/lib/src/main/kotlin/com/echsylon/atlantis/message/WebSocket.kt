@@ -1,5 +1,6 @@
 package com.echsylon.atlantis.message
 
+import com.echsylon.atlantis.extension.isZero
 import com.echsylon.atlantis.extension.toRandomDelay
 import com.echsylon.atlantis.extension.toRandomSize
 import com.echsylon.atlantis.extension.writeIfNotNull
@@ -128,7 +129,7 @@ class WebSocket(
             executor.runCatching {
                 schedule( // Will throw if closing (because in "shutdown" state)
                     {
-                        println("Atlantis WebSocket Send:\n\t${path}\n\t$message")
+                        println("Atlantis WebSocket Send:\n\t${message.type} $path\n\t$message")
                         messageWriteQueue
                             .runCatching { addAll(fragments) }
                             .onFailure { shutdown() }
