@@ -421,7 +421,6 @@ internal class Server {
     private fun ensureSecWebSocketAccept(webSocketKey: String?, response: Response) {
         webSocketKey
             ?.takeIf { it.isNotBlank() }
-            ?.takeIf { response.headers.webSocketAccept == null }
             ?.let { it + WS_ACCEPT_UUID }
             ?.let { MessageDigest.getInstance("SHA-1").digest(it.toByteArray(UTF_8)) }
             ?.let { Base64.getEncoder().encode(it).toString(UTF_8) }
