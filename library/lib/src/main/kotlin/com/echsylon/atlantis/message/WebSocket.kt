@@ -133,6 +133,8 @@ class WebSocket(
                             .runCatching { addAll(fragments) }
                             .onFailure { shutdown() }
                             .onSuccess {
+                                // Re-schedule ping and pong messages.
+                                if (message.delay.isZero()) return@onSuccess
                                 if (message.type == PING) sendMessage(message)
                                 if (message.type == PONG) sendMessage(message)
                             }
